@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.2 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.3 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -12047,7 +12047,16 @@ JSON만: {"titles":["제목1","제목2","제목3","제목4","제목5"]}`;
         setReviewStatus(null);
         setSimilarityResult(null);
         setConvertedThumbPrompt("");
-        setYoutubeMetadata(null);
+        // [어그로보존] 실존인물 어그로 썸네일이 있으면 그것만 남기고 나머지만 리셋
+        setYoutubeMetadata(function(_prevYM){
+          try {
+            var _isRPnow = (useRealPerson && selectedRealPerson && realPersonMode === 'side');
+            if (_isRPnow && _prevYM && _prevYM.thumbnailTexts && _prevYM.thumbnailTexts.length > 0) {
+              return { thumbnailTexts: _prevYM.thumbnailTexts };
+            }
+          } catch(_e){}
+          return null;
+        });
 
         // ========== r4.6: 벤치마킹 썸네일 이미지 DNA 분석 (야담 + NK 공통) ==========
         try {
@@ -13041,7 +13050,7 @@ ${selectedHook ? '선택 훅: ' + selectedHook.example : ''}
 
  톤: "여러분", "생각해 보십시오", "~하십니까" 같은 말 거는 구어체 필수!
  분량: 30~40초 (충분히 길게, 첫 한 방으로 잡고 왜?로 끌고가기)
-${(typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim()) ? '\n★★ 키워드 인트로 반영 (필수): 아래 키워드 중 1~2개를 인트로 안 어디든 자연스럽게 넣으세요. 첫 문장이든 중간이든 상관없지만, 인트로에 반드시 등장해야 합니다. 예: "시진핑 방북 이런 시국에..." / "우크라이나 파병 소식이 들려오던 그때..."\n키워드: ' + mustKeywords + '\n(주의: 키워드 1~2개만. 다 넣지 말 것. 가장 자극적인 것 우선)\n' : ''}
+${(typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim()) ? '\n⛔⛔ [키워드 인트로 최우선 강제] 아래 키워드 중 1~2개를 반드시 인트로의 [첫 번째 문장 또는 두 번째 문장] 안에 넣으세요! 본문이 아니라 인트로 맨 앞에! 이건 유튜브 검색·알고리즘 노출에 필수입니다.\n키워드: ' + mustKeywords + '\n예시 (첫 문장에 키워드): "시진핑 방북 소식이 평양을 뒤흔들던 그때, 누군가 사라졌습니다." / "우크라이나 파병 명단이 내려온 그날 밤, 한 남자가 강을 건넜습니다."\n→ 키워드 1~2개만 (다 넣지 말 것), 가장 자극적인 것 우선, 반드시 첫째~둘째 문장 안에!\n' : ''}
 
  문체 리듬감 (v20.65 수정5: 오감별 짧은 문장 예시):
 시각: "파란 불꽃이 튀었습니다."
@@ -14972,6 +14981,7 @@ ${_nextSents}
     - 세 번째 문장: 충격 대사 (따옴표 안) - 위기/경고/비밀
     - 1막 전체 톤은 유지하되, 처음 3문장만 더 임팩트 있게
     - 단, 따옴표 대사 자체는 절대 변경 금지
+    - ⛔ [키워드 절대 보존] 원본 인트로(1막 첫부분)에 특정 키워드(예: 시진핑 방북, 우크라이나 파병, 중국 교류 등 시사 단어)가 있으면 → 그 키워드를 절대 삭제하거나 다른 말로 바꾸지 마라. 인트로 첫~둘째 문장의 키워드는 유튜브 노출에 필수다. 그대로 유지할 것!
 
 12. 🔥🔥 [인트로 2분 (1막 첫 2000자) 5단계 임팩트 - 시청자 끝까지 보게 만들기]
     1막은 영상 인트로(첫 2분)로 사용됨. 시청자가 끝까지 보게 만드는 5단계 구조 필수:
@@ -16247,8 +16257,13 @@ JSON 형식:
                       const _tt = (youtubeMetadata && youtubeMetadata.thumbnailTexts) ? youtubeMetadata.thumbnailTexts : null;
                       if (_tt && _tt.length > 0) {
                         const _first = _tt[0];
-                        if (typeof _first === 'string' && _first.indexOf('\n') > 0) {
-                          // 이미 윗줄\n아랫줄 형태
+                        if (_first && typeof _first === 'object' && (_first.top || _first.bottom)) {
+                          // 어그로 썸네일 객체 형식 {top, bottom}
+                          _nkL1 = (_first.top || '').trim();
+                          _nkL2 = (_first.bottom || '').trim();
+                          _nkThumb2Line = true;
+                        } else if (typeof _first === 'string' && _first.indexOf('\n') > 0) {
+                          // 윗줄\n아랫줄 문자열 형태
                           const _parts = _first.split('\n');
                           _nkL1 = (_parts[0] || '').trim();
                           _nkL2 = (_parts[1] || '').trim();
@@ -16333,6 +16348,11 @@ JSON 형식:
               _d6Place = _d6PlaceTransMap[window._coreBait.place] || window._coreBait.place;
               if (_d6Place) console.log('D-6 fallback: place "' + window._coreBait.place + '" → "' + _d6Place + '"');
             }
+            // [어그로배경수정] NK 실존인물 어그로면 엉뚱한 결말장소(대사관 등) 주입 제외, 소품만
+            var _isRPbg = (useRealPerson && selectedRealPerson && realPersonMode === 'side');
+            // 결말/한국 장소는 어그로에 부적합 (썸네일은 북한 내부 긴장 배경 유지)
+            var _badPlace = _d6Place && /대사관|embassy|한국|korea|공항|airport|하나원|서울|seoul/i.test(_d6Place);
+            if (_isRPbg && _badPlace) { _d6Place = ''; }
             if (_d6Prop || _d6Place) {
               let _d6Extra = '';
               if (_d6Prop) _d6Extra += ', featuring ' + _d6Prop + ' as key prop';
@@ -22931,7 +22951,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.2 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.3 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
