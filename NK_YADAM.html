@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.1.6 로드완료 ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.2 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -11432,10 +11432,16 @@ ${isYadam ?
                 if (!_hasChild) {
                   // 시놉에서 "아들/딸/막내 OO" 패턴으로 자녀 이름·성별 추출
                   let _childName = '', _childGender = '';
-                  const _sonM = _synAll.match(/아들\s*([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에|로|만|\s|,|\.|$)/);
-                  const _dauM = _synAll.match(/딸\s*([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에|로|만|\s|,|\.|$)/);
+                  const _sonM = _synAll.match(/아들\s+([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에게|에|로|만|\s|,|\.|$)/);
+                  const _dauM = _synAll.match(/딸\s+([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에게|에|로|만|\s|,|\.|$)/);
+                  // [에게버그수정] '아들에게/딸에게' 같은 조사 직결은 이름 아님 (공백 필수 \s+)
                   if (_sonM && _sonM[1]) { _childName = _sonM[1]; _childGender = '남'; }
                   else if (_dauM && _dauM[1]) { _childName = _dauM[1]; _childGender = '여'; }
+                  // [에게버그 안전망] 조사/불용어가 이름으로 추출되면 무효화
+                  var _josaBlacklist = ['에게','에서','으로','에는','과는','와는','이는','가는','한테','부터','까지','보다','처럼','만큼','에게는','에서는','이라고','라고','이라는','라는','이며','으며','에게서','한테서'];
+                  if (_childName && _josaBlacklist.indexOf(_childName) >= 0) { _childName = ''; }
+                  // 1글자거나 받침조사 패턴이면 무효화
+                  if (_childName && _childName.length < 2) { _childName = ''; }
                   // 추출 이름이 기존 캐스트와 겹치면 무효화(다른 인물 보호)
                   if (_childName && _usedN.has(_childName)) { _childName = ''; }
                   // 못 찾으면 이름풀 fallback
@@ -22925,7 +22931,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.1.6 | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.2 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
