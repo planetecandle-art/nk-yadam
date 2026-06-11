@@ -126,6 +126,1836 @@
   <div id="root"></div>
   <script type="text/babel">
 /* ===== r5.1.6 LOAD BANNER ===== */
+
+// ===== 경량화 복구 함수 33개 (정규식 인식 추출) =====
+window.buildHistoricalContext = function buildHistoricalContext(scriptOrSynopsis, isYadamMode) {
+  if (!isYadamMode) return '';
+  if (!scriptOrSynopsis || typeof scriptOrSynopsis !== 'string') return '';
+  
+  var matched = [];
+  var addedKeys = {};
+  var allDBs = [window.VERIFIED_HISTORICAL_DB, window.VERIFIED_LAWS_DB];
+  allDBs.forEach(function(db) {
+    if (!db) return;
+    Object.keys(db).forEach(function(category) {
+      var items = db[category];
+      if (!items || typeof items !== 'object') return;
+      Object.keys(items).forEach(function(key) {
+        if (addedKeys[key]) return;
+        if (scriptOrSynopsis.indexOf(key) >= 0) {
+          matched.push(key + ' = ' + items[key]);
+          addedKeys[key] = true;
+        }
+      });
+    });
+  });
+  
+  if (matched.length > 30) matched = matched.slice(0, 30);
+  if (matched.length === 0) return '';
+  
+  return '\n\n[r5.0 #21 자동 매칭 검증 정보 - 본문에 등장하는 사실만 정확히 사용]\n' +
+    matched.map(function(m) { return '- ' + m; }).join('\n') +
+    '\n[중요] 위 정보와 다른 사실 절대 만들지 말 것. 인용 시점은 [고증: 출처]로 표시.';
+};
+window.injectPersona = function injectPersona(script, channelKey, isYadamMode) {
+  // 안전장치 1: 채널키 유효성 검사 (실패 시 원본 반환)
+  if (!script || !channelKey || !window.PERSONA_DB || !window.PERSONA_DB[channelKey]) {
+    return script;
+  }
+  
+  var personas = window.PERSONA_DB[channelKey];
+  var pickRandom = function pickRandom(arr) {
+    if (!arr || arr.length === 0) return null;
+    return arr[Math.floor(Math.random() * arr.length)];
+  };
+  
+  // ========== 막 분리 (r5.0 B: [N막] / [N막: 제목] 두 형식 모두 매칭) ==========
+  // 베이스 대본 형식: [1막] 본문 [2막] 본문 ... 또는 [1막: 제목] 본문 [2막: 제목] 본문 ...
+  // 막 마커 앞에서 split (lookahead 사용)
+  var acts = script.split(/(?=\[\d+막[^\]]*\])/);
+  // 첫 요소는 인트로 (1막 마커 이전 부분) - 별도 처리
+  // 막이 있는 요소들만 acts로 사용
+  
+  // 인트로(첫 요소, [1막] 이전)와 본문(막들) 분리
+  var intro = '';
+  var actBlocks = [];
+  if (acts.length > 0 && !acts[0].match(/^\[\d+막[^\]]*\]/)) {
+    intro = acts[0];
+    actBlocks = acts.slice(1);
+  } else {
+    actBlocks = acts;
+  }
+  
+  if (actBlocks.length < 3) {
+    console.log('[PERSONA] 막 분리 실패 ([N막] 마커 부족), 페르소나 주입 생략. actBlocks.length=' + actBlocks.length);
+    return script;
+  }
+  
+  console.log('[PERSONA] 채널: ' + channelKey + ', 막 수: ' + actBlocks.length + ', 인트로 길이: ' + intro.length);
+  
+  // acts 변수를 actBlocks로 매핑 (이후 코드 호환)
+  acts = actBlocks;
+  
+  // ========== 1. 1막 본론 시작 페르소나 ([1막] 또는 [1막: 제목] 마커 직후) ==========
+  // acts[0] = "[1막] 본론 텍스트..." 또는 "[1막: 제목]\n본론" 형식
+  // [1막] 마커 + 첫 문장 끝(.) 직후에 페르소나 주입
+  var act1 = acts[0];
+  // r5.0 B: [1막] / [1막: 제목] 두 형식 모두 매칭
+  var act1HeaderMatch = act1.match(/^\[1막[^\]]*\][^\n]*\n/);
+  if (act1HeaderMatch) {
+    var headerEnd = act1HeaderMatch[0].length;
+    // 첫 문단 끝 찾기 (첫 마침표 또는 첫 \n)
+    var bodyStart = headerEnd;
+    var firstSentenceEnd = act1.indexOf('.', bodyStart);
+    if (firstSentenceEnd === -1) firstSentenceEnd = act1.indexOf('。', bodyStart);
+    if (firstSentenceEnd > bodyStart && firstSentenceEnd < bodyStart + 500) {
+      var introPersona = pickRandom(personas.intro_universal);
+      if (introPersona) {
+        var insertPos = firstSentenceEnd + 1;
+        var marker = '\n\n[PERSONA_PROTECTED_START]\n' + introPersona + '\n[PERSONA_PROTECTED_END]\n\n';
+        act1 = act1.slice(0, insertPos) + marker + act1.slice(insertPos);
+        acts[0] = act1;
+        console.log('[PERSONA] 1막 본론 시작 주입 OK: ' + introPersona.slice(0, 30) + '...');
+      }
+    } else {
+      console.log('[PERSONA] 1막 첫 문장 끝점 못 찾음, 1막 페르소나 생략');
+    }
+  } else {
+    console.log('[PERSONA] 1막 [1막] 헤더 못 찾음, 1막 페르소나 생략');
+  }
+  
+  // ========== 2. 4~5막 감정 정점 페르소나 ==========
+  // 야담 8막 / NK 9막 → 4막 또는 5막에 주입 (정확히 acts.length의 50% 지점)
+  var midActIdx = Math.floor(acts.length / 2);
+  if (midActIdx >= 1 && midActIdx < acts.length - 1) {
+    var midPersona = pickRandom(personas.middle);
+    if (midPersona) {
+      var midAct = acts[midActIdx];
+      // 막 끝 부분에 추가 (자연스러운 위치)
+      var midMarker = '\n\n[PERSONA_PROTECTED_START]\n' + midPersona + '\n[PERSONA_PROTECTED_END]';
+      acts[midActIdx] = midAct.trimEnd() + midMarker;
+      console.log('[PERSONA] ' + (midActIdx + 1) + '막 정점 주입 OK: ' + midPersona.slice(0, 30) + '...');
+    }
+  }
+  
+  // ========== 3. 마지막 막 마무리 페르소나 (잠언 + 상황인지 + 시리즈) ==========
+  // 야담 8막 / NK 9막 = acts[acts.length - 1]
+  var lastIdx = acts.length - 1;
+  var lastAct = acts[lastIdx];
+  var endingParts = [];
+  
+  // 3-1. 잠언 (필수, 100%)
+  var endingProverb = pickRandom(personas.ending_proverb);
+  if (endingProverb) {
+    endingParts.push(endingProverb);
+    console.log('[PERSONA] 마지막 막 잠언: ' + endingProverb.slice(0, 30) + '...');
+  }
+  
+  // 3-2. 시청자 상황 인지 (#17, 30% 확률 - 매 영상 X)
+  if (Math.random() < 0.3 && personas.ending_situation && personas.ending_situation.length > 0) {
+    var situationPersona = pickRandom(personas.ending_situation);
+    if (situationPersona) {
+      endingParts.push(situationPersona);
+      console.log('[PERSONA] 시청자 상황 인지 (#17): ' + situationPersona.slice(0, 30) + '...');
+    }
+  }
+  
+  // 3-3. 시리즈 자기참조 (#18, 에피소드 2화부터, localStorage)
+  try {
+    if (typeof localStorage !== 'undefined') {
+      var seriesKey = 'siri_episode_' + channelKey;
+      var episodeNum = parseInt(localStorage.getItem(seriesKey) || '0', 10);
+      // 현재 영상 = episodeNum + 1
+      var currentEpisode = episodeNum + 1;
+      
+      if (currentEpisode >= 2 && personas.ending_series && personas.ending_series.length > 0) {
+        var seriesPersona = pickRandom(personas.ending_series);
+        if (seriesPersona) {
+          endingParts.push(seriesPersona);
+          console.log('[PERSONA] 시리즈 자기참조 (#18, 에피소드 ' + currentEpisode + '): ' + seriesPersona.slice(0, 30) + '...');
+        }
+      }
+      
+      // 카운트 증가 (다음 영상 위해)
+      localStorage.setItem(seriesKey, String(currentEpisode));
+      console.log('[PERSONA] 채널 ' + channelKey + ' 에피소드 카운트 → ' + currentEpisode);
+    }
+  } catch (e) {
+    console.log('[PERSONA] 시리즈 카운트 실패 (localStorage 미지원?): ' + e.message);
+  }
+  
+  // 모든 ending 멘트 합치기
+  if (endingParts.length > 0) {
+    var endText = endingParts.join('\n\n');
+    var endMarker = '\n\n[PERSONA_PROTECTED_START]\n' + endText + '\n[PERSONA_PROTECTED_END]';
+    acts[lastIdx] = lastAct.trimEnd() + endMarker;
+  }
+  
+  // ========== 막 다시 합치기 ==========
+  // 인트로 + 본문 막들 다시 합치기
+  return intro + acts.join('');
+};
+window.stripPersonaMarkers = function stripPersonaMarkers(script) {
+  if (!script) return script;
+  // r4.8 #1: 마커 변형/누락 케이스 전부 커버 (탭 숨김 보강)
+  // 줄바꿈 유무 무관, 짝 깨짐 시에도 안전, 잔여 빈줄 3개+ 정리
+  return script
+    .replace(/\s*\[PERSONA_PROTECTED_START\]\s*/g, '\n')
+    .replace(/\s*\[PERSONA_PROTECTED_END\]\s*/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+window.resolveChannelKey = function resolveChannelKey(isYadamMode) {
+  try {
+    if (typeof window === 'undefined') return null;
+    // 1차: window._currentPersonaChannel (외부 set용)
+    if (window._currentPersonaChannel) return window._currentPersonaChannel;
+    
+    // 2차: yadamChannel/nkChannel 전역 변수 (Babel 컴파일 후 유지되는지 확인 필요)
+    // currentChannelName 전역에서 추론
+    var name = window._currentChannelName || '';
+    if (isYadamMode) {
+      if (name.indexOf('마님') >= 0 || name.indexOf('야화') >= 0) return 'manim';
+      if (name.indexOf('청암') >= 0 || name.indexOf('야담') >= 0) return 'chungam';
+      // 야담 기본값
+      return 'chungam';
+    } else {
+      if (name.indexOf('평양') >= 0) return 'pyongyang';
+      if (name.indexOf('북쪽') >= 0 || name.indexOf('창문') >= 0) return 'bukchang';
+      // NK 기본값
+      return 'pyongyang';
+    }
+  } catch (e) {
+    console.log('[PERSONA] resolveChannelKey 에러: ' + e.message);
+    return null;
+  }
+};
+window.enrichCastFromSynopsis = function enrichCastFromSynopsis(synopsis, currentCast, isYadamMode) {
+  if (!synopsis || !Array.isArray(currentCast)) return currentCast;
+  
+  // r5.0.9 A-1: 가해자/조력자 키워드 화이트리스트
+  var YADAM_KEYWORDS = {
+    // 가해자
+    '새어머니': { role: '가해자', gender: '여', age: '40대' },
+    '계모': { role: '가해자', gender: '여', age: '40대' },
+    '시어머니': { role: '가해자', gender: '여', age: '50대' },
+    '시아버지': { role: '가해자', gender: '남', age: '50대' },
+    '시누이': { role: '가해자', gender: '여', age: '20대' },
+    '본처': { role: '가해자', gender: '여', age: '30대' },
+    '첩': { role: '가해자', gender: '여', age: '20대' },
+    '관아 사또': { role: '가해자', gender: '남', age: '40대' },
+    '아전': { role: '가해자', gender: '남', age: '30대' },
+    // 조력자
+    '몸종': { role: '조력자', gender: '여', age: '20대' },
+    '유모': { role: '조력자', gender: '여', age: '40대' },
+    '하인': { role: '조력자', gender: '남', age: '30대' },
+    '머슴': { role: '조력자', gender: '남', age: '30대' },
+    '훈장': { role: '조력자', gender: '남', age: '50대' },
+    '의원': { role: '조력자', gender: '남', age: '50대' },
+    '스님': { role: '조력자', gender: '남', age: '50대' }
+  };
+  
+  var NK_KEYWORDS = {
+    // 가해자
+    '보위부': { role: '가해자', gender: '남', age: '40대' },
+    '보위원': { role: '가해자', gender: '남', age: '30대' },
+    '호위원': { role: '가해자', gender: '남', age: '30대' },
+    '검열관': { role: '가해자', gender: '남', age: '40대' },
+    // 조력자  
+    '운전사': { role: '조력자', gender: '남', age: '40대' },
+    '운전수': { role: '조력자', gender: '남', age: '40대' },
+    '브로커': { role: '조력자', gender: '남', age: '40대' },
+    '안내인': { role: '조력자', gender: '남', age: '40대' },
+    '의사': { role: '조력자', gender: '남', age: '50대' },
+    '간호원': { role: '조력자', gender: '여', age: '30대' },
+    '동료': { role: '조력자', gender: '남', age: '30대' }
+  };
+  
+  var keywords = isYadamMode ? YADAM_KEYWORDS : NK_KEYWORDS;
+  var existingNames = currentCast.map(function(c){ return c.name || ''; });
+  var existingRoles = currentCast.map(function(c){ return (c.role || '').toLowerCase(); });
+  var enriched = currentCast.slice();
+  var addedKeywords = [];
+  
+  // 시놉시스에서 키워드 감지
+  Object.keys(keywords).forEach(function(kw){
+    // 시놉에 키워드가 등장하는지 확인
+    if (synopsis.indexOf(kw) === -1) return;
+    
+    // 이미 캐스트에 같은 역할이 있으면 스킵
+    var alreadyHasRole = existingRoles.some(function(r){ return r.indexOf(kw) >= 0; });
+    if (alreadyHasRole) return;
+    
+    // 캐스트에 추가 (이름은 임시, 나중에 generateCast가 바꿈)
+    var info = keywords[kw];
+    enriched.push({
+      name: kw,  // 임시 이름 (역할 키워드)
+      role: kw + ' (' + info.role + ')',
+      gender: info.gender,
+      age: info.age,
+      isMain: false,
+      status: 'alive',
+      deathAt: null,
+      _r509_autoAdded: true  // 자동 추가 마커
+    });
+    addedKeywords.push(kw);
+  });
+  
+  if (addedKeywords.length > 0) {
+    console.log('[r5.0.9 A-1] 일관성 체인: 시놉에서 캐스트 자동 보강 →', addedKeywords.join(', '));
+  }
+  
+  return enriched;
+};
+window.extractBenchmarkDNA = function extractBenchmarkDNA(benchText, isYadamMode) {
+  if (!benchText) return { hasTimeJump: false, jumpYears: 0, hasStatusReversal: false, statusKeyword: null, characterCount: 0, characterTypes: [] };
+  
+  var dna = {
+    hasTimeJump: false,
+    jumpYears: 0,
+    hasStatusReversal: false,
+    statusKeyword: null,
+    characterCount: 0,
+    characterTypes: [],
+    revengePattern: false,
+    secretPattern: false
+  };
+  
+  // 시간 점프 감지
+  var timeJumpRegex = /(\d{1,2})\s*년\s*(후|뒤|만에|지나)/;
+  var tjMatch = benchText.match(timeJumpRegex);
+  if (tjMatch) {
+    dna.hasTimeJump = true;
+    dna.jumpYears = parseInt(tjMatch[1], 10);
+  }
+  
+  // 신분 역전 키워드 (야담/NK 공통 + 분리)
+  var YADAM_REVERSAL = ['정경부인', '왕세자', '왕세자비', '어사', '판서', '대감', '정승', '내명부', '귀비', '왕비', '중전', '세자빈', '대비', '왕대비', '정실', '본처'];
+  var NK_REVERSAL = ['국정원', '귀순', '망명', '공직자', '국회의원', '교수', 'CEO', '대표', '회장'];
+  var reversalList = isYadamMode ? YADAM_REVERSAL : NK_REVERSAL;
+  
+  for (var i = 0; i < reversalList.length; i++) {
+    if (benchText.indexOf(reversalList[i]) >= 0) {
+      dna.hasStatusReversal = true;
+      dna.statusKeyword = reversalList[i];
+      break;
+    }
+  }
+  
+  // 복수 패턴 (떡상 핵심)
+  if (/(복수|차디찬|통쾌|한마디|돌아온|되돌아온)/.test(benchText)) {
+    dna.revengePattern = true;
+  }
+  
+  // 비밀 패턴
+  if (/(비밀|숨겨진|밝혀진|드러난|발각된)/.test(benchText)) {
+    dna.secretPattern = true;
+  }
+  
+  // 인물 타입 추출 (야담)
+  if (isYadamMode) {
+    var YADAM_CHARS = ['양반', '본처', '첩', '며느리', '시어머니', '시아버지', '새어머니', '계모', '의붓', '서자', '서녀', '천민', '노비', '거지', '주모', '도령', '소저', '아씨', '선비', '훈장', '의원', '스님', '관아', '사또', '아전', '판서', '정승'];
+    YADAM_CHARS.forEach(function(c){
+      if (benchText.indexOf(c) >= 0) dna.characterTypes.push(c);
+    });
+  } else {
+    // NK
+    var NK_CHARS = ['외교관', '방산', '지도원', '집사', '운전사', '운전수', '브로커', '의사', '교수', '간부', '호위원', '보위부', '평양', '평양시당', '국가보위성', '인민무력부', '대장', '소장', '중장', '상장', '소좌', '중좌', '상좌', '대좌'];
+    NK_CHARS.forEach(function(c){
+      if (benchText.indexOf(c) >= 0) dna.characterTypes.push(c);
+    });
+  }
+  
+  dna.characterCount = dna.characterTypes.length;
+  
+  console.log('[r5.0.9 B-1] 벤치마킹 DNA 추출:', JSON.stringify(dna));
+  return dna;
+};
+window.applyDNAToSynopsisPrompt = function applyDNAToSynopsisPrompt(originalPrompt, dna) {
+  if (!dna || !originalPrompt) return originalPrompt;
+  
+  var dnaInstructions = '\n\n[r5.0.9 B-2 벤치마킹 DNA 강제 적용]\n';
+  
+  if (dna.hasTimeJump && dna.jumpYears > 0) {
+    dnaInstructions += '- 시간 점프 ' + dna.jumpYears + '년 후 시점 강제 적용 (필수)\n';
+  }
+  
+  if (dna.hasStatusReversal && dna.statusKeyword) {
+    dnaInstructions += '- 신분 역전 결말 강제: 주인공이 ' + dna.statusKeyword + '으로 돌아옴\n';
+  }
+  
+  if (dna.revengePattern) {
+    dnaInstructions += '- 복수/응징 키워드 포함 (차디찬/통쾌/한마디 등)\n';
+  }
+  
+  if (dna.secretPattern) {
+    dnaInstructions += '- 비밀/진실 폭로 키워드 포함\n';
+  }
+  
+  if (dna.characterTypes && dna.characterTypes.length > 0) {
+    dnaInstructions += '- 핵심 인물 타입 유지: ' + dna.characterTypes.slice(0, 5).join(', ') + '\n';
+  }
+  
+  // DNA가 비어있으면 강제 주입 X (식상 패턴 방지)
+  if (!dna.hasTimeJump && !dna.hasStatusReversal && !dna.revengePattern && !dna.secretPattern) {
+    return originalPrompt;
+  }
+  
+  return originalPrompt + dnaInstructions;
+};
+window.applyHookKeywordsByDNA = function applyHookKeywordsByDNA(prompt, dna, isYadamMode) {
+  if (!prompt || !dna) return prompt;
+  
+  var hooks = [];
+  
+  // 시간 점프 있을 때만 추가
+  if (dna.hasTimeJump && dna.jumpYears > 0) {
+    hooks.push('★ 시간 점프 ' + dna.jumpYears + '년 강조 키워드: ' + window.HOOK_KEYWORDS_DB.timeJump.slice(0, 5).join(' / '));
+  }
+  
+  // 신분 역전 있을 때만 추가
+  if (dna.hasStatusReversal && dna.statusKeyword) {
+    var revList = isYadamMode ? window.HOOK_KEYWORDS_DB.yadamReversal : window.HOOK_KEYWORDS_DB.nkReversal;
+    hooks.push('★ 신분 역전 결말 키워드 (' + dna.statusKeyword + ' 중심): ' + revList.slice(0, 8).join(' / '));
+  }
+  
+  // 복수 패턴 있을 때만 추가
+  if (dna.revengePattern) {
+    hooks.push('★ 떡상 감정 키워드: ' + window.HOOK_KEYWORDS_DB.emotion.slice(0, 8).join(' / '));
+  }
+  
+  // 비밀 패턴 있을 때만 추가
+  if (dna.secretPattern) {
+    hooks.push('★ 비밀/폭로 키워드: 묻어둔 비밀 / 드러난 진실 / 발각된 / 폭로된 / 밝혀진');
+  }
+  
+  // hooks가 비어있으면 강제 주입 X (다양성 유지)
+  if (hooks.length === 0) {
+    console.log('[r5.0.9 C-2] DNA에 떡상 패턴 없음 → 키워드 강제 주입 안함 (다양성 유지)');
+    return prompt;
+  }
+  
+  var hookSection = '\n\n[r5.0.9 C-2 떡상 키워드 적용 (벤치마킹 DNA 매칭)]\n' + hooks.join('\n') + '\n→ 위 키워드 중 자연스럽게 2~3개 본문에 활용';
+  
+  console.log('[r5.0.9 C-2] 떡상 키워드 ' + hooks.length + '개 자동 적용 (DNA 매칭)');
+  return prompt + hookSection;
+};
+window.smoothChannelGreeting = function smoothChannelGreeting(script, channelName, isYadamMode) {
+  if (!script || !channelName) return script;
+  
+  // 채널멘트 패턴 찾기
+  var greetingRegex = new RegExp('(' + channelName + '입니다[.,]?\\s*[^\\n]{0,50})', 'g');
+  var matches = script.match(greetingRegex);
+  
+  if (!matches || matches.length === 0) return script;
+  
+  // 채널멘트 직전 문장 추출 (인트로 끝 부분)
+  var firstGreetingIdx = script.indexOf(matches[0]);
+  if (firstGreetingIdx <= 50) return script;  // 너무 앞이면 X
+  
+  var beforeText = script.substring(Math.max(0, firstGreetingIdx - 200), firstGreetingIdx);
+  var lastSentMatch = beforeText.match(/([^.!?]+[.!?])\s*$/);
+  
+  if (!lastSentMatch) return script;
+  var lastSent = lastSentMatch[1].trim();
+  
+  // 인트로 끝 패턴 분석
+  var transitionWord = '';
+  
+  if (lastSent.endsWith('?') || lastSent.endsWith('까요?') || lastSent.endsWith('을까요?')) {
+    // 의문문 → 답을 찾는 멘트
+    transitionWord = '\n\n그 답을 찾기 위해, ';
+  } else if (lastSent.match(/(었습니다|있었답니다|되었지요|있었지요)\.$/)) {
+    // 회상/평서 → 자연스럽게 본격 시작
+    transitionWord = '\n\n오늘은 그 이야기를 함께 만나보시지요. ';
+  } else if (lastSent.match(/(다|요|이지요|랍니다|었어요)\.$/)) {
+    // 평서 → 본격 시작
+    transitionWord = '\n\n오늘 ';
+  } else {
+    transitionWord = '\n\n자, ';
+  }
+  
+  // 첫 번째 채널멘트 직전에 자연 연결어 삽입
+  var modified = script.substring(0, firstGreetingIdx) + transitionWord + script.substring(firstGreetingIdx);
+  
+  console.log('[r5.0.9 E-1] 채널멘트 자연 연결 적용: 인트로 끝 → "' + transitionWord.trim() + '" → 채널멘트');
+  return modified;
+};
+window.enrichNKCast = function enrichNKCast(synopsis, currentCast) {
+  if (!synopsis || !Array.isArray(currentCast)) return currentCast;
+  
+  var existingRoles = currentCast.map(function(c){ return (c.role || '').toLowerCase(); });
+  var enriched = currentCast.slice();
+  var added = [];
+  
+  Object.keys(window.NK_HELPER_KEYWORDS).forEach(function(kw){
+    if (synopsis.indexOf(kw) === -1) return;
+    
+    // 이미 같은 역할이 있으면 스킵
+    var alreadyHas = existingRoles.some(function(r){ return r.indexOf(kw) >= 0; });
+    if (alreadyHas) return;
+    
+    var info = window.NK_HELPER_KEYWORDS[kw];
+    enriched.push({
+      name: kw,
+      role: kw + ' (' + info.role + ')',
+      gender: info.gender,
+      age: info.age,
+      isMain: false,
+      status: 'alive',
+      deathAt: null,
+      _r509_autoAdded: true
+    });
+    added.push(kw);
+  });
+  
+  if (added.length > 0) {
+    console.log('[r5.0.9 G-2] NK 캐스트 자동 보강 →', added.join(', '));
+  }
+  
+  return enriched;
+};
+window.buildDynamicMidjourneyContext = function buildDynamicMidjourneyContext(cast, synopsis, isYadamMode) {
+  if (!Array.isArray(cast)) return { peopleCount: 2, clothingHint: '', backgroundHint: '' };
+  
+  // 1) 인물 수 (캐스트 기준, 최대 5명)
+  var peopleCount = Math.min(Math.max(cast.length, 1), 5);
+  
+  // 2) 의상 자동 매칭 (직업/신분 → 의상)
+  var clothingMap = isYadamMode ? {
+    '주인공': 'simple white jeogori with indigo chima, traditional hanbok',
+    '양반': 'noble silk hanbok with embroidery, scholar attire',
+    '본처': 'elegant noble hanbok, jjokjin meori bun',
+    '새어머니': 'dark hanbok with stern appearance',
+    '시어머니': 'aged noble hanbok, traditional bun',
+    '거지': 'ragged dirty hanbok with patches and tears',
+    '노비': 'humble cotton clothing, tied hair',
+    '몸종': 'simple servant hanbok, tied hair',
+    '훈장': 'scholar robe with ink-stained sleeves',
+    '의원': 'traditional Korean doctor robe, herb pouch',
+    '스님': 'Buddhist monk gray robe, prayer beads',
+    '선비': 'white scholar hanbok, gat hat',
+    '관아': 'official magistrate uniform, black gat',
+    '왕세자': 'royal ceremonial robe with golden dragon',
+    '정경부인': 'high-class noblewoman hanbok with gold embroidery',
+    '어사': 'royal inspector uniform, marpae plaque',
+    '판서': 'high-ranking court official robe',
+    '아씨': 'young noblewoman hanbok, single braid',
+    '도령': 'young scholar attire, topknot'
+  } : {
+    '외교관': 'formal black suit with white shirt and tie',
+    '방산': 'civilian formal jacket, modest attire',
+    '지도원': '평양시당 dark formal suit, party badge',
+    '집사': 'formal butler suit',
+    '운전사': 'simple jacket with cap',
+    '운전수': 'simple jacket with cap',
+    '브로커': 'casual jacket, watchful eyes',
+    '의사': 'white medical coat with stethoscope',
+    '교수': 'formal jacket with glasses',
+    '간부': 'high-ranking party uniform with badges',
+    '호위원': 'military style uniform, alert posture',
+    '보위부': 'dark uniform with red collar tabs',
+    '평양': 'formal civilian attire appropriate for Pyongyang',
+    '주인공': 'modest North Korean civilian attire'
+  };
+  
+  // 3) 배경 자동 매칭 (시놉시스 키워드 → 배경)
+  var backgroundMap = isYadamMode ? {
+    '양반가': 'noble Korean hanok mansion with tile roof, courtyard with wooden floor',
+    '마당': 'traditional Korean courtyard with stone path',
+    '산속': 'dense Korean mountain forest, pine trees',
+    '산길': 'winding mountain path with old trees',
+    '마을': 'old Korean village with thatched roofs',
+    '저잣거리': 'old Korean market street with hanging signs',
+    '관아': 'official magistrate office with traditional decorations',
+    '궁궐': 'royal palace with red columns and golden roof tiles',
+    '강가': 'misty Korean river with reeds',
+    '논밭': 'rice paddy fields with traditional tools',
+    '뒷산': 'small hill behind village with shrines'
+  } : {
+    '평양': 'Pyongyang street with monumental architecture',
+    '단둥': 'Dandong border city with Yalu river view',
+    '옌지': 'Yanji city with Korean-Chinese signs',
+    '베트남': 'Vietnam jungle border path',
+    '인천': 'Incheon airport modern terminal',
+    '국경': 'tense border crossing area, barbed wire',
+    '강': 'Yalu or Tumen river crossing point',
+    '터널': 'dark tunnel with concrete walls',
+    '산': 'rugged Korean mountain border area',
+    '집': 'modest North Korean apartment interior'
+  };
+  
+  // 의상 추출
+  var clothings = [];
+  cast.forEach(function(c){
+    if (!c) return;
+    var role = (c.role || '') + ' ' + (c.name || '');
+    Object.keys(clothingMap).forEach(function(kw){
+      if (role.indexOf(kw) >= 0 && clothings.indexOf(clothingMap[kw]) === -1) {
+        clothings.push(clothingMap[kw]);
+      }
+    });
+  });
+  
+  // 배경 추출 (시놉에서)
+  var backgrounds = [];
+  if (synopsis) {
+    Object.keys(backgroundMap).forEach(function(kw){
+      if (synopsis.indexOf(kw) >= 0 && backgrounds.indexOf(backgroundMap[kw]) === -1) {
+        backgrounds.push(backgroundMap[kw]);
+      }
+    });
+  }
+  
+  var result = {
+    peopleCount: peopleCount,
+    clothingHint: clothings.slice(0, 3).join(' / '),
+    backgroundHint: backgrounds.slice(0, 2).join(' / ') || (isYadamMode ? 'traditional Korean Joseon dynasty setting' : 'North Korean realistic setting')
+  };
+  
+  console.log('[r5.0.9 I-1] 미드저니 동적 컨텍스트:', JSON.stringify(result));
+  return result;
+};
+window.localDeficiencyCheck = function localDeficiencyCheck(script, cast, isYadamMode) {
+  if (!script) return { issues: [], score: 0 };
+  
+  var issues = [];
+  var deductions = 0;
+  
+  // 1) 호흡 검수 (긴 문장 → 자동 쉼표 추가 권장)
+  var sentences = script.split(/[.!?]\s+/);
+  var longSentences = sentences.filter(function(s){ return s.length > 150; });
+  if (longSentences.length > 5) {
+    issues.push({ type: 'pacing', count: longSentences.length, msg: '긴 문장 ' + longSentences.length + '개 (150자+) → 호흡 끊김' });
+    deductions += longSentences.length;
+  }
+  
+  // 2) 메타 주석 검수 (시청자 노출 X)
+  var metaPatterns = [/\(수정\)/, /\(변경\)/, /※/, /\[메모\]/, /\[수정\]/, /\* 주의:/];
+  var metaCount = 0;
+  metaPatterns.forEach(function(p){
+    var m = script.match(new RegExp(p.source, 'g'));
+    if (m) metaCount += m.length;
+  });
+  if (metaCount > 0) {
+    issues.push({ type: 'meta', count: metaCount, msg: '메타 주석 ' + metaCount + '개 (제거 필요)' });
+    deductions += metaCount * 5;
+  }
+  
+  // 3) 빈 따옴표 검수
+  var emptyQuotes = (script.match(/[\"\"][\s]*[\"\"]/g) || []).length + (script.match(/\.\.\.\s*\.\.\./g) || []).length;
+  if (emptyQuotes > 0) {
+    issues.push({ type: 'empty_quote', count: emptyQuotes, msg: '빈 따옴표 ' + emptyQuotes + '개' });
+    deductions += emptyQuotes * 3;
+  }
+  
+  // 4) 막 태그 본문 노출 검수
+  var actLeakPatterns = [/(\d)막에서/g, /(\d)막에 들어/g, /이전 막/g, /다음 막/g];
+  var actLeakCount = 0;
+  actLeakPatterns.forEach(function(p){
+    var m = script.match(p);
+    if (m) actLeakCount += m.length;
+  });
+  if (actLeakCount > 0) {
+    issues.push({ type: 'act_leak', count: actLeakCount, msg: '막 태그 본문 노출 ' + actLeakCount + '회' });
+    deductions += actLeakCount * 8;
+  }
+  
+  // 5) 환각 이름 검수 (캐스트 외 이름 빈도 높음)
+  if (Array.isArray(cast) && cast.length > 0) {
+    var verifyResult = window.verifyCastInScript ? window.verifyCastInScript(script, cast) : { ok: true, missing: [] };
+    if (!verifyResult.ok && verifyResult.missing.length > 0) {
+      issues.push({ type: 'hallucination', count: verifyResult.missing.length, msg: '환각 이름 ' + verifyResult.missing.length + '개', detail: verifyResult.missing });
+      deductions += verifyResult.missing.length * 10;
+    }
+  }
+  
+  // 6) 떡밥 회수 검수 (1막 떡밥 → 후반부 회수)
+  if (isYadamMode) {
+    // 1막 첫 부분 (~10%) 핵심 키워드 추출
+    var firstAct = script.substring(0, Math.floor(script.length * 0.15));
+    var lastAct = script.substring(Math.floor(script.length * 0.7));
+    
+    // 야담 떡밥 키워드: "그 비밀", "그날", "후일", "훗날", "수상한", "이상한"
+    var teaserPatterns = ['그 비밀', '그날', '훗날', '후일', '수상', '이상한'];
+    var teaserUsed = 0;
+    teaserPatterns.forEach(function(t){
+      if (firstAct.indexOf(t) >= 0) teaserUsed++;
+    });
+    
+    if (teaserUsed === 0) {
+      issues.push({ type: 'no_teaser', msg: '1막에 떡밥 부족' });
+      deductions += 5;
+    }
+  }
+  
+  // 7) 채널멘트 중복 검수
+  var greetingMatches = script.match(/(청암야담|마님야화|평양데스크|북쪽창문)입니다/g);
+  if (greetingMatches && greetingMatches.length > 1) {
+    issues.push({ type: 'duplicate_greeting', count: greetingMatches.length, msg: '채널멘트 중복 ' + greetingMatches.length + '회' });
+    deductions += (greetingMatches.length - 1) * 5;
+  }
+  
+  // 8) NK 시간 역순 검수 (NK는 시간 역순 X)
+  if (!isYadamMode) {
+    // "5년 전, 그러나 7년 후" 같은 모순
+    var timeContradictions = (script.match(/(\d+)\s*년\s*전.{0,200}(\d+)\s*년\s*후/g) || []).length;
+    if (timeContradictions > 2) {
+      issues.push({ type: 'time_disorder', count: timeContradictions, msg: 'NK 시간 역순 모순 ' + timeContradictions + '회' });
+      deductions += timeContradictions * 3;
+    }
+  }
+  
+  var score = Math.max(0, 100 - deductions);
+  console.log('[r5.0.9 L-1] 로컬 결핍 검수: ' + issues.length + '개 이슈, 점수 ' + score + '/100');
+  
+  return { issues: issues, score: score, deductions: deductions };
+};
+window.smartReplaceWithoutRegen = function smartReplaceWithoutRegen(script, cast) {
+  if (!script || !Array.isArray(cast)) return { script: script, replacements: 0 };
+  
+  var modified = script;
+  var replacements = 0;
+  var castNames = cast.map(function(c){ return c.name || ''; }).filter(function(n){ return n.length >= 2; });
+  
+  // 1) 환각 이름 → 가장 유사한 캐스트 이름으로 치환 (편집거리 기반)
+  if (window.verifyCastInScript) {
+    var verify = window.verifyCastInScript(script, cast);
+    if (!verify.ok && verify.missing.length > 0) {
+      verify.missing.forEach(function(missingItem){
+        var hallucName = missingItem.name;
+        // 가장 유사한 캐스트 이름 찾기 (첫 글자 일치 우선, 없으면 길이 비슷한 것)
+        var bestMatch = null;
+        var firstChar = hallucName.charAt(0);
+        
+        for (var i = 0; i < castNames.length; i++) {
+          if (castNames[i].charAt(0) === firstChar) {
+            bestMatch = castNames[i];
+            break;
+          }
+        }
+        // 첫 글자 매칭 실패 시 첫 번째 캐스트 사용
+        if (!bestMatch && castNames.length > 0) {
+          bestMatch = castNames[0];
+        }
+        
+        if (bestMatch && bestMatch !== hallucName) {
+          // r5.0.9 M-1 개선: 조사 자동 보정 치환
+          // "호식이가" → "백합이" (받침 따라 조사 매칭)
+          var matches = 0;
+          
+          // 한글 받침 유무 체크 (마지막 글자)
+          var hasJongseong = function(name){
+            if (!name || name.length === 0) return false;
+            var lastCh = name.charCodeAt(name.length - 1);
+            if (lastCh < 0xAC00 || lastCh > 0xD7A3) return false;
+            return ((lastCh - 0xAC00) % 28) !== 0;
+          };
+          
+          var bestHasJong = hasJongseong(bestMatch);
+          
+          // 조사 자동 매핑
+          var particles = [
+            ['은', '는'],   // 받침O / 받침X
+            ['이', '가'],
+            ['을', '를'],
+            ['과', '와'],
+            ['아', '야'],
+            ['으로', '로']
+          ];
+          
+          // 환각 이름 + 조사 패턴부터 치환 (긴 패턴 먼저)
+          particles.forEach(function(p){
+            // hallucName + 받침조사 → bestMatch + 적절한 조사
+            // 예: "호식이가" → 호식이 받침 X → "가" 사용
+            //     bestMatch "백합" → 받침 O → "이" 사용
+            //     "호식이가" → "백합이"
+            
+            // 받침O 조사 (은/이/을/과/아)
+            var p1 = p[0];
+            // 받침X 조사 (는/가/를/와/야)  
+            var p2 = p[1];
+            
+            // hallucName + p1 형태
+            var rx1 = new RegExp(hallucName + p1, 'g');
+            var m1 = (modified.match(rx1) || []).length;
+            if (m1 > 0) {
+              modified = modified.replace(rx1, bestMatch + (bestHasJong ? p1 : p2));
+              matches += m1;
+            }
+            
+            // hallucName + p2 형태
+            var rx2 = new RegExp(hallucName + p2, 'g');
+            var m2 = (modified.match(rx2) || []).length;
+            if (m2 > 0) {
+              modified = modified.replace(rx2, bestMatch + (bestHasJong ? p1 : p2));
+              matches += m2;
+            }
+          });
+          
+          // '의', '에', '에게' 등 받침 무관 조사
+          ['의', '에', '에게', '에서', '도', '만', '까지'].forEach(function(p){
+            var rx = new RegExp(hallucName + p, 'g');
+            var m = (modified.match(rx) || []).length;
+            if (m > 0) {
+              modified = modified.replace(rx, bestMatch + p);
+              matches += m;
+            }
+          });
+          
+          // 마지막: 단독 hallucName 치환 (조사 없는 경우)
+          var rxAlone = new RegExp(hallucName + '(?![가-힣])', 'g');
+          var mAlone = (modified.match(rxAlone) || []).length;
+          if (mAlone > 0) {
+            modified = modified.replace(rxAlone, bestMatch);
+            matches += mAlone;
+          }
+          
+          replacements += matches;
+          console.log('[r5.0.9 M-1] 환각 이름 후처리 치환 (조사 보정): "' + hallucName + '" → "' + bestMatch + '" (' + matches + '회)');
+        }
+      });
+    }
+  }
+  
+  // 2) 나이 일관성 후처리 (캐스트 나이와 본문 나이 충돌 시 캐스트 우선)
+  cast.forEach(function(c){
+    if (!c.name || !c.age) return;
+    var age = c.age;
+    var ageNum = parseInt(age, 10);
+    if (isNaN(ageNum)) return;
+    
+    // "백합 35세" 같은 표현이 있으면 캐스트 나이로 보정
+    var ageRegex = new RegExp(c.name + '\\s*\\((\\d{2})세\\)', 'g');
+    var ageMatches = modified.match(ageRegex);
+    if (ageMatches) {
+      ageMatches.forEach(function(m){
+        var foundAge = parseInt(m.match(/\d+/)[0], 10);
+        if (Math.abs(foundAge - ageNum) > 5) {
+          modified = modified.replace(m, c.name + ' (' + age + ')');
+          replacements++;
+          console.log('[r5.0.9 M-1] 나이 후처리 보정: ' + foundAge + '세 → ' + age);
+        }
+      });
+    }
+  });
+  
+  return { script: modified, replacements: replacements };
+};
+window.compressSystemPrompt = function compressSystemPrompt(originalSystem) {
+  if (!originalSystem || originalSystem.length < 1000) return originalSystem;
+  
+  var compressed = originalSystem;
+  
+  // 1) 중복 빈 줄 제거 (\n\n\n+ → \n\n)
+  compressed = compressed.replace(/\n{3,}/g, '\n\n');
+  
+  // 2) 중복 공백 제거 (단, 한국어 들여쓰기는 보존)
+  compressed = compressed.replace(/  +/g, ' ');
+  
+  // 3) 같은 규칙 중복 감지 (단순 비교, 100% 동일한 줄 1회만)
+  var lines = compressed.split('\n');
+  var seenLines = {};
+  var dedupedLines = [];
+  lines.forEach(function(line){
+    var trimmed = line.trim();
+    if (trimmed.length < 20) {
+      // 짧은 줄은 그대로 유지
+      dedupedLines.push(line);
+      return;
+    }
+    if (!seenLines[trimmed]) {
+      seenLines[trimmed] = true;
+      dedupedLines.push(line);
+    }
+    // 중복이면 스킵
+  });
+  compressed = dedupedLines.join('\n');
+  
+  // 4) 동일 키워드 반복 압축 ("절대 금지: A, 절대 금지: B" → "절대 금지: A, B")
+  // 너무 공격적이면 의미 손상되므로 보수적으로
+  
+  var savedBytes = originalSystem.length - compressed.length;
+  if (savedBytes > 100) {
+    console.log('[r5.0.9 N-1] 시스템 프롬프트 압축: ' + originalSystem.length + ' → ' + compressed.length + ' (-' + savedBytes + '자, -' + Math.round(savedBytes / originalSystem.length * 100) + '%)');
+  }
+  
+  return compressed;
+};
+window.matchNKIntroType = function matchNKIntroType(dna, benchmark) {
+  if (!dna) return 'A';  // 기본 Type A (긴급 속보형)
+  
+  // 우선순위 매칭
+  // 1. 청각 키워드 (총성/사이렌/무전기) → Type B (총성/청각 몰입형)
+  if (benchmark && /(총성|총소리|사이렌|무전|격추|발사|탕!|탕탕)/.test(benchmark)) return 'B';
+  
+  // 2. 시간 점프 + 신분 역전 → Type A (긴급 속보형)
+  if (dna.hasTimeJump && dna.hasStatusReversal) return 'A';
+  
+  // 3. 숫자/규모 키워드 (가족/대규모/N명) → Type C (숫자 대비형)
+  if (benchmark && /(가족|대규모|일가족|개월|[0-9]+명|[0-9]+세|[0-9]+살)/.test(benchmark)) return 'C';
+  
+  // 4. 비밀/문건/증언 키워드 → Type D (비밀 폭로형)
+  if (dna.secretPattern || (benchmark && /(문건|증언|폭로|비밀)/.test(benchmark))) return 'D';
+  
+  // 5. 추격/긴박 키워드 → Type E (청각 몰입형)
+  if (benchmark && /(추격|쫓기|MiG|미그|전투기|격추|추격당)/.test(benchmark)) return 'E';
+  
+  // 기본: Type A
+  return 'A';
+};
+window.buildNKIntroSystemPrompt = function buildNKIntroSystemPrompt(typeKey, dna, benchmark, channelHint) {
+  if (!window.NK_INTRO_GUIDE) return '';
+  
+  var guide = window.NK_INTRO_GUIDE;
+  var type = guide.types[typeKey] || guide.types['A'];
+  var prompt = '';
+  
+  prompt += '\n\n[r5.0.9.1 NK 인트로 지침 v3.0 FINAL 강제 적용]\n';
+  prompt += '★ 선택된 인트로 패턴: Type ' + typeKey + ' (' + type.name + ')\n';
+  prompt += '★ 구조: ' + type.structure.join(' → ') + '\n\n';
+  
+  prompt += '【필수 규격 (어기면 재생성)】\n';
+  prompt += '- 길이: 5~9줄 (벤치마크 평균)\n';
+  prompt += '- 문장: 3~7문장\n';
+  prompt += '- 숫자: 최소 3개 이상 (시간/나이/규모/거리/속도)\n';
+  prompt += '- 조직명: 1개 이상 (보위부/국정원/인민무력부/평양시당 등)\n';
+  prompt += '- 후킹 단어: 2개 이상\n';
+  prompt += '- 질문: 마지막에 1개 ("과연 ~할까요?" / "왜 ~했을까요?")\n';
+  prompt += '- 결말: 70% 이상 숨김 (탈출 성공/주요 인물 정체/동기 비공개)\n';
+  
+  prompt += '\n【7가지 황금 법칙】\n';
+  prompt += '1. 조직적 긴급성: 보위부/국정원/평양시당 등 조직명으로 신뢰성 + "비상령/경계령/즉각/긴급"\n';
+  prompt += '2. 청각적 몰입: "탕! 탕! 탕!" / 무전기 고함 / 사이렌 → 즉각 몰입\n';
+  prompt += '3. 숫자의 극적 대비: 8개월↔75세, 11살↔평생 한 번도 (극단 대비)\n';
+  prompt += '4. 2단계 충격: 사건 제시 → "하지만/그런데" → 전례 없는 반전\n';
+  prompt += '5. 진실성 선언: "북한이 발칵 뒤집혔습니다" / "평양에서 전대미문의 일이"\n';
+  prompt += '6. 시공간 좌표: 2025년 N월 N일 오전 N시 정각, 평양 교외 강동군 (블랙박스 정밀도)\n';
+  prompt += '7. 박탈의 극대화: 당연한 것 → 완전 박탈 (학교/친구/자유 → "한 번도/없이")\n';
+  
+  // 벤치마킹 DNA 기반 강조
+  if (dna && dna.hasStatusReversal && dna.statusKeyword) {
+    prompt += '\n【★ 신분의 역설 최강 후킹 (이 사연 적용)】\n';
+    prompt += '- 핵심: 직업 ↔ 행동의 모순 강조\n';
+    prompt += '- 예: "김정은을 지키던 사람이 김정은으로부터 도망쳤다"\n';
+    prompt += '- 이번 사연 신분 키워드: ' + dna.statusKeyword + '\n';
+    prompt += '- 1단계(흔한 이미지) → 2단계(반전: 직업/신분 폭로) 자동 배치\n';
+  }
+  
+  // 후킹 단어 권장
+  prompt += '\n【후킹 단어 풀 (자연스럽게 2개+ 활용)】\n';
+  prompt += '- 강력 오프닝: ' + guide.hookWords.powerOpening.join(' / ') + '\n';
+  prompt += '- 사건 후킹: ' + guide.hookWords.eventHook.slice(0, 8).join(', ') + '\n';
+  prompt += '- 진실 후킹: ' + guide.hookWords.truthHook.slice(0, 6).join(', ') + '\n';
+  prompt += '- 긴박감: ' + guide.hookWords.urgency.slice(0, 6).join(', ') + '\n';
+  
+  // 청각 몰입 키워드 (Type B/E일 때 강조)
+  if (typeKey === 'B' || typeKey === 'E') {
+    prompt += '\n【★ 청각 몰입 강조 (Type ' + typeKey + ')】\n';
+    prompt += '- 총성: 탕! 탕! 탕! / 탕— 탕—\n';
+    prompt += '- 무전기: "즉시 항로를 돌려라" / "격추 명령이 떨어졌다"\n';
+    prompt += '- 신체 반응: 귓속을 찔렀습니다 / 심장이 멎었습니다\n';
+  }
+  
+  prompt += '\n【절대 금지】\n';
+  prompt += '- 추상적 표현 X (예: "한 인물의 이야기")\n';
+  prompt += '- 결말 공개 X (예: "결국 탈북에 성공했습니다")\n';
+  prompt += '- 10줄 이상 X / 3줄 이하 X\n';
+  prompt += '- 숫자 0~2개 X (3개 필수)\n';
+  prompt += '- 후킹 단어 0~1개 X (2개 필수)\n';
+  prompt += '- 단조로운 평서문 X (질문/감각 필수)\n';
+  
+  if (channelHint) {
+    prompt += '\n【채널멘트 위치】\n';
+    prompt += '- 인트로 본문(5~9줄) 끝 → 질문 → 채널멘트("' + channelHint + '입니다. 구독과 좋아요...")\n';
+    prompt += '- 인트로 시작에 채널멘트 X\n';
+  }
+  
+  prompt += '\n【출력 형식】\n';
+  prompt += '구체적이고 강력한 5~9줄 인트로 + 마지막 질문 (구독멘트는 그 뒤 자동 삽입)\n';
+  
+  return prompt;
+};
+window.validateNKIntro = function validateNKIntro(introText, channel) {
+  // r5.0.9.3 보정 0-B: 야담 분리 검증
+  if (channel && channel !== 'NK' && channel !== 'nk') {
+    console.error('[r5.0.9.3] validateNKIntro는 NK 전용 함수. 야담 호출 차단됨. channel=' + channel);
+    return { ok: false, score: 0, issues: ['NK 전용 함수에 야담 채널 호출 차단'], blockedByChannelGuard: true };
+  }
+  
+  if (!introText) return { ok: false, score: 0, issues: ['인트로 비어있음'] };
+  
+  var issues = [];
+  var hardLimitViolations = [];  // r5.0.9.2 v4.0: 하드 리밋 위반 추적
+  var score = 100;
+  var formula = window.NK_INTRO_GUIDE.goldenFormula;
+  
+  // 1) 길이 검증 (5~9줄)
+  var lines = introText.split(/\n+/).filter(function(l){ return l.trim().length > 5; });
+  if (lines.length < formula.minLines) {
+    issues.push('길이 부족: ' + lines.length + '줄 (5~9줄 필요)');
+    score -= 15;
+  } else if (lines.length > 12) {
+    issues.push('길이 초과: ' + lines.length + '줄 (5~9줄 권장)');
+    score -= 10;
+  }
+  
+  // 2) 숫자 카운트 (3개+)
+  var numberMatches = introText.match(/\d+[년월일시분초세살명억만]/g) || [];
+  if (numberMatches.length < formula.minNumbers) {
+    issues.push('숫자 부족: ' + numberMatches.length + '개 (3개+ 필요)');
+    score -= 15;
+  }
+  
+  // 3) 조직명 카운트 (1개+)
+  var orgs = window.NK_INTRO_GUIDE.laws.institutionalUrgency.organizations;
+  var orgFound = 0;
+  orgs.forEach(function(org){ if (introText.indexOf(org) >= 0) orgFound++; });
+  if (orgFound === 0) {
+    issues.push('조직명 없음 (1개+ 필요: 보위부/국정원/평양시당 등)');
+    score -= 10;
+  }
+  
+  // 4) 후킹 단어 카운트 (2개+)
+  var allHooks = [].concat(
+    window.NK_INTRO_GUIDE.hookWords.powerOpening,
+    window.NK_INTRO_GUIDE.hookWords.eventHook,
+    window.NK_INTRO_GUIDE.hookWords.truthHook,
+    window.NK_INTRO_GUIDE.hookWords.urgency
+  );
+  var hookFound = 0;
+  allHooks.forEach(function(h){ if (introText.indexOf(h) >= 0) hookFound++; });
+  if (hookFound < formula.minHookWords) {
+    issues.push('후킹 단어 부족: ' + hookFound + '개 (2개+ 필요)');
+    score -= 15;
+  }
+  
+  // 5) 질문 마무리 검증
+  var lastSection = introText.substring(introText.length - 200);
+  if (!/[?？]/.test(lastSection)) {
+    issues.push('마지막 질문 없음 (필수)');
+    score -= 10;
+  }
+  
+  // 6) 결말 노출 차단
+  var endingLeakPatterns = ['탈북에 성공했', '한국에 도착했', '귀순했습니다', '무사히 도착', '결국 살아남'];
+  var leakFound = endingLeakPatterns.some(function(p){ return introText.indexOf(p) >= 0; });
+  if (leakFound) {
+    issues.push('결말 노출 감지 (70% 숨김 위반)');
+    score -= 20;
+  }
+  
+  // ========== r5.0.9.2 v4.0 신규 검증 항목 ==========
+  
+  // 7) v4.0 황금 길이 하드 리밋 - 글자 수 (280자)
+  var charCount = introText.replace(/\s/g, '').length;
+  if (charCount > formula.maxChars) {
+    hardLimitViolations.push('글자 수 하드 리밋 초과: ' + charCount + '자 (최대 ' + formula.maxChars + '자)');
+    score -= 25;  // 하드 리밋은 -25점
+  } else if (charCount > formula.targetChars + 20) {
+    issues.push('글자 수 초과: ' + charCount + '자 (목표 ' + formula.targetChars + '자)');
+    score -= 5;
+  } else if (charCount < formula.minChars) {
+    issues.push('글자 수 부족: ' + charCount + '자 (최소 ' + formula.minChars + '자)');
+    score -= 10;
+  }
+  
+  // 8) v4.0 황금 길이 하드 리밋 - 영상 시간 (70초)
+  // 한국어 평균: 1초당 4-5자 (나레이션 기준 4.5자/초 적용)
+  var estimatedSec = Math.round(charCount / 4.5);
+  if (estimatedSec > formula.maxDurationSec) {
+    hardLimitViolations.push('영상 시간 하드 리밋 초과: ' + estimatedSec + '초 (최대 ' + formula.maxDurationSec + '초)');
+    score -= 25;
+  } else if (estimatedSec > formula.targetDurationSec + 10) {
+    issues.push('영상 시간 초과: ' + estimatedSec + '초 (목표 ' + formula.targetDurationSec + '초)');
+    score -= 5;
+  }
+  
+  // 9) v4.0 후크 8개 하드 리밋
+  var totalHookCount = numberMatches.length + orgFound + hookFound;
+  if (totalHookCount > formula.maxHooksPerIntro) {
+    hardLimitViolations.push('후크 개수 하드 리밋 초과: ' + totalHookCount + '개 (최대 ' + formula.maxHooksPerIntro + '개)');
+    score -= 15;
+  }
+  
+  // 10) v4.0 두 한마디 아키텍처 검증 (Two-Quote Architecture)
+  var quotePattern = /["'""].+?["'""]/g;
+  var quotes = introText.match(quotePattern) || [];
+  var twoQuoteDetected = quotes.length >= 2;
+  if (twoQuoteDetected) {
+    score += 5;  // 두 한마디 아키텍처 보너스
+    console.log('[r5.0.9.2 v4.0] 두 한마디 아키텍처 감지: +5점');
+  }
+  
+  // 11) v4.0 유명인 첫 3줄 보너스
+  var firstThreeLines = lines.slice(0, 3).join(' ');
+  var celebrities = window.NK_INTRO_GUIDE.celebrityBonusInFirstThreeLines.celebrities;
+  var celebrityInFirstThree = celebrities.some(function(c){ return firstThreeLines.indexOf(c) >= 0; });
+  if (celebrityInFirstThree && window.NK_INTRO_GUIDE.celebrityBonusInFirstThreeLines.enabled) {
+    score += window.NK_INTRO_GUIDE.celebrityBonusInFirstThreeLines.bonusScore;
+    console.log('[r5.0.9.2 v4.0] 유명인 첫 3줄 보너스: +' + window.NK_INTRO_GUIDE.celebrityBonusInFirstThreeLines.bonusScore + '점');
+  }
+  
+  // 12) v4.0 시간 정확성 검증 (날짜/시간 표현 일관성)
+  // 인트로에 등장하는 시간 표현이 모순되지 않는지 확인
+  var timeExpressions = introText.match(/(\d+년|\d+월|\d+일|\d+시|\d+분|\d+초|새벽|아침|오전|오후|저녁|밤|자정|정오)/g) || [];
+  var timeIssue = false;
+  // 같은 인트로에 "새벽"과 "정오"가 동시 등장하면 모순
+  if (introText.indexOf('새벽') >= 0 && introText.indexOf('정오') >= 0) timeIssue = true;
+  if (introText.indexOf('아침') >= 0 && introText.indexOf('밤') >= 0 && timeExpressions.length < 4) timeIssue = true;
+  if (timeIssue) {
+    issues.push('시간 표현 모순 (예: 새벽+정오 동시 등장)');
+    score -= 10;
+  }
+  
+  // 13) v4.0 시각적 구도 검증 (첫 줄 시각적 첫 컷)
+  var firstLine = lines[0] || '';
+  var hasVisualElement = /\d{4}년|\d+월|\d+일|\d+시|새벽|밤|밤중|어둠|불빛|총성|탕!|"/.test(firstLine);
+  if (!hasVisualElement && firstLine.length > 10) {
+    issues.push('첫 줄 시각적 구도 약함 (시간/장소/소리/대사 권장)');
+    score -= 5;
+  }
+  
+  // 14) v4.0 정형 오프닝 빈도 추적
+  var formulaicPatterns = window.NK_INTRO_GUIDE.formulaicOpeningFrequency.formulaicPatterns;
+  var formulaicUsed = formulaicPatterns.some(function(p){ return introText.substring(0, 100).indexOf(p) >= 0; });
+  if (formulaicUsed) {
+    // 정형 오프닝 사용 시 알림 (차단 X, 정보 제공)
+    console.log('[r5.0.9.2 v4.0] 정형 오프닝 사용 감지 (3편당 1번 이하 권장)');
+  }
+  
+  // ========== 최종 점수 계산 ==========
+  
+  // 하드 리밋 위반 시 자동 차단
+  var blocked = hardLimitViolations.length > 0;
+  
+  score = Math.max(0, Math.min(110, score));  // 최대 110 (보너스 포함)
+  console.log('[r5.0.9.2 v4.0] 인트로 검증: ' + score + '/100, 이슈 ' + issues.length + '개, 하드 리밋 위반 ' + hardLimitViolations.length + '개');
+  
+  return {
+    ok: !blocked && issues.length === 0 && score >= 80,
+    blocked: blocked,                             // r5.0.9.2 v4.0: 하드 리밋 위반 시 차단
+    score: score,
+    issues: issues,
+    hardLimitViolations: hardLimitViolations,     // r5.0.9.2 v4.0: 하드 리밋 위반 목록
+    stats: {
+      lines: lines.length,
+      charCount: charCount,                       // r5.0.9.2 v4.0: 글자 수
+      estimatedSec: estimatedSec,                 // r5.0.9.2 v4.0: 예상 영상 시간
+      totalHookCount: totalHookCount,             // r5.0.9.2 v4.0: 총 후크 수
+      numbers: numberMatches.length,
+      organizations: orgFound,
+      hookWords: hookFound,
+      hasQuestion: /[?？]/.test(lastSection),
+      twoQuoteDetected: twoQuoteDetected,         // r5.0.9.2 v4.0: 두 한마디 아키텍처
+      celebrityInFirstThree: celebrityInFirstThree, // r5.0.9.2 v4.0: 유명인 첫 3줄
+      formulaicOpening: formulaicUsed             // r5.0.9.2 v4.0: 정형 오프닝 사용
+    }
+  };
+};
+window.createNKAlert = function createNKAlert(triggerKey, data, channel) {
+  if (channel && channel !== 'NK' && channel !== 'nk') {
+    console.error('[r5.0.9.3] createNKAlert는 NK 전용. 야담 호출 차단.');
+    return null;
+  }
+  
+  var trigger = window.NK_ALERT_SYSTEM.triggers[triggerKey];
+  if (!trigger) return null;
+  
+  return {
+    level: trigger.level,
+    message: trigger.message,
+    triggerKey: triggerKey,
+    data: data || {},
+    overridable: window.NK_ALERT_SYSTEM.override.enabled,
+    timestamp: new Date().toISOString()
+  };
+};
+window.analyzeNKSeriesMeta = function analyzeNKSeriesMeta(currentHooks, recentEpisodes, channel) {
+  if (channel && channel !== 'NK' && channel !== 'nk') {
+    console.error('[r5.0.9.3] analyzeNKSeriesMeta는 NK 전용. 야담 호출 차단.');
+    return null;
+  }
+  
+  if (!Array.isArray(recentEpisodes)) recentEpisodes = [];
+  
+  var analysis = {
+    informationalOnly: true,        // r5.0.9.3 보정 10: 정보 제공만
+    scoreImpact: 0,                 // 점수 영향 절대 0
+    patterns: [],
+    recommendations: []
+  };
+  
+  // 최근 3편 후크 종류 추적
+  var recentHookTypes = {};
+  recentEpisodes.slice(-3).forEach(function(ep){
+    if (ep.hooks) {
+      ep.hooks.forEach(function(h){
+        recentHookTypes[h.type] = (recentHookTypes[h.type] || 0) + 1;
+      });
+    }
+  });
+  
+  // 현재 후크 패턴 분석
+  currentHooks.forEach(function(h){
+    if (recentHookTypes[h.type] >= 2) {
+      analysis.patterns.push({
+        hookText: h.exactText || h.type,
+        type: h.type,
+        recentUseCount: recentHookTypes[h.type],
+        message: '최근 3편 중 ' + recentHookTypes[h.type] + '편 동일 패턴 사용'
+      });
+    }
+  });
+  
+  // 사용자 알림 생성 (점수 영향 X)
+  if (analysis.patterns.length > 0) {
+    analysis.recommendations.push({
+      action: 'userDecision',
+      message: '시리즈 다양성 알림. 점수 영향 없음 (정보만).',
+      options: ['그대로 사용', '변형', '누락']
+    });
+  }
+  
+  return analysis;
+};
+window.recommendYadamTextType = function(hooks, scriptText, channel) {
+  if (channel && channel !== 'yadam' && channel !== 'YADAM') {
+    console.error('[r5.0.9.3 야담 썸네일] 야담 전용 함수. NK 호출 차단.');
+    return null;
+  }
+  
+  if (!Array.isArray(hooks)) hooks = [];
+  if (!scriptText) scriptText = '';
+  
+  // 1순위: 95+ 직접 인용 → 유형 B
+  var hasStrongQuote = hooks.some(function(h){ 
+    return h.type === 'directQuote' && (h.score || 0) >= 90; 
+  });
+  if (hasStrongQuote) {
+    var topQuote = hooks.filter(function(h){ return h.type === 'directQuote'; })
+                       .sort(function(a, b){ return (b.score || 0) - (a.score || 0); })[0];
+    return { 
+      type: 'B', 
+      priority: 'highest', 
+      reason: '95+ 직접 인용 후크 감지',
+      suggestedText: topQuote ? topQuote.exactText : null
+    };
+  }
+  
+  // 2순위: 시간 점프 후크 → 유형 C
+  var hasTimeJump = /\d+년\s*후|\d+년\s*전|백\s*일\s*뒤|그날\s*밤|이듬해|수년\s*후/.test(scriptText);
+  if (hasTimeJump) {
+    return { 
+      type: 'C', 
+      priority: 'highest', 
+      reason: '시간 점프 후크 감지' 
+    };
+  }
+  
+  // 3순위: 안전 기본 → 유형 A
+  return { 
+    type: 'A', 
+    priority: 'safe_default', 
+    reason: '일반 사연 (안전 기본)' 
+  };
+};
+window.validateYadamThumbnailText = function(line1, line2, type, scriptText, channel) {
+  if (channel && channel !== 'yadam' && channel !== 'YADAM') {
+    console.error('[r5.0.9.3 야담 썸네일] 야담 전용 함수. NK 호출 차단.');
+    return { ok: false, issues: ['NK 호출 차단됨'] };
+  }
+  
+  if (!line1 || !line2) {
+    return { ok: false, issues: ['1줄 또는 2줄 비어있음'] };
+  }
+  
+  var issues = [];
+  var hardLimitViolations = [];
+  var score = 100;
+  var guide = window.YADAM_THUMBNAIL_GUIDE;
+  
+  // 1) 글자 수 검증 (1줄 18자, 2줄 20자)
+  var line1Len = line1.replace(/["'""\s]/g, '').length;
+  var line2Len = line2.replace(/\s/g, '').length;
+  
+  if (line1Len > guide.charLimits.line1.max) {
+    hardLimitViolations.push('1줄 글자 수 하드 리밋 초과: ' + line1Len + '자 (최대 ' + guide.charLimits.line1.max + '자)');
+    score -= 25;
+  } else if (line1Len > 16) {
+    issues.push('1줄 글자 수 권장 초과: ' + line1Len + '자 (12-16자 권장)');
+    score -= 5;
+  }
+  
+  if (line2Len > guide.charLimits.line2.max) {
+    hardLimitViolations.push('2줄 글자 수 하드 리밋 초과: ' + line2Len + '자 (최대 ' + guide.charLimits.line2.max + '자)');
+    score -= 25;
+  } else if (line2Len > 18) {
+    issues.push('2줄 글자 수 권장 초과: ' + line2Len + '자 (14-18자 권장)');
+    score -= 5;
+  }
+  
+  // 2) 작은 따옴표 검증 (비추천)
+  if (/['']/.test(line1) || /['']/.test(line2)) {
+    issues.push('작은 따옴표 \'\' 사용 (큰 따옴표 "" 또는 따옴표 없이 권장)');
+    score -= 5;
+  }
+  
+  // 3) 금지 단어 검증
+  var allForbidden = [].concat(
+    guide.forbiddenWords.sigaShock,
+    guide.forbiddenWords.cruelty,
+    guide.forbiddenWords.sexual,
+    guide.forbiddenWords.selfHarm,
+    guide.forbiddenWords.transliterationRisk
+  );
+  
+  var combined = line1 + ' ' + line2;
+  allForbidden.forEach(function(w){
+    if (combined.indexOf(w) >= 0) {
+      hardLimitViolations.push('금지 단어 사용: ' + w);
+      score -= 20;
+    }
+  });
+  
+  // 4) 박스/대괄호 사용 검증
+  if (/\[|\]/.test(combined)) {
+    hardLimitViolations.push('대괄호 [ ] 사용 금지');
+    score -= 15;
+  }
+  
+  // 5) 유형별 추가 검증
+  if (type === 'B') {
+    // 유형 B: 본편 직접 인용 검증
+    if (scriptText && line1) {
+      var quoted = line1.replace(/["'""]/g, '').trim();
+      var normalizedScript = scriptText.replace(/[""'']/g, '"').replace(/\s+/g, ' ');
+      var normalizedQuoted = quoted.replace(/[""'']/g, '"').replace(/\s+/g, ' ');
+      
+      if (normalizedScript.indexOf(normalizedQuoted) < 0) {
+        hardLimitViolations.push('유형 B: 본편에 없는 대사 (exactText 위반)');
+        score -= 30;
+      }
+    }
+  }
+  
+  if (type === 'C') {
+    // 유형 C: 시간 후크 필수
+    var hasTimeHook = /\d+년|\d+일|백\s*일|그날\s*밤|이듬해|수년/.test(line2);
+    if (!hasTimeHook) {
+      issues.push('유형 C: 2줄에 시간 후크 없음');
+      score -= 10;
+    }
+  }
+  
+  score = Math.max(0, Math.min(100, score));
+  var blocked = hardLimitViolations.length > 0;
+  
+  console.log('[r5.0.9.3 야담 썸네일] 텍스트 검증: ' + score + '/100, 이슈 ' + issues.length + '개, 하드 리밋 위반 ' + hardLimitViolations.length + '개');
+  
+  return {
+    ok: !blocked && issues.length === 0 && score >= 80,
+    blocked: blocked,
+    score: score,
+    issues: issues,
+    hardLimitViolations: hardLimitViolations,
+    stats: {
+      line1Length: line1Len,
+      line2Length: line2Len,
+      type: type
+    }
+  };
+};
+window.buildYadamThumbnailPrompt = function(data, version, channel) {
+  if (channel && channel !== 'yadam' && channel !== 'YADAM') {
+    console.error('[r5.0.9.3 야담 썸네일] 야담 전용 함수. NK 호출 차단.');
+    return null;
+  }
+  
+  if (!data) {
+    console.error('[r5.0.9.3 야담 썸네일] data 인자 필수');
+    return null;
+  }
+  
+  // 기본값
+  var left = data.left || '20s man, ragged dopo, pointing finger, angry shout';
+  var center = data.center || 'wedding table with red cloth and candles';
+  var right = data.right || '40s woman in green hanbok, shocked expression';
+  var background = data.background || 'bride in red hwarot, head down, peeking from middle-back';
+  var line1 = data.line1 || '';
+  var line2 = data.line2 || '';
+  
+  // 고정 헤더 (시리즈 통일)
+  var prompt = 'Korean webtoon-style sageuk thumbnail, 16:9, bright sunny daytime, ';
+  prompt += 'vibrant saturated colors, bold black outlines, realistic adult proportions, ';
+  prompt += 'traditional Joseon courtyard scene.\n\n';
+  
+  // 인물 슬롯
+  prompt += 'LEFT (35%): ' + left + '\n';
+  prompt += 'CENTER (10%): ' + center + '\n';
+  prompt += 'RIGHT (55%): ' + right + '\n';
+  prompt += 'BACKGROUND: ' + background + '\n';
+  
+  // 버전 분기
+  if (version === 'A' && line1 && line2) {
+    // 버전 A: 이미지 + 텍스트 (텍스트 하단 통합)
+    prompt += '\nTEXT BLOCK at bottom of frame, both lines together (NOT split):\n';
+    prompt += 'Line 1 (large, yellow #FFD700, bold, thick black outline): "' + line1 + '"\n';
+    prompt += 'Line 2 (smaller 60%, white #FFFFFF, bold, directly below line 1): "' + line2 + '"\n';
+    prompt += '\nBoth lines bottom-aligned 20% from bottom, centered, tight line spacing.\n';
+    prompt += '\nNO chibi, NO palace, NO dark, NO violence, NO split text layout, NO red box, NO brackets.\n';
+  } else {
+    // 버전 B: 이미지만 (캔바 후처리용)
+    prompt += '\nNO text, NO chibi, NO palace, NO dark, NO red box, NO brackets.\n';
+    prompt += 'Bottom 20% of frame should be visually less busy (for text overlay later in Canva/Photoshop).\n';
+  }
+  
+  prompt += '\n--ar 16:9 --v 6';
+  
+  return prompt;
+};
+window.buildYadamThumbnailFullSet = function(scriptText, hooks, characterData, channelKey) {
+  // 채널 검증
+  var detectedChannel = (channelKey && channelKey.indexOf('마님') >= 0) ? 'manim' : 
+                        (channelKey && channelKey.indexOf('청암') >= 0) ? 'chungam' : 'chungam';
+  
+  // 유형 자동 추천
+  var recommendation = window.recommendYadamTextType(hooks, scriptText, 'yadam');
+  
+  // 캐릭터 데이터 기본값 (사연마다 다름)
+  var charData = characterData || {
+    left: '20s man, ragged dopo, pointing finger, angry shout',
+    center: 'wedding table with red cloth and candles',
+    right: '40s woman in green hanbok, shocked expression',
+    background: 'bride in red hwarot, head down, peeking from middle-back'
+  };
+  
+  // 3가지 유형 텍스트 자동 생성 (사연 데이터 필요 시 외부에서 채움)
+  var textsByType = {
+    A: { line1: '', line2: '' },
+    B: { line1: '', line2: '' },
+    C: { line1: '', line2: '' }
+  };
+  
+  // 결과 빌드 (6개 프롬프트: 3유형 × 2버전)
+  var result = {
+    channel: 'yadam',
+    channelKey: detectedChannel,
+    recommendation: recommendation,
+    prompts: {
+      A_versionA: null,  // 유형 A + 텍스트 포함
+      A_versionB: null,  // 유형 A + 이미지만
+      B_versionA: null,  // 유형 B + 텍스트 포함
+      B_versionB: null,  // 유형 B + 이미지만
+      C_versionA: null,  // 유형 C + 텍스트 포함
+      C_versionB: null   // 유형 C + 이미지만
+    },
+    texts: textsByType,
+    note: '3가지 유형 모두 생성 후 A/B 테스트 권장. 추천 유형: ' + recommendation.type
+  };
+  
+  // 외부에서 textsByType 채운 후 buildYadamThumbnailPrompt() 호출
+  // 이 함수는 인프라만 제공
+  
+  console.log('[r5.0.9.3 야담 썸네일] 통합 빌드 인프라 준비. 추천 유형: ' + recommendation.type + ' (' + recommendation.reason + ')');
+  
+  return result;
+};
+window._stripActTags = function(s) {
+  if (!s || typeof s !== 'string') return s;
+  // [1막: 제목] / [1막] / [ 1 막 : ... ] 형태 제거
+  s = s.replace(/\[\s*\d+\s*막[^\]]*\]\s*/g, '');
+  // (긴장, 절박함) 같은 감정 태그가 줄 단독으로 있을 때 제거 (대사 보호: 따옴표/문장 중간은 제외)
+  s = s.replace(/^\s*\([가-힣\s,·]+\)\s*$/gm, '');
+  // 💀 사망 마커 줄 제거
+  s = s.replace(/^\s*💀[^\n]*$/gm, '');
+  s = s.replace(/💀\s*사망[:：][^\n]*/g, '');
+  // ===N막=== 구분선 제거
+  s = s.replace(/={2,}\s*\d+\s*막[^=]*={2,}/g, '');
+  // 연속 빈 줄 정리
+  s = s.replace(/\n{3,}/g, '\n\n');
+  return s.trim();
+};
+window._fixYadamSpeechLevel = function(s) {
+  if (!s || typeof s !== 'string') return s;
+  var dialogues = [];
+  s = s.replace(/[\u201C\u201D][^\u201C\u201D]*[\u201C\u201D]|"[^"]*"/g, function(m){
+    dialogues.push(m); return '\u0001D' + (dialogues.length-1) + '\u0001';
+  });
+  var rep = [
+    [/들렸다([.\n])/g,'들렸지요$1'],[/나왔다([.\n])/g,'나왔습니다$1'],[/돌아섰다([.\n])/g,'돌아섰지요$1'],
+    [/말했다([.\n])/g,'말했답니다$1'],[/보았다([.\n])/g,'보았지요$1'],[/걸었다([.\n])/g,'걸었답니다$1'],
+    [/앉았다([.\n])/g,'앉았지요$1'],[/일어났다([.\n])/g,'일어났답니다$1'],[/사라졌다([.\n])/g,'사라졌지요$1'],
+    [/멈췄다([.\n])/g,'멈췄답니다$1'],[/떨어졌다([.\n])/g,'떨어졌지요$1'],[/들어왔다([.\n])/g,'들어왔지요$1'],
+    [/달려갔다([.\n])/g,'달려갔답니다$1'],[/되었다([.\n])/g,'되었지요$1'],[/하였다([.\n])/g,'하였답니다$1'],
+    [/시작했다([.\n])/g,'시작했답니다$1'],[/없었다([.\n])/g,'없었지요$1'],[/있었다([.\n])/g,'있었답니다$1'],
+    [/([가-힣])았다([.\n])/g,'$1았지요$2'],[/([가-힣])었다([.\n])/g,'$1었답니다$2'],
+    [/([가-힣])였다([.\n])/g,'$1였지요$2'],[/([가-힣])했다([.\n])/g,'$1했답니다$2'],
+    [/([가-힣])졌다([.\n])/g,'$1졌습니다$2'],[/([가-힣])랐다([.\n])/g,'$1랐답니다$2'],
+    [/([가-힣])렀다([.\n])/g,'$1렀지요$2'],[/([가-힣])렸다([.\n])/g,'$1렸답니다$2'],
+    [/([가-힣])썼다([.\n])/g,'$1썼지요$2'],[/([가-힣])웠다([.\n])/g,'$1웠습니다$2'],
+    [/([가-힣])췄다([.\n])/g,'$1췄답니다$2'],[/([가-힣])왔다([.\n])/g,'$1왔지요$2'],
+    [/([가-힣])갔다([.\n])/g,'$1갔답니다$2'],[/([가-힣])꼈다([.\n])/g,'$1꼈지요$2']
+  ];
+  rep.forEach(function(r){ s = s.replace(r[0], r[1]); });
+  s = s.replace(/\u0001D(\d+)\u0001/g, function(m,i){ return dialogues[parseInt(i)]; });
+  return s;
+};
+window.buildYadamSceneImages = function(fullScript) {
+  // [v21.0 r5.1.3-3] 9개 작업 통합 (①②③⑤⑥⑦)
+  try {
+    if (!fullScript || typeof fullScript !== 'string') return '';
+    var BASE_BODY = "Korean traditional storybook watercolor illustration, soft delicate brushwork with hanji paper texture, muted warm earth tones with vivid accent colors for visibility, NO manga, NO anime, NO photorealism, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO wool coat, NO supernatural lightning, NO magical glow";
+    var NEG = "--no photorealism --no 3d render --no western faces --no modern clothes --no trousers --no suit --no blazer --no reading glasses --no jeans --no t-shirt --no sneakers --no wristwatch --no english text --no korean text --no text --no letters --no writing --no speech bubbles --no supernatural lightning --ar 16:9 --s 250";
+
+    // [② 영문 변환] 한국어 → 영문 키워드 매핑 (핵심 80개)
+    var KW_MAP = {
+      // 인물 호칭
+      '본처': 'former first wife', '첩': 'concubine', '기생': 'gisaeng courtesan', '수령': 'corrupt magistrate',
+      '암행어사': 'royal secret inspector', '상인': 'elderly merchant', '행상': 'traveling peddler',
+      '남편': 'husband', '아내': 'wife', '딸': 'young daughter', '아들': 'young son',
+      '어머니': 'mother', '아버지': 'father', '어르신': 'elderly man', '마님': 'noble lady',
+      '양반': 'yangban noble', '관료': 'official', '포졸': 'police officer', '병사': 'soldier',
+      '여인': 'woman', '소년': 'young boy', '소녀': 'young girl', '아이': 'child',
+      // 장소
+      '잔치': 'banquet hall with lanterns', '관아': 'government office courtyard', '옥': 'dark prison cell',
+      '거리': 'village street', '집': 'traditional Korean house hanok', '방': 'inner room',
+      '마당': 'inner courtyard', '약초점': 'small herb shop', '장터': 'busy marketplace',
+      '창고': 'storage room', '안채': 'inner quarters', '사랑방': 'study room with candle',
+      '대문': 'gate', '담장': 'wall', '들': 'open field', '산': 'mountain path',
+      // 사물
+      '편지': 'old yellowed letter', '일기장': 'leather-bound diary',
+      '이혼장': 'divorce paper document', '비녀': 'silver hairpin', '신발': 'worn shoes',
+      '비단': 'silk fabric', '약초': 'dried herbs', '촛불': 'flickering candle',
+      '술잔': 'porcelain wine cup', '문서': 'official document', '꽃': 'flower',
+      // 감정/표정
+      '충격': 'shocked', '분노': 'angry furious', '슬픔': 'sorrowful',
+      '눈물': 'tears streaming', '미소': 'subtle smile',
+      '결의': 'determined resolve', '공포': 'terrified', '절망': 'despair',
+      '복수': 'vengeful', '용서': 'forgiving', '회한': 'regretful', '감격': 'overwhelmed with emotion',
+      // 시간/숫자
+      '삼십 년': 'thirty years passed', '30년': 'thirty years passed', '십 년': 'ten years',
+      '하루': 'one day', '사흘': 'three days', '한 장': 'one piece',
+      // 행위
+      '쫓겨난': 'banished and expelled', '변신': 'transformation', '폭로': 'reveal truth',
+      '발견': 'discover important', '갇혀': 'imprisoned in cell', '울': 'crying with tears',
+      '쓰러': 'collapsing on ground', '도망': 'fleeing', '재회': 'reunion',
+      '심판': 'judgment', '처형': 'execution', '석방': 'released',
+      // [v21.0 r5.1.4] 왕실/무기/장소 추가 매핑
+      '왕': 'king on royal throne', '임금': 'king on royal throne', '주상': 'king on royal throne',
+      '왕문': 'king', '전하': 'majesty king', '상감': 'majesty king',
+      '세자': 'crown prince', '왕세자': 'crown prince', '동궁': 'crown prince palace',
+      '왕비': 'queen', '왕후': 'queen', '중전': 'queen',
+      '대감': 'high official in court robes', '판서': 'minister', '정승': 'prime minister',
+      '영의정': 'chief state councilor', '대제학': 'royal scholar',
+      '암행어사': 'royal secret inspector with horse plaque', '어사': 'royal inspector',
+      '사또': 'local magistrate', '원님': 'local magistrate', '관찰사': 'provincial governor',
+      '포도대장': 'police chief', '포졸': 'royal guard', '관졸': 'palace guard',
+      '장군': 'general in armor', '무관': 'military officer',
+      '궁궐': 'royal palace courtyard', '궁중': 'royal palace', '대전': 'main throne hall',
+      '내전': 'inner palace chamber', '동궁': 'crown prince residence',
+      '관아': 'government office courtyard with red gate', '동헌': 'official hall',
+      '향교': 'Confucian school', '서당': 'village school',
+      // 무기/사물
+      '화살': 'arrow', '활': 'traditional Korean bow', '궁': 'bow',
+      '검': 'sword', '칼': 'blade', '창': 'spear', '갑옷': 'armor',
+      '말': 'horse', '마차': 'royal carriage', '가마': 'palanquin',
+      // 신분
+      '양반': 'yangban noble class', '사대부': 'scholar official class',
+      '중인': 'middle class merchant', '상민': 'commoner', '천민': 'low class',
+      '노비': 'servant', '종': 'household servant', '백정': 'butcher class',
+      '거지': 'beggar in ragged clothes', '거상': 'wealthy merchant',
+      // 장소 추가
+      '숲': 'deep forest', '산': 'mountain path', '강': 'flowing river',
+      '주막': 'roadside tavern', '객주집': 'inn with travelers',
+      // 추가 행위
+      '변장': 'wearing disguise', '배신': 'betrayal', '음모': 'conspiracy plot',
+      '반란': 'rebellion uprising', '구원': 'rescue', '재회': 'reunion',
+      // 추가 캐릭터
+      '소년': 'young Korean boy in his teens', '소녀': 'young Korean girl in her teens',
+      '도령': 'young scholar', '낭자': 'young noble lady',
+      '아씨': 'noble young lady', '마님': 'noble lady of the house',
+      '시어머니': 'mother-in-law', '며느리': 'daughter-in-law',
+      '사냥꾼': 'hunter with bow', '나무꾼': 'woodcutter',
+      '주모': 'tavern keeper woman', '무당': 'shaman'
+    };
+
+    function koToEn(text) {
+      var found = [];
+      var seen = {};
+      Object.keys(KW_MAP).forEach(function(k) {
+        if (text.indexOf(k) >= 0 && !seen[KW_MAP[k]]) {
+          found.push(KW_MAP[k]);
+          seen[KW_MAP[k]] = 1;
+        }
+      });
+      return found.slice(0, 10).join(', ');
+    }
+
+    // 채널멘트 기준 인트로/본문 분리
+    var cmRe = /(마님야화입니다|청암야담입니다|구독과 좋아요는|구독과 좋아요)/;
+    var cmIdx = fullScript.search(cmRe);
+    var introText = cmIdx > 0 ? fullScript.slice(0, cmIdx) : fullScript.slice(0, 500);
+
+    var out = '';
+
+    // ── [③] 인트로: 1장면 2-3컷 자동 변형 ──
+    out += '═══════════════════════════════\n';
+    out += '🎬 인트로 이미지 프롬프트 (1핵심장면 → 3컷)\n';
+    out += '═══════════════════════════════\n\n';
+
+    var introEn = koToEn(introText);
+    var introScene = introEn || 'dramatic confrontation scene at Joseon banquet, intense emotional encounter';
+
+    var introCuts = [
+      {
+        label: '컷1 — 클로즈업 (썸네일급, 충격)',
+        body: 'EXTREME emotional close-up portrait, main female character face filling 55% of frame, INTENSE shocked or determined expression with vivid emotion, lips pressed firm or mouth slightly open, eyes burning with suppressed emotion, dramatic candlelight on face, traditional hanbok visible, ' + introScene
+      },
+      {
+        label: '컷2 — 전경 (대결 구도)',
+        body: 'Wide establishing shot of dramatic confrontation moment, two figures facing each other in tension across a Joseon banquet courtyard, paper lanterns hanging from eaves, dramatic shadows, frozen guests watching in shock, all wearing traditional hanbok appropriate to status, ' + introScene
+      },
+      {
+        label: '컷3 — 시선 충돌 (정체 폭로)',
+        body: 'Two faces locked in eye contact across the scene, recognition and revelation moment, both faces visible with equal weight, contrasting emotions (terror vs cold determination), warm interior candlelight with stormy mood, ' + introScene
+      }
+    ];
+
+    introCuts.forEach(function(c) {
+      out += '[인트로 ' + c.label + ']\n';
+      out += BASE_BODY + ', ' + c.body + ', vivid expressive emotions, strong color contrast, dramatic moody atmosphere ' + NEG + '\n\n';
+    });
+
+    // ── [①②⑤⑥⑦] 본문: 막 단위 영문 의미장면 20개 ──
+    out += '\n═══════════════════════════════\n';
+    out += '🖼️ 본문 이미지 프롬프트 (20장면, 영문 의미단위)\n';
+    out += '═══════════════════════════════\n\n';
+
+    // 막 태그로 분할
+    var actMatches = fullScript.match(/\[\d+막[^\]]*\][^\[]*/g) || [];
+    var actBlocks = [];
+    actMatches.forEach(function(am, idx) {
+      var actHeader = am.match(/\[(\d+)막[^\]]*\]/);
+      var actNo = actHeader ? parseInt(actHeader[1]) : (idx + 1);
+      var content = am.replace(/\[\d+막[^\]]*\]/, '').trim();
+      actBlocks.push({ num: actNo, content: content, total: actMatches.length });
+    });
+    var totalActs = actBlocks.length;
+
+    // 막당 의미장면 추출 (총 20장면)
+    var scenes = [];
+    if (actBlocks.length >= 4) {
+      var perAct = Math.max(1, Math.round(20 / actBlocks.length));
+      actBlocks.forEach(function(ab) {
+        // [① 의미단위 분할] 문장 그룹 (2~3문장)
+        var sents = ab.content.split(/(?:다\.|요\.|니다\.|었지요\.|입니다\.)\s*/).filter(function(x){ return x.trim().length > 12; });
+        var perSceneSents = Math.max(2, Math.round(sents.length / perAct));
+        for (var p = 0; p < perAct && scenes.length < 20; p++) {
+          var seg = sents.slice(p * perSceneSents, (p + 1) * perSceneSents).join(' ').trim();
+          if (seg.length > 20) {
+            scenes.push({ actNum: ab.num, totalActs: totalActs, korText: seg });
+          }
+        }
+      });
+    }
+    // 폴백: 막 분할 실패 시 20등분
+    if (scenes.length < 10) {
+      scenes = [];
+      var body = cmIdx > 0 ? fullScript.slice(cmIdx) : fullScript;
+      var csize = Math.ceil(body.length / 20);
+      var estActs = totalActs || 8;
+      for (var k = 0; k < 20; k++) {
+        var seg2 = body.slice(k * csize, (k + 1) * csize).trim();
+        if (seg2.length > 15) {
+          var estAct = Math.min(estActs, Math.max(1, Math.ceil((k + 1) * estActs / 20)));
+          scenes.push({ actNum: estAct, totalActs: estActs, korText: seg2 });
+        }
+      }
+    }
+
+    scenes.slice(0, 20).forEach(function(sc, i) {
+      var en = koToEn(sc.korText);
+      var sceneDesc = en || 'narrative dramatic moment in Joseon era';
+      var preview = sc.korText.length > 40 ? sc.korText.slice(0, 40) + '...' : sc.korText;
+
+      // [⑦] 막별 분위기: 마지막 막 = warm, 나머지 = INTENSE
+      var isLastAct = (sc.actNum === sc.totalActs);
+      var moodKw = isLastAct
+        ? 'warm gentle peaceful expression, soft golden afternoon light, intimate family moment, hopeful atmosphere, mother and child or family gathering'
+        : 'INTENSE expressive emotions, dramatic moody lighting with strong shadows, vivid dramatic tension';
+
+      out += '[본문 ' + (i + 1) + '/20] 막' + sc.actNum + '/' + sc.totalActs + (isLastAct ? ' (warm)' : ' (intense)') + ' — ' + preview + '\n';
+      out += BASE_BODY + ', narrative storytelling moment, ' + sceneDesc + ', ' + moodKw + ', all characters wearing traditional Joseon hanbok appropriate to their status ' + NEG + '\n\n';
+    });
+
+    return out;
+  } catch (e) {
+    console.warn('[v21.0 r5.1.3-3 야담 이미지 빌더] 오류:', e);
+    return '';
+  }
+};
+window.YADAM_VALIDATE_MENT_POS = function(script) {
+  if (!script) return;
+  var mentMatch = script.match(/(마님야화입니다|청암야담입니다)[^\n]{0,100}/);
+  if (!mentMatch) return;
+  var pos = mentMatch.index;
+  var ratio = (pos / script.length * 100).toFixed(1);
+  if (pos > script.length * 0.25) {
+    console.warn('[v21.0 r5.1.5] 야담 채널멘트 위치 늦음 (' + ratio + '%, 권장 0~25%)');
+  } else {
+    console.log('[v21.0 r5.1.5] 야담 채널멘트 위치 OK (' + ratio + '%)');
+  }
+};
+window.YADAM_CAST_SYNOPSIS_VERIFY = function(castList, synopsisText) {
+  if (!castList || !synopsisText) return { ok: true, mismatched: [] };
+  var mismatched = [];
+  castList.forEach(function(c) {
+    if (c.name && c.name.length >= 1 && synopsisText.indexOf(c.name) < 0) {
+      mismatched.push(c.name);
+    }
+  });
+  if (mismatched.length > 0) {
+    console.warn('[v21.0 r5.1.4 ⑦] 캐스트↔시놉 불일치: ' + mismatched.join(', ') + ' (시놉에 미등장)');
+    return { ok: false, mismatched: mismatched };
+  }
+  console.log('[v21.0 r5.1.4 ⑦] 캐스트↔시놉 일치 확인 (' + castList.length + '명)');
+  return { ok: true, mismatched: [] };
+};
+window.YADAM_DETECT_WARM_SCENE = function(text) {
+  if (!text) return false;
+  var warmKw = ['재회', '화해', '용서', '재결합', '대물림', '되물림', '들국화', '약초밭', '약초점', '딸과', '아들과', '손녀', '손자', '품에 안', '눈물을 닦', '가족', '평화', '안락', '훗날', '세월이 흘러', '늙어'];
+  return warmKw.some(function(kw){ return text.indexOf(kw) >= 0; });
+};
+window.YADAM_AMBIGUOUS_PRONOUN_CHECK = function(text) {
+  if (!text) return { ok: true, warnings: [] };
+  var warnings = [];
+  // "자신이" + 명사 등장 시 모호 가능
+  var ambiguousPatterns = [
+    /자신이\s*[^.]{0,30}(내쫓|죽이|버리)/g,
+    /그자가\s*[^.]{0,30}/g,
+    /그\s*사람이\s*[^.]{0,30}(내쫓|죽이|버리)/g
+  ];
+  ambiguousPatterns.forEach(function(re) {
+    var m = text.match(re);
+    if (m) m.forEach(function(p){ warnings.push(p.slice(0, 50)); });
+  });
+  if (warnings.length > 0) {
+    console.warn('[v21.0 r5.1.4 ⑨] 모호한 대명사 감지: ' + warnings.length + '건');
+  }
+  return { ok: warnings.length === 0, warnings: warnings };
+};
+window.YADAM_TITLE_ABSTRACT_BLOCK = function(title) {
+  if (!title || typeof title !== 'string') return { ok: true };
+  var abstractOnly = /^[^,]{0,15}(운명|결말|비밀|진실|이야기|사연|순간|기억)[은는이가]?[\s,]*그?\s*(한\s*번의|끝에|이야기)?\s*$/;
+  var tooShort = title.replace(/\s/g, '').length < 8;
+  var noConcreteNoun = !/(첩|본처|기생|수령|남편|아내|딸|아들|어머니|아버지|편지|이혼장|일기장|독약|화살|장군|왕|상인|어르신|선비|마님|양반|관아|궁궐|기방)/.test(title);
+  if (tooShort) return { ok: false, reason: '제목 너무 짧음' };
+  if (noConcreteNoun && abstractOnly.test(title)) return { ok: false, reason: '추상명사만 사용 (구체 명사 없음)' };
+  return { ok: true };
+};
+window.verifyCastInScript = function verifyCastInScript(script, cast) {
+  if (!script || !Array.isArray(cast) || cast.length === 0) return { ok: true, missing: [] };
+  
+  var castNames = cast.map(function(c){ return c.name || ''; }).filter(function(n){ return n.length >= 2; });
+  var missing = [];
+  
+  // 대본에서 자주 등장하는 인물명 패턴 (3글자 이내, 조사 앞)
+  // 예: "백합이 말했다" → "백합" 추출
+  var nameCandidates = {};
+  var nameRegex = /([가-힣]{2,4})(?:이|가|은|는|을|를|에게|의|와|과|도)/g;
+  var match;
+  while ((match = nameRegex.exec(script)) !== null) {
+    var name = match[1];
+    nameCandidates[name] = (nameCandidates[name] || 0) + 1;
+  }
+  
+  // 5회 이상 등장한 단어 중 캐스트에 없는 것 = 환각 가능성
+  // 단, 일반 명사는 제외
+  var COMMON_NOUNS = ['그날','오늘','내일','어제','마음','얼굴','사람','이야기','시간','순간','자리','집안','말씀','목소리','자신','우리','당신','이름','마을','산속','아이','엄마','아빠','형님','부친','모친','어머','아버','나리','대감','마님','부인','아씨','도련','아씨','선비','양반','평민','노비','사연','시절','과거','미래','현재','상황','경우','마지막','처음','중간'];
+  
+  Object.keys(nameCandidates).forEach(function(name){
+    if (nameCandidates[name] < 5) return;  // 5회 미만은 무시
+    if (COMMON_NOUNS.indexOf(name) >= 0) return;  // 일반 명사 제외
+    if (castNames.indexOf(name) >= 0) return;  // 캐스트에 있으면 OK
+    missing.push({ name: name, count: nameCandidates[name] });
+  });
+  
+  if (missing.length > 0) {
+    console.warn('[r5.0.9 A-2] 일관성 체인: 캐스트에 없는 인물 후보 발견', missing);
+  }
+  
+  return { ok: missing.length === 0, missing: missing };
+};
+window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMode) {
+  if (!script) return script;
+  var result = script;
+  var fixCount = 0;
+  
+  // ========== 1. 신분 어법 일관성 (야담만) ==========
+  if (isYadamMode) {
+    // 야담에서 흔한 어법 오류: 현대어 "있었어요" → 옛 어조 "있었답니다"
+    // 단, 페르소나 보호 영역 밖에서만
+    var protectedMatches = [];
+    var protectedPattern = /\[PERSONA_PROTECTED_START\][\s\S]*?\[PERSONA_PROTECTED_END\]/g;
+    var pMatch;
+    while ((pMatch = protectedPattern.exec(result)) !== null) {
+      protectedMatches.push({ start: pMatch.index, end: pMatch.index + pMatch[0].length });
+    }
+    
+    var isInProtected = function (idx) {
+      for (var i = 0; i < protectedMatches.length; i++) {
+        if (idx >= protectedMatches[i].start && idx < protectedMatches[i].end) return true;
+      }
+      return false;
+    };
+    
+    // 청암야담은 "~답니다/~하더이다" 톤 강화
+    if (channelKey === 'chungam') {
+      var chungamReplacements = [
+        { from: /했어요\./g, to: '하였더이다.' },
+        { from: /있었어요\./g, to: '있었더이다.' },
+        { from: /이라고 해요\./g, to: '이라 하더이다.' }
+      ];
+      for (var i = 0; i < chungamReplacements.length; i++) {
+        var pattern = chungamReplacements[i].from;
+        var replacement = chungamReplacements[i].to;
+        // protected 영역 밖에서만 (간단화: 전체 치환 후 보호영역 복원은 복잡하므로 주석)
+        // 보수적으로: 첫 1~2개만 치환 (전체 톤 유지)
+        var matches = result.match(pattern);
+        if (matches && matches.length > 0) {
+          // 너무 많이 치환하면 부자연스러움 → 30% 확률로만
+          if (Math.random() < 0.3) {
+            result = result.replace(pattern, function (m, offset) {
+              return isInProtected(offset) ? m : replacement;
+            });
+            fixCount++;
+          }
+        }
+      }
+    }
+  }
+  
+  // ========== 3. 호흡 - 너무 긴 문장 분리 ==========
+  // 60자 이상 한 문장 → 자연스러운 위치에 쉼표 추가 시도
+  // (보수적: 너무 자주 적용하면 오히려 어색)
+  // → 일단 패스 (검수 단계에서 더 잘 됨)
+  
+  // ========== 4. 떡밥 - 1막 끝 후킹 강화 ==========
+  // 1막에서 마지막 문장이 단조로우면 떡밥 멘트 추가 (이미 인트로에 있으면 X)
+  // → 페르소나가 이미 1막에 들어가니 패스
+  
+  // ========== 5. 시리즈 → #18에서 이미 처리됨 ==========
+  
+  if (fixCount > 0) {
+    console.log('[#16] 결핍 자동 해결 ' + fixCount + '건 적용');
+  }
+  
+  return result;
+};
+
+/* ===== 복구 함수 끝 ===== */
+
 console.log("%c★ NK/YADAM v21.0 r5.1.6 로드완료 ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
