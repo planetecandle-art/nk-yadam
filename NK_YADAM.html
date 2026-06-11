@@ -13035,7 +13035,7 @@ ${selectedHook ? '선택 훅: ' + selectedHook.example : ''}
 
  톤: "여러분", "생각해 보십시오", "~하십니까" 같은 말 거는 구어체 필수!
  분량: 30~40초 (충분히 길게, 첫 한 방으로 잡고 왜?로 끌고가기)
-${(typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim()) ? '\n ★필수 키워드를 인트로에도 자연스럽게 언급: ' + mustKeywords + '\n' : ''}
+${(typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim()) ? '\n★★ 키워드 인트로 반영 (필수): 아래 키워드 중 1~2개를 인트로 안 어디든 자연스럽게 넣으세요. 첫 문장이든 중간이든 상관없지만, 인트로에 반드시 등장해야 합니다. 예: "시진핑 방북 이런 시국에..." / "우크라이나 파병 소식이 들려오던 그때..."\n키워드: ' + mustKeywords + '\n(주의: 키워드 1~2개만. 다 넣지 말 것. 가장 자극적인 것 우선)\n' : ''}
 
  문체 리듬감 (v20.65 수정5: 오감별 짧은 문장 예시):
 시각: "파란 불꽃이 튀었습니다."
@@ -15507,7 +15507,7 @@ ${chunkScript}`;
                       ? '신체 반응(식은땀/얼음장/심장이 멎/오싹), 충격 표현(비명/갈랐/터졌), 위기 단어(저주/재앙/죽음/암행어사)' 
                       : '신체 반응(콱/식은땀/얼어붙), 충격 표현(총성/시신/체포), 긴박 단어(보위부/심문/도주)';
                     var _r44_boostSys = '당신은 한국 야담/탈북 다큐 인트로 후킹 강화 전문가입니다. 첫 5문장의 톤과 문법을 유지하되, 시청자가 첫 30초에 이탈하지 않도록 신체 반응/감각 충격/위기 표현 키워드를 자연스럽게 1~2개 추가합니다. 절대 새 사건/인물 만들지 말 것. 원본 의미 100% 유지.';
-                    var _r44_boostPrompt = '아래 첫 5문장을 다시 써주세요. 후킹 키워드를 자연스럽게 1~2개 추가하되, 사건과 인물은 100% 동일하게.\n\n사용 가능 후킹 키워드: ' + _r44_hookHints + '\n\n[원본 첫 5문장]\n' + _r44_first5 + '\n\n[조건]\n- 문장 수는 동일 (5문장)\n- 어미는 ' + (isYadam ? '"~답니다/~지요"' : '"~었습니다/~ㅂ니다"') + ' 유지\n- 새로운 사건이나 인물 절대 추가 금지\n- 결과만 출력 (설명 X)';
+                    var _r44_boostPrompt = '아래 첫 5문장을 다시 써주세요. 후킹 키워드를 자연스럽게 1~2개 추가하되, 사건과 인물은 100% 동일하게.\n\n사용 가능 후킹 키워드: ' + _r44_hookHints + '\n\n[원본 첫 5문장]\n' + _r44_first5 + '\n\n[조건]\n- 문장 수는 동일 (5문장)\n- 어미는 ' + (isYadam ? '"~답니다/~지요"' : '"~었습니다/~ㅂ니다"') + ' 유지\n- 새로운 사건이나 인물 절대 추가 금지\n' + ((typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim()) ? '- ★원본에 키워드(' + mustKeywords + ')가 있으면 반드시 그대로 유지할 것. 키워드를 삭제하지 말 것!\n' : '') + '- 결과만 출력 (설명 X)';
                     
                     callClaude(_r44_boostSys, _r44_boostPrompt, 1500, 'sonnet', 0.5).then(function(_r44_boosted) {
                       if (_r44_boosted && _r44_boosted.length > 100 && _r44_boosted.length < _r44_first5.length * 2) {
@@ -16233,8 +16233,27 @@ JSON 형식:
                 // [N-신규] 제목 글씨 2줄 분할 (야담처럼 TEXT OVERLAY)
                 let _nkL1 = '', _nkL2 = '';
                 try {
-                  const _nkTitle = (typeof selectedTitle === 'string' && selectedTitle) ? selectedTitle : '';
-                  if (_nkTitle) {
+                  // [썸네일문구 우선] selectedTitle 없으면 thumbnailTexts 첫 문구 사용 (이미지에 실제 어그로 문구 박힘)
+                  let _nkTitle = (typeof selectedTitle === 'string' && selectedTitle) ? selectedTitle : '';
+                  let _nkThumb2Line = false;
+                  if (!_nkTitle) {
+                    try {
+                      const _tt = (youtubeMetadata && youtubeMetadata.thumbnailTexts) ? youtubeMetadata.thumbnailTexts : null;
+                      if (_tt && _tt.length > 0) {
+                        const _first = _tt[0];
+                        if (typeof _first === 'string' && _first.indexOf('\n') > 0) {
+                          // 이미 윗줄\n아랫줄 형태
+                          const _parts = _first.split('\n');
+                          _nkL1 = (_parts[0] || '').trim();
+                          _nkL2 = (_parts[1] || '').trim();
+                          _nkThumb2Line = true;
+                        } else if (typeof _first === 'string') {
+                          _nkTitle = _first.trim();
+                        }
+                      }
+                    } catch (_ttE) {}
+                  }
+                  if (!_nkThumb2Line && _nkTitle) {
                     const _ci = _nkTitle.lastIndexOf(',');
                     if (_ci > 0 && _ci < _nkTitle.length - 1) {
                       _nkL1 = _nkTitle.slice(0, _ci + 1).trim();
@@ -17565,8 +17584,19 @@ thumbnails는 4개, clickRate 높은 순서로 정렬.\n\n[#19 팀워크 원칙 
                     console.log('T-1: NK 제목 ' + thumbResult.titles.length + '개 생성 (대본 기반 덮어쓰기)');
                   }
                   if (thumbResult.thumbnails && thumbResult.thumbnails.length > 0) {
-                    _t1Update.thumbnailTexts = thumbResult.thumbnails;
-                    console.log('T-1: NK 썸네일 문구 ' + thumbResult.thumbnails.length + '개 생성');
+                    // [어그로 보존] 실존인물 어그로 썸네일이 이미 있으면 덮어쓰지 않음 (제목만 대본 기반)
+                    var _hasAggroThumb = false;
+                    try {
+                      var _existTT = (youtubeMetadata && youtubeMetadata.thumbnailTexts) ? youtubeMetadata.thumbnailTexts : null;
+                      var _isRP = (useRealPerson && selectedRealPerson && realPersonMode === 'side');
+                      if (_isRP && _existTT && _existTT.length > 0) _hasAggroThumb = true;
+                    } catch(_aggE) {}
+                    if (_hasAggroThumb) {
+                      console.log('T-1: 실존인물 어그로 썸네일 유지 → 대본기반 덮어쓰기 스킵 (제목만 갱신)');
+                    } else {
+                      _t1Update.thumbnailTexts = thumbResult.thumbnails;
+                      console.log('T-1: NK 썸네일 문구 ' + thumbResult.thumbnails.length + '개 생성');
+                    }
                   }
                   // r9-32 Part 2: T-S 제목-썸네일 동기화
                   try {
