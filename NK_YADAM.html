@@ -226,7 +226,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
     // 본인모드: 썸네일에 실존인물 이름 필수 + 측근(가공)이 탈북. 대본은 그 실존인물 사건을 실제로 다룸.
     const REAL_PERSON_JOB_THUMB = {
       "김여정": {
-        jobs: ["정치보위부 비서","외무성 참사관","조선중앙통신 기자","통일전선부 공작요원","호위사령부 경호원"],
+        jobs: ["j102_김정은 경호원","j102_당 중앙위원회 비서","j102_당 국제부 연락책","j102_외교관 신분 대남공작원","j102_보위부 대좌 조사관"],
         thumbs: [
           {top:"김여정 숨겨둔 가족 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
           {top:"북한 2인자 김여정 최측근", bottom:"탈북 한마디에 평양 발칵 뒤집혔다"},
@@ -235,7 +235,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         eventHint: "김여정의 비밀 외교/숙청/권력암투 사건을 측근 화자가 직접 목격하고 연루되어 탈북"
       },
       "최룡해": {
-        jobs: ["군단 참모장교","군당 조직부장","정치보위부 비서","호위사령부 경호원"],
+        jobs: ["j102_조선인민군 참모총장","j102_군단 부참모장","j102_당 조직지도부 검열원","j102_총정치국 고급간부","j102_근위사단 대대장"],
         thumbs: [
           {top:"사라진 군서열 1위 최룡해", bottom:"국정원도 놀란 충격적인 진짜 이유"},
           {top:"북한 2인자 최룡해 측근 탈북", bottom:"평양에 상상도 못 할 일 벌어졌다"},
@@ -244,7 +244,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         eventHint: "최룡해의 실각/군부 권력다툼 사건을 측근 화자가 목격하고 연루되어 탈북"
       },
       "김정은": {
-        jobs: ["호위사령부 경호원","외화벌이 지배인","보위부 조사관","당 중앙위 과장"],
+        jobs: ["j102_김정은 경호원","j102_김정은 이동경호 사전정찰조 팀장","j102_김정은 전용열차 보안 책임자","j102_김정은 집사 역할 담당자","j102_39호실 외화벌이 총책"],
         thumbs: [
           {top:"김정은 비자금 담당자 탈북", bottom:"도착 3초 만에 국정원도 경악했다"},
           {top:"사라진 김정은 두고", bottom:"곧 평양이 피바다 된다는 소문"},
@@ -253,7 +253,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         eventHint: "김정은 일가의 비자금/내부 동요 사건을 측근 화자가 목격하고 연루되어 탈북"
       },
       "리설주": {
-        jobs: ["호위사령부 경호원","국립교향악단 지휘자","만수대창작사 화가","고려호텔 지배인"],
+        jobs: ["j102_김정은 경호원","j102_평양 1호 경호국 참모","j102_생활총국 고위 간부","j102_고위층 주택구역 경비대장","j102_예술단원"],
         thumbs: [
           {top:"북한 리설주 최측근 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
           {top:"리설주 전담 경호원 탈북", bottom:"북한에 피바람이 불기 시작했다"},
@@ -262,7 +262,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         eventHint: "리설주 주변의 특권층 실상/권력 갈등을 측근 화자가 목격하고 연루되어 탈북"
       },
       "현송월": {
-        jobs: ["조선중앙TV 프로듀서","국립교향악단 지휘자","만수대창작사 화가","호위사령부 경호원"],
+        jobs: ["j102_예술단원","j102_대외방송국 기술감독","j102_당 선전선동부 고위 간부","j102_평양 1호 경호국 참모","j102_생활총국 고위 간부"],
         thumbs: [
           {top:"북한 2인자 현송월 숙청", bottom:"그 가족에게 벌어진 잔혹한 참극"},
           {top:"현송월 전담 비서 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
@@ -271,7 +271,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         eventHint: "현송월 가족 숙청/권력 견제 사건을 측근 화자가 목격하고 연루되어 탈북"
       },
       "김주애": {
-        jobs: ["호위사령부 경호원","외국어대학 통역사","적십자병원 외과과장","조선중앙TV 프로듀서"],
+        jobs: ["j102_김정은 경호원","j102_김정은 이동경호 사전정찰조 팀장","j102_생활총국 고위 간부","j102_고위층 주택구역 경비대장","j102_의료인"],
         thumbs: [
           {top:"김주애 사라진 충격 이유", bottom:"전담 경호원 탈북에 평양 발칵"},
           {top:"후계자 김주애 전담 경호원", bottom:"탈북 한마디에 북한 피바람 불었다"},
@@ -19989,8 +19989,18 @@ ${reviewed.slice(-3000)}
                       // r9-31 Part 2: S-9 실존인물별 적합 직업 자동 추천 (setJob to random for reroll)
                       // 실존인물 변경 시 '다시 뽑기' 유도 위해 selectedJob을 random으로 리셋
                       if (e.target.value && typeof setSelectedJob === 'function') {
-                        setSelectedJob('random');
-                        console.log('S-9 r9-31 Part 2: 실존인물 ' + e.target.value + ' 선택 → 직업 random 재추천');
+                        // 실존인물 선택 시 그 인물 측근 직업 중 첫번째로 자동 세팅
+                        var _jt = (typeof REAL_PERSON_JOB_THUMB !== 'undefined' && REAL_PERSON_JOB_THUMB[e.target.value]) ? REAL_PERSON_JOB_THUMB[e.target.value] : null;
+                        if (_jt && _jt.jobs && _jt.jobs.length > 0) {
+                          setSelectedJob(_jt.jobs[0]);
+                          if (typeof setEscapeConfig === 'function' && typeof getJ102EscapeConfig === 'function') {
+                            try { setEscapeConfig(getJ102EscapeConfig(_jt.jobs[0])); } catch(e){}
+                          }
+                          console.log('실존인물 ' + e.target.value + ' 선택 → 측근 직업 ' + _jt.jobs[0] + ' 자동 세팅');
+                        } else {
+                          setSelectedJob('random');
+                          console.log('실존인물 ' + e.target.value + ' 선택 → 직업 random');
+                        }
                       }
                     }}
                     disabled={!useRealPerson}
@@ -20066,6 +20076,13 @@ ${reviewed.slice(-3000)}
                     }}
                   >
                     <option value="random">🎲 랜덤 (모든 직업군) ⚠️ 복장 불일치 가능</option>
+                    {useRealPerson && selectedRealPerson && typeof REAL_PERSON_JOB_THUMB !== 'undefined' && REAL_PERSON_JOB_THUMB[selectedRealPerson] && (
+                      <optgroup label={`⭐ ${selectedRealPerson} 측근 직업 (추천)`}>
+                        {REAL_PERSON_JOB_THUMB[selectedRealPerson].jobs.map(function(jv){
+                          return <option key={jv} value={jv}>{jv.replace('j102_','')}</option>;
+                        })}
+                      </optgroup>
+                    )}
                     <optgroup label="🟥 보위부·안전기관">
                       <option value="j102_보위부 중장">보위부 중장</option>
                       <option value="j102_보위부 해외공작국 과장">보위부 해외공작국 과장</option>
