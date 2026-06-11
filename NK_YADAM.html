@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.3 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.4 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -15557,6 +15557,32 @@ ${chunkScript}`;
               } else {
                 console.log('[r4.4 #5 후킹] ✅ 시작 패턴 양호');
               }
+              
+              // [r5.4 인트로 키워드 코드강제] 인트로 첫 2문장에 키워드 없으면 직접 삽입
+              try {
+                if (typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim() && fullScript) {
+                  var _kwArr = mustKeywords.split(',').map(function(k){return k.trim();}).filter(function(k){return k;});
+                  // 인트로(첫 400자)에 키워드가 하나라도 있나 체크
+                  var _introHead = fullScript.slice(0, 400);
+                  var _hasKwInIntro = _kwArr.some(function(k){ return _introHead.indexOf(k) >= 0; });
+                  if (!_hasKwInIntro && _kwArr.length > 0) {
+                    // 첫 문장 끝(첫 마침표) 위치 찾기
+                    var _firstPeriod = fullScript.indexOf('.');
+                    if (_firstPeriod > 0 && _firstPeriod < 200) {
+                      // 키워드 1~2개를 자연스러운 한 문장으로 삽입
+                      var _kw1 = _kwArr[0];
+                      var _kw2 = _kwArr.length > 1 ? _kwArr[1] : '';
+                      var _kwSentence = _kw2
+                        ? ' ' + _kw1 + '과 ' + _kw2 + '를 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.'
+                        : ' ' + _kw1 + '을 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.';
+                      fullScript = fullScript.slice(0, _firstPeriod + 1) + _kwSentence + fullScript.slice(_firstPeriod + 1);
+                      console.log('[r5.4 인트로 키워드 강제] 첫 문장 뒤 삽입 → ' + _kw1 + (_kw2 ? ', ' + _kw2 : ''));
+                    }
+                  } else if (_hasKwInIntro) {
+                    console.log('[r5.4 인트로 키워드] ✅ 이미 인트로에 키워드 존재');
+                  }
+                }
+              } catch(_kwErr) { console.warn('[r5.4 인트로 키워드] 오류:', _kwErr.message); }
             }
           } catch(_r44_e5) {
             console.warn('[r4.4 #5 후킹 검증] 오류:', _r44_e5.message);
@@ -16256,7 +16282,20 @@ JSON 형식:
                     try {
                       const _tt = (youtubeMetadata && youtubeMetadata.thumbnailTexts) ? youtubeMetadata.thumbnailTexts : null;
                       if (_tt && _tt.length > 0) {
-                        const _first = _tt[0];
+                        // [r5.4 앵글별 다른문구] 키워드 입력 있으면 앵글(idx)마다 다른 썸네일 문구 사용
+                        // 키워드 버전 2개(보통 _tt[3],_tt[4]) + 어그로 1개 → 앵글 0,1,2에 배정
+                        var _hasKw = (typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim());
+                        var _pickIdx = 0;
+                        if (_hasKw && _tt.length >= 5) {
+                          // 앵글0→키워드1(_tt[3]), 앵글1→키워드2(_tt[4]), 앵글2→어그로(_tt[0])
+                          var _angleMap = [3, 4, 0];
+                          _pickIdx = _angleMap[idx] !== undefined ? _angleMap[idx] : 0;
+                        } else if (_hasKw && _tt.length >= 4) {
+                          // 키워드 1개만 있을 때: 앵글0→키워드(_tt[3]), 나머지→어그로
+                          var _angleMap2 = [3, 0, 1];
+                          _pickIdx = _angleMap2[idx] !== undefined ? _angleMap2[idx] : 0;
+                        }
+                        const _first = _tt[_pickIdx] || _tt[0];
                         if (_first && typeof _first === 'object' && (_first.top || _first.bottom)) {
                           // 어그로 썸네일 객체 형식 {top, bottom}
                           _nkL1 = (_first.top || '').trim();
@@ -17529,7 +17568,17 @@ JSON 형식으로 출력:
             const metaResult = safeParse(metaRaw);
             
             if (metaResult?.titles) {
-              setYoutubeMetadata(metaResult);
+              // [어그로보존] 기존 thumbnailTexts(실존인물 어그로) 유지하면서 메타데이터 병합
+              setYoutubeMetadata(function(_prevM){
+                var _merged = Object.assign({}, _prevM || {}, metaResult);
+                try {
+                  var _isRPm = (useRealPerson && selectedRealPerson && realPersonMode === 'side');
+                  if (_isRPm && _prevM && _prevM.thumbnailTexts && _prevM.thumbnailTexts.length > 0 && (!metaResult.thumbnailTexts || metaResult.thumbnailTexts.length === 0)) {
+                    _merged.thumbnailTexts = _prevM.thumbnailTexts;
+                  }
+                } catch(_e){}
+                return _merged;
+              });
             }
 
             // v20.54 T-1: NK 썸네일 문구 + 제목 동시 생성 (대본 기반 = 100% 일치)
@@ -22951,7 +23000,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.3 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.4 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
