@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.8 로드완료 (2026-06-12 빌드: 묶음A 배우자중복·나이모순 수정) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.9 로드완료 (2026-06-12 빌드: 실존인물 프로필 얼굴강화·나이모순·필름표현 수정) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2049,7 +2049,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       { value: "김정은", label: "김정은 (국무위원장)", role: "국무위원장", gender: "남", age: "40대 초반" },
       { value: "리설주", label: "리설주 (김정은 부인)", role: "김정은 부인", gender: "여", age: "30대 중반" },
       { value: "현송월", label: "현송월 (모란봉악단 단장)", role: "모란봉악단 단장", gender: "여", age: "50대 초반" },
-      { value: "김주애", label: "김주애 (김정은 딸)", role: "김정은 딸", gender: "여", age: "10대 초반" }
+      { value: "김주애", label: "김주애 (김정은 딸)", role: "김정은 딸", gender: "여", age: "13세" }
     ];
     
     // ============ 실존인물별 측근 직업 + 어그로 썸네일 매핑 (벤치마킹 검증 공식) ============
@@ -3283,7 +3283,19 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
     const getRandomTemplate = (templates) => templates[Math.floor(Math.random() * templates.length)];
 
     // ========== 이미지 스타일 ==========
-    const NK_IMAGE_STYLE = "shot on 35mm film, natural film grain, documentary photography style, East Asian setting, dramatic natural lighting, high contrast, emotional atmosphere, clear face, unobstructed view, natural realistic skin texture with subtle pores, authentic human face, adult in 30s-40s, NOT elderly, NOT cgi, NOT 3d render, NOT airbrushed, NOT plastic skin, no text, no speech bubbles, no letters, no Korean characters";
+    // [r5.9 나이모순 제거] 'adult in 30s-40s, NOT elderly' 삭제 — 캐릭터별 실제 나이(70대/9세 등)와 충돌하던 문구.
+    // 나이는 각 프로필의 agePhrase로 개별 지정됨.
+    const NK_IMAGE_STYLE = "shot on 35mm film, natural film grain, documentary photography style, East Asian setting, dramatic natural lighting, high contrast, emotional atmosphere, clear face, unobstructed view, natural realistic skin texture with subtle pores, authentic human face, NOT cgi, NOT 3d render, NOT airbrushed, NOT plastic skin, no text, no speech bubbles, no letters, no Korean characters";
+    // [r5.9 실존인물 공용 얼굴묘사] 썸네일+프로필 양쪽에서 동일 묘사 사용 (이전엔 썸네일에만 적용돼 프로필이 실물과 달랐음).
+    // 실제 인물 닮은꼴 강화: 얼굴형/머리/표정 디테일 추가.
+    const RP_FACE_DESC = {
+      '김정은': 'Kim Jong-un, North Korean supreme leader in his early 40s, very heavyset large build, distinctive short cropped hair shaved high on the sides and back, round full chubby face with double chin, thick dark eyebrows, dark Mao-style suit or formal dark suit with red lapel pin badge, stern commanding expression',
+      '김여정': 'Kim Yo-jong, North Korean senior official in her late 30s, younger sister of Kim Jong-un, short black bobbed hair, round face with sharp determined narrow eyes, pale complexion, dark formal cadre jacket, composed but cold stern expression',
+      '최룡해': 'Choe Ryong-hae, elderly North Korean official in his early 70s, round full fleshy face with heavy jowls and wide broad cheekbones, full head of black-grey hair neatly combed back (full hair, not thinning), thick eyebrows, small calm but stern eyes, olive-green military dress uniform with gold epaulettes and rows of medals, dignified solemn authoritative presence',
+      '리설주': 'Ri Sol-ju, North Korean first lady in her mid 30s, wife of Kim Jong-un, elegant voluminous updo hairstyle, soft refined oval face, fair smooth complexion, stylish dark dress or coat, poised graceful but reserved expression',
+      '현송월': 'Hyon Song-wol, North Korean female official and music director in her 50s, long black hair styled in voluminous updo, defined dark eyeliner, mature elegant face, military dress uniform or elegant dark coat, dignified confident expression',
+      '김주애': 'Kim Ju-ae, North Korean girl around 13 years old, early teenager, chubby round face with full puffy cheeks, black hair pulled back, adult-style dark coat, mature serious expression for her young age, clearly a young teenage girl not an adult'
+    };
     const YADAM_IMAGE_STYLE = "Korean traditional storybook watercolor illustration style, Joseon dynasty late period, soft delicate brushwork with hanji paper texture, muted warm earth tones with vivid accent colors for visibility, NO manga, NO anime, NO webtoon, NO photorealism, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO pearl earrings, NO wool coat, clear facial features matching role and age, INTENSE expressive emotions when scene requires, strong color contrast for thumbnail readability, clear face, unobstructed view, no text, no speech bubbles, no letters, no Korean characters";
 
     const IconLoader = () => <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4m-8-10h4m12 0h4m-3.5-6.5-2.8 2.8m-7.4 7.4-2.8 2.8m0-13.1 2.8 2.8m7.4 7.4 2.8 2.8"/></svg>;
@@ -8372,7 +8384,19 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             costume = 'wearing ' + _profCloth;
           }
           
-          const rawPrompt = `Character portrait of an East Asian ${genderWord} ${agePhrase}, ${costume}, ${appearance}, ${background}, documentary portrait, natural lighting, clear face visible, ${NK_IMAGE_STYLE}, --ar 1:1 --v 6.1 --style raw --stylize 150`;
+          // [r5.9 실존인물 프로필] 이 캐스트가 실존인물(예: 최룡해)이면, 썸네일과 동일한 강화 얼굴묘사 사용.
+          // 이전엔 프로필이 일반 외모만 써서 실물과 달랐음 → 이제 썸네일/프로필 묘사 일치.
+          var _rpProfileFace = '';
+          try {
+            if (typeof selectedRealPerson !== 'undefined' && selectedRealPerson && useRealPerson
+                && typeof RP_FACE_DESC !== 'undefined' && RP_FACE_DESC[charName]
+                && charName === selectedRealPerson) {
+              _rpProfileFace = RP_FACE_DESC[charName];
+            }
+          } catch(_rppe){}
+          const rawPrompt = _rpProfileFace
+            ? `Character portrait of ${_rpProfileFace}, ${background}, documentary portrait, natural lighting, clear face visible, ${NK_IMAGE_STYLE}, --ar 1:1 --v 6.1 --style raw --stylize 150`
+            : `Character portrait of an East Asian ${genderWord} ${agePhrase}, ${costume}, ${appearance}, ${background}, documentary portrait, natural lighting, clear face visible, ${NK_IMAGE_STYLE}, --ar 1:1 --v 6.1 --style raw --stylize 150`;
           return sanitizeForWhisk(rawPrompt);
         }
       };
@@ -8462,7 +8486,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           .replace(/torture|고문/gi, "harsh interrogation")
           //  v20.32: shot/killed → collapsed/fell (fallen 대신 자연스럽게)
           .replace(/\bshot\s+dead\b/gi, "collapsed")
-          .replace(/\bshot\b(?!\s*(screen|film|angle|close|wide|establishing))/gi, "struck down")
+          .replace(/\bshot\b(?!\s*(screen|film|angle|close|wide|establishing|on\b|cinematic|composition|of\b))/gi, "struck down")
           .replace(/\bmurdered\b|\bkilled\b/gi, "lost")
           .replace(/\bmurder\b|\bkill\b/gi, "harm")
           .replace(/\bexecuted\b/gi, "sentenced")
@@ -16321,15 +16345,7 @@ JSON 형식:
               var _rpFaceTag = '';
               try {
                 if (useRealPerson && selectedRealPerson && realPersonMode === 'side') {
-                  var _RP_FACE = {
-                    '김정은': 'Kim Jong-un, North Korean supreme leader, heavyset build, short cropped hair shaved on sides, round full face, dark formal suit with red lapel pin badge, stern authoritative expression',
-                    '김여정': 'Kim Yo-jong, North Korean senior official and sister of Kim Jong-un, black hair, round face, dark formal cadre jacket, composed stern expression',
-                    '최룡해': 'Choe Ryong-hae, elderly North Korean senior official in his 70s, thinning hair combed back, broad fleshy face, olive-green military uniform with medals, stern solemn expression',
-                    '리설주': 'Ri Sol-ju, North Korean first lady and wife of Kim Jong-un, elegant updo hairstyle, refined face, stylish dark dress, poised expression',
-                    '현송월': 'Hyon Song-wol, North Korean female official and music director, long black hair styled up in voluminous updo, dark eyeliner, military dress uniform or elegant dark coat, dignified confident expression',
-                    '김주애': 'Kim Ju-ae, young daughter of Kim Jong-un around 12 years old, chubby round face with full cheeks, black hair pulled back, adult-style dark coat, mature serious expression'
-                  };
-                  _rpFaceTag = _RP_FACE[selectedRealPerson] || '';
+                  _rpFaceTag = (typeof RP_FACE_DESC !== 'undefined' && RP_FACE_DESC[selectedRealPerson]) ? RP_FACE_DESC[selectedRealPerson] : '';
                 }
               } catch(_rpfe){}
               // [r5.7 좌우반전] 실존인물 모드: 왼쪽=실존인물 얼굴, 오른쪽=국기+주인공
@@ -23124,7 +23140,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.8 (2026-06-12 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.9 (2026-06-12 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
