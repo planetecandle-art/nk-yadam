@@ -2895,12 +2895,49 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
                 return '';
               };
               const _newRank = _deriveRank(jobName);
+              // [소속 r5.8 방식A] 베이스 config의 unit(소속)도 사병 부대(판문점경비대대 등)를
+              // 그대로 상속하면 "참모총장 소속=판문점경비대대" 모순. → 직업명 기준 상위기관 산정.
+              const _deriveUnit = (name) => {
+                // (0) 경호·호위 → 호위사령부 (사병부대 fallback 방지)
+                if (/경호|호위|이동경호|사전정찰|전용열차 보안|1호 경호/.test(name)) return '호위사령부';
+                // (1) 직업명에 이미 구체적 기관/부서가 포함 → 그 부분을 소속으로 사용
+                const _orgKeys = ['39호실','정찰총국','보위부','보위성','총정치국','국방과학원','당 조직지도부','당 선전선동부','당 국제부','당 중앙위원회','당 출판보도국','청년동맹','여맹','중앙당','혁명역사연구소','봉화진료소','류경호텔','국가통신부','국경경비대','생활총국','비서국','무역성','전략군','특수작전군','근위사단','평양 IT개발센터','국립'];
+                for (const k of _orgKeys) { if (name.indexOf(k) >= 0) return k; }
+                // (1-b) 전용열차 관련 → 철도성 산하
+                if (/전용열차/.test(name)) return '철도성 1호 열차관리국';
+                // (2) 군 최고지휘부 → 총참모부
+                if (/참모총장|참모장|군단 부참모|작전참모/.test(name)) return '조선인민군 총참모부';
+                // (3) 병종별 사령부
+                if (/해군|잠수함|함장/.test(name)) return '조선인민군 해군사령부';
+                if (/공군|방공|전투기|조종사|레이더/.test(name)) return '조선인민군 항공 및 반항공군사령부';
+                if (/포병|미사일|로켓|위성발사/.test(name)) return '전략군사령부';
+                // (4) 핵·과학기술 기밀 → 국방과학원
+                if (/핵|화학무기|생물무기|탄도|군수공장/.test(name)) return '제2자연과학원(국방과학원)';
+                // (5) 무역·외화벌이 → 대외 무역기관
+                if (/무역|외화벌이|수출|밀수|해외 식당|해외영업|IT 인력/.test(name)) return '내각 대외무역성 산하';
+                // (6) 그 외 군 일반 → 전선 부대(베이스 유지)
+                if (/스나이퍼|경비대장|국경경비/.test(name)) return '조선인민군 전선 경비부대';
+                // (6-b) 통신·기술 기밀직 → 통신/기술 기관
+                if (/감청|통신|암호|위성통신|방송|정보보안|통신망/.test(name)) return '국가통신감독국';
+                if (/우편|검열/.test(name)) return '체신성 검열과';
+                // (6-c) 평양 특권층·서비스직 → 생활/접대 기관
+                if (/집사|요리사|식당|총지배인|마트|빌라|요양소|의무장|예술단|공연단|영상 감독|선전물/.test(name)) return '생활총국 산하 봉사기관';
+                if (/운전기사/.test(name)) return '중앙당 운수관리국';
+                if (/교원|학교/.test(name)) return '평양 제1중학교';
+                // (6-d) 특수·위험·해외공작 → 대남/대외 공작 라인
+                if (/대남공작|위장회사|지하시설|식품 검사/.test(name)) return '국가보위성 특수국';
+                // (7) 매칭 없으면 베이스 유지
+                if (/군|부대|사단|대대|중대|연대/.test(name)) return baseConfig.job.unit;
+                return baseConfig.job.unit;
+              };
+              const _newUnit = _deriveUnit(jobName);
               return {
                 ...baseConfig,
                 job: {
                   ...baseConfig.job,
                   name: jobName,
                   rank: _newRank,
+                  unit: _newUnit,
                   detail: jobName + ' 출신'
                 }
               };
