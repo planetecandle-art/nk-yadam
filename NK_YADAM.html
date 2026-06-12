@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.7 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.8 로드완료 (2026-06-12 빌드: 묶음A 배우자중복·나이모순 수정) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2881,12 +2881,26 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             const baseKey = J102_ESCAPE_MAP[jobValue] || 'civilian';
             const baseConfig = getValidEscapeConfig(baseKey);
             if (baseConfig) {
-              // 직업명만 오버라이드 (탈출루트/유형은 기존 매핑 사용)
+              // [2단계 r5.8 직업-계급] 베이스 config의 rank를 그대로 쓰면
+              // 참모총장·함장 등 고위직이 'frontline_soldier'(사병) rank("병사")를 상속하는 모순 발생.
+              // → 직업명에서 적절한 계급을 직접 산정. 직책 자체가 계급/직위면 rank를 비움(중복 방지).
+              const _deriveRank = (name) => {
+                // (1) 직책 자체가 이미 계급/최고직위 → 별도 계급 안 붙임(rank 비움)
+                const _selfTitle = ['참모총장','참모장','총책','총괄','사장','소장','국장','부장','단장','총지배인','책임자','책임관','담당자','담당관','관리자','지도원','검열원','검열관','감독','연구사','연구원','의사','의무장','교원','기사장','기사','기관사','프로그래머','요원','총책임자','부대표','지휘관','대대장','중대장','함장','조종사','참모','간부','비서','팀장','과장','부부장','검사관','운전기사','보위원'];
+                for (const t of _selfTitle) { if (name.indexOf(t) >= 0) return ''; }
+                // (2) 장성급 키워드 → 고위 계급
+                if (/사령관|군단장|총정치국|전략군|특수작전군/.test(name)) return '상장';
+                // (3) 그 외 군 일반직 → 영관급 정도
+                if (/군|부대|연대|사단/.test(name)) return '대좌';
+                return '';
+              };
+              const _newRank = _deriveRank(jobName);
               return {
                 ...baseConfig,
                 job: {
                   ...baseConfig.job,
                   name: jobName,
+                  rank: _newRank,
                   detail: jobName + ' 출신'
                 }
               };
@@ -11459,7 +11473,16 @@ ${isYadam ?
                 }
 
                 // ---------- (A) 아내 처리: 조력자와 분리 ----------
-                const _hasSpouse = newCast.some(c => /아내|남편|배우자|처\b|부인/.test(c.role || ''));
+                // [묶음A r5.8] role에 배우자 표현이 없어도, 시놉 본문에 "아내/남편 OO"가
+                // 캐스트 인물(특히 핵심조력자)을 가리키면 그 인물이 곧 배우자 → 가짜 배우자 생성 금지
+                const _spouseWord = (_main2 => (_main2 && (_main2.gender === '여' || _main2.gender === 'female')) ? '남편' : '아내')(newCast.find(c => c.isMain) || newCast[0]);
+                const _spouseInSynM = _synAll.match(new RegExp(_spouseWord + '\\s+([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에게|에|로|만|\\s|,|\\.|$)'));
+                const _spouseNameInSyn = (_spouseInSynM && _spouseInSynM[1] && _spouseInSynM[1].length >= 2) ? _spouseInSynM[1] : '';
+                const _spouseIsExistingCast = _spouseNameInSyn && newCast.some(c => c.name === _spouseNameInSyn && !c.isMain);
+                const _hasSpouse = newCast.some(c => /아내|남편|배우자|처\b|부인/.test(c.role || '')) || _spouseIsExistingCast;
+                if (_spouseIsExistingCast) {
+                  console.log('북-6(배우자): 시놉의 "' + _spouseWord + ' ' + _spouseNameInSyn + '"가 기존 캐스트(' + _spouseNameInSyn + ')와 동일 → 가짜 배우자 생성 안 함(중복 방지)');
+                }
                 if (!_hasSpouse) {
                   // 주인공 성별 반대로 배우자 성별
                   const _main = newCast.find(c => c.isMain) || newCast[0];
@@ -11473,10 +11496,26 @@ ${isYadam ?
                     for (const pn of _sPool) { if (!_usedN.has(pn)) { _spouseName = pn; break; } }
                   }
                   if (_spouseName) {
-                    const _spouseAge = (30 + Math.floor(Math.random() * 16)) + '세';
+                    // [묶음A r5.8 나이모순] 주인공 나이를 기준으로 배우자 나이를 ±8세 안에서 산정
+                    // (기존: 30~45세 고정 → 주인공 50대인데 배우자 31세 같은 모순 발생)
+                    let _mainAgeNum = 0;
+                    const _mainAgeRaw = (_main && _main.age) ? String(_main.age) : '';
+                    const _decM = _mainAgeRaw.match(/(\d+)\s*대/);
+                    const _yrM = _mainAgeRaw.match(/(\d+)\s*세/);
+                    if (_decM) { _mainAgeNum = parseInt(_decM[1], 10) + (/중반/.test(_mainAgeRaw) ? 5 : /후반/.test(_mainAgeRaw) ? 7 : 2); }
+                    else if (_yrM) { _mainAgeNum = parseInt(_yrM[1], 10); }
+                    let _spouseAge;
+                    if (_mainAgeNum >= 20 && _mainAgeNum <= 80) {
+                      const _delta = Math.floor(Math.random() * 9) - 4; // -4 ~ +4
+                      let _sAge = _mainAgeNum + _delta;
+                      if (_sAge < 22) _sAge = 22;
+                      _spouseAge = _sAge + '세';
+                    } else {
+                      _spouseAge = (30 + Math.floor(Math.random() * 16)) + '세';
+                    }
                     newCast.push({ name: _spouseName, role: '주인공의 배우자', gender: _spouseGender, age: _spouseAge, isMain: false, status: 'alive', deathAt: null, appearance: '', clothing: '' });
                     _usedN.add(_spouseName);
-                    console.log('북-6(배우자): ' + _spouseName + ' (' + _spouseGender + ', ' + _spouseAge + ') — 조력자와 분리');
+                    console.log('북-6(배우자): ' + _spouseName + ' (' + _spouseGender + ', ' + _spouseAge + ') — 주인공 나이(' + _mainAgeRaw + ') 기준 ±8 산정');
                   }
                 }
               }
@@ -23032,7 +23071,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.7 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.8 (2026-06-12 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
