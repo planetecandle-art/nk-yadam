@@ -13808,6 +13808,22 @@ C. 암행어사 출두 (400자+)
             const actTokenLimit = 24576 // v20.65 r3: 분량제한 완화 (12288→24576);
             // r9-24: Claude Sonnet 우선 + XML 프롬프트 최적화
             const _isClaudeSonnet = (apiKey2 && apiKey2.startsWith('sk-ant-'));
+            // ========== [D-2-c r5.8] NK 썸네일 문구 받아쓰기 ==========
+            // 먼저 생성한 NK 썸네일 어그로 문구를 대본이 뒷받침하도록 방향 주입.
+            // (썸네일↔대본 불일치 방지. 야담 B방식 selectedTitle 주입과 동일한 검증된 패턴)
+            try {
+              if (!isYadam && youtubeMetadata && Array.isArray(youtubeMetadata.thumbnailTexts) && youtubeMetadata.thumbnailTexts.length > 0) {
+                const _ttPick = youtubeMetadata.thumbnailTexts[0] || {};
+                const _ttTop = (_ttPick.top || _ttPick.upper || _ttPick.line1 || '').toString().trim();
+                const _ttBottom = (_ttPick.bottom || _ttPick.lower || _ttPick.line2 || '').toString().trim();
+                const _ttJoined = [_ttTop, _ttBottom].filter(Boolean).join(' / ');
+                if (_ttJoined.length >= 3) {
+                  writePrompt += `\n\n⛔ [D-2-c 썸네일 받아쓰기 - 최우선] 이 영상의 썸네일 어그로 문구는 「${_ttJoined}」입니다. 이 막의 사건·전개·인물 행동이 이 문구가 자극하는 충격/궁금증을 실제로 뒷받침하도록 작성하세요. 썸네일과 대본 내용이 따로 놀면 안 됩니다. ⚠️ 단, 썸네일 문구를 대사나 나레이션에 그대로 베껴 넣지는 마세요(자연스럽게 사건으로 녹일 것).`;
+                  if (actNum === 1) { console.log('[D-2-c] NK 썸네일 문구 대본 주입 → ' + _ttJoined); }
+                }
+              }
+            } catch(_d2cErr) { console.warn('[D-2-c] 썸네일 주입 스킵:', _d2cErr.message); }
+            // ========== [D-2-c] 끝 ==========
             let _writePromptFinal = writePrompt;
             let _writeSystemFinal = writeSystem;
             
