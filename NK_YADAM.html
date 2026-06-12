@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.4 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r5.7 로드완료 (2026-06-11 빌드) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -16225,7 +16225,28 @@ JSON 형식:
                 _b1Clothing = _b1Map[_b1Job] || '';
                 if (_b1Clothing) console.log('B-1: 직업복장 →', _b1Clothing);
               }
-              let rightSide = `${char1Tag}${_b1Clothing ? ' ' + _b1Clothing + ',' : ''} portrait with determined yet fearful expression, flat front lighting on face, no shadows, evenly lit subject, face fully illuminated, against North Korean flag background with red blue white stripes and red star, cinematic red lighting`;
+              // [r5.5 실존인물 얼굴] 실존인물 모드면 오른쪽에 그 인물 얼굴 사용 (어그로 강화)
+              var _rpFaceTag = '';
+              try {
+                if (useRealPerson && selectedRealPerson && realPersonMode === 'side') {
+                  var _RP_FACE = {
+                    '김정은': 'Kim Jong-un, North Korean supreme leader, heavyset build, short cropped hair shaved on sides, round full face, dark formal suit with red lapel pin badge, stern authoritative expression',
+                    '김여정': 'Kim Yo-jong, North Korean senior official and sister of Kim Jong-un, black hair, round face, dark formal cadre jacket, composed stern expression',
+                    '최룡해': 'Choe Ryong-hae, elderly North Korean senior official in his 70s, thinning hair combed back, broad fleshy face, olive-green military uniform with medals, stern solemn expression',
+                    '리설주': 'Ri Sol-ju, North Korean first lady and wife of Kim Jong-un, elegant updo hairstyle, refined face, stylish dark dress, poised expression',
+                    '현송월': 'Hyon Song-wol, North Korean female official and music director, long black hair styled up in voluminous updo, dark eyeliner, military dress uniform or elegant dark coat, dignified confident expression',
+                    '김주애': 'Kim Ju-ae, young daughter of Kim Jong-un around 12 years old, chubby round face with full cheeks, black hair pulled back, adult-style dark coat, mature serious expression'
+                  };
+                  _rpFaceTag = _RP_FACE[selectedRealPerson] || '';
+                }
+              } catch(_rpfe){}
+              // [r5.7 좌우반전] 실존인물 모드: 왼쪽=실존인물 얼굴, 오른쪽=국기+주인공
+              // 일반 모드: 오른쪽=주인공+국기 (기존 유지)
+              var _protagonistOnFlag = `${char1Tag}${_b1Clothing ? ' ' + _b1Clothing + ',' : ''} portrait with determined yet fearful expression, flat front lighting on face, no shadows, evenly lit subject, face fully illuminated, against North Korean flag background with red blue white stripes and red star, cinematic red lighting`;
+              var _realPersonFace = _rpFaceTag
+                ? `${_rpFaceTag}, EXTREME CLOSE-UP on face filling 40-50% of frame, vivid bright lighting, clear face lighting, dark dramatic background`
+                : '';
+              let rightSide = _protagonistOnFlag;
               // v20.52d L패치: NK 오른쪽 인원수 반영 (ES6)
               if (escapeConfig && escapeConfig.escapeType) {
                 const etype = escapeConfig.escapeType.type;
@@ -16258,8 +16279,13 @@ JSON 형식:
                   else if (/30대/.test(_b2Age)) _b2AgeEn = 'adult in their 30s';
                   else if (/20대/.test(_b2Age)) _b2AgeEn = 'young adult in their 20s';
                 }
+                // [r5.7] 좌우반전 후 rightSide=주인공이므로 나이 연동 항상 적용
                 if (_b2AgeEn && rightSide.indexOf(_b2AgeEn) < 0) {
                   rightSide = rightSide.replace('portrait with', _b2AgeEn + ', portrait with');
+                  // _protagonistOnFlag도 동기화 (실존인물 모드에서 오른쪽=주인공)
+                  if (_protagonistOnFlag && _protagonistOnFlag.indexOf(_b2AgeEn) < 0) {
+                    _protagonistOnFlag = _protagonistOnFlag.replace('portrait with', _b2AgeEn + ', portrait with');
+                  }
                   console.log('B-2: 나이 연동 → ' + _b2AgeEn + (_b2CastAge ? ' (캐스트: ' + _b2CastAge + ')' : ''));
                 }
               }
@@ -16271,7 +16297,13 @@ JSON 형식:
                 const leftSideDesc = char2Tag 
                   ? `${char1Tag} and ${char2Tag} ${leftScene}` 
                   : `${char1Tag} ${leftScene}`;
-                const promptBase = `Split screen cinematic composition. Left side: ${leftSideDesc}, brightly lit characters, clear face lighting, dark night background, North Korean military atmosphere. Right side: ${rightSide}.`;
+                // [r5.7 좌우반전] 실존인물 모드면 왼쪽=실존인물 얼굴, 오른쪽=국기+주인공
+                let promptBase;
+                if (_realPersonFace) {
+                  promptBase = `Split screen cinematic composition. Left side: ${_realPersonFace}, North Korean atmosphere. Right side: ${_protagonistOnFlag}.`;
+                } else {
+                  promptBase = `Split screen cinematic composition. Left side: ${leftSideDesc}, brightly lit characters, clear face lighting, dark night background, North Korean military atmosphere. Right side: ${rightSide}.`;
+                }
                 // [N-신규] 제목 글씨 2줄 분할 (야담처럼 TEXT OVERLAY)
                 let _nkL1 = '', _nkL2 = '';
                 try {
@@ -23000,7 +23032,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.4 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r5.7 (2026-06-11 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
