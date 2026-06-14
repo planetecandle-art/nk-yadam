@@ -1958,7 +1958,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.6.0 로드완료 (2026-06-14 빌드: ★P1-c 탈북루트 일관성(DMZ/압록강/해외/해상) + C-2b 블록중복제거 + 썸네일배경 루트연동 + 키워드/직업 모드안내 + 태그정리) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.6.1 로드완료 (2026-06-14 빌드: ★P1-c 탈북루트 일관성(DMZ/압록강/해외/해상) + C-2b 블록중복제거 + 썸네일배경 루트연동 + 키워드/직업 모드안내 + 태그정리 + 시놉단계 루트강제(8막 중국모순 차단)) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -10137,6 +10137,22 @@ ${storyHintText}${realPersonText}${tokenInstructionText}
 - 미완결 여운으로 끝내기 (모든 게 해결되지 않은 채)
 
 소재/배경/인물은 완전히 새로, 구조만 동일.
+${(function(){
+  try {
+    if (isYadam || typeof escapeConfig === 'undefined' || !escapeConfig || !escapeConfig.route) return '';
+    var _sr = ((escapeConfig.route.key||'')+' '+(escapeConfig.route.type||'')+' '+(escapeConfig.route.name||'')).toLowerCase();
+    if (/dmz|gp|jsa|군사분계|휴전선|철책/.test(_sr)) {
+      return '\\n⛔⛔ [탈북루트 강제: DMZ 직접 돌파] 이 인물은 휴전선(DMZ/철책)을 직접 돌파합니다.\\n- 6·7막: DMZ 철책 돌파 (지뢰밭/초소/추격)\\n- 8막: ★중국·단둥·제3국 절대 금지! DMZ를 넘으면 곧바로 한국(남한)입니다. 8막은 휴전선 통과 직후 남측 군 신병인계/합동신문 또는 도착 직후 상황으로 작성. \"중국 은신처/공안\" 절대 쓰지 말 것!\\n- 9막: 한국 정착';
+    }
+    if (/overseas|defect|diplomat|망명|해외|대회|출장|외교|대사관/.test(_sr)) {
+      return '\\n⛔⛔ [탈북루트 강제: 해외출장/망명] 이 인물은 해외 출장·대회 중 현지에서 이탈해 망명합니다.\\n- 5·6·7막: 해외 현지(개최국)에서 호텔 이탈→대사관 진입 또는 제3국 이동 (압록강·두만강·DMZ 절대 금지! 이미 해외에 있음)\\n- 8막: 현지 대사관 또는 제3국 경유 (중국 국경 도강 서술 금지)\\n- 9막: 한국 정착';
+    }
+    if (/sea|boat|해상|어선|바다/.test(_sr)) {
+      return '\\n⛔⛔ [탈북루트 강제: 해상] 이 인물은 배(해상)로 탈출합니다.\\n- 6·7막: 해상 이동/표류 (압록강·DMZ 절대 금지)\\n- 8막: 해상 구조 또는 제3국/한국 도착\\n- 9막: 한국 정착';
+    }
+    return '\\n[탈북루트: 국경 도강(압록강/두만강)] 8막 중국 은신처 경유 정상. DMZ·해외대회 등장 금지.';
+  } catch(e){ return ''; }
+})()}
  시간 흐름 규칙 \\n- 1막은 플래시포워드이므로 절대날짜 허용! (예: "2025년 12월", "2026년 2월")\\n- 2막~9막은 반드시 상대적 시간 표현! (예: "그로부터 석 달이 지났습니다", "반년이 흐른 어느 날")\\n- 절대 날짜(연도+월)는 1막 또는 탈출 당일/직전/직후에만 허용!\\n- 시간 흐름은 2막→9막 순방향 유지! 이전 막보다 과거로 가면 안 됨!${realPerson && realPersonMode === "side" ? `\n⚠️ ${realPerson.value}는 조연으로 등장! 주인공은 새로운 가상 인물!` : ''}${escapeConfig ? `\n\n⛔ [최종 확인] 주인공 직업 = "${escapeConfig.job.name}". 시놉시스에서 이 직업이 아닌 다른 직업(교사/농부/어부 등)으로 나오면 실패입니다!` : ''}
 {"scenes":[{"act":1,"title":"막제목","summary":"200자 시놉시스","emotion":"감정","death":null}]}`;
 
@@ -23502,7 +23518,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.6.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.6.1 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
