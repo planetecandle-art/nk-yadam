@@ -320,6 +320,8 @@ window.resolveChannelKey = function resolveChannelKey(isYadamMode) {
       // 야담 기본값
       return 'chungam';
     } else {
+      if (name.indexOf('수첩') >= 0) return 'bukchang';
+      if (name.indexOf('평양데스크') >= 0 || name.indexOf('데스크') >= 0) return 'pyongyang';
       if (name.indexOf('평양') >= 0) return 'pyongyang';
       if (name.indexOf('북쪽') >= 0 || name.indexOf('창문') >= 0) return 'bukchang';
       // NK 기본값
@@ -790,7 +792,7 @@ window.localDeficiencyCheck = function localDeficiencyCheck(script, cast, isYada
   }
   
   // 7) 채널멘트 중복 검수
-  var greetingMatches = script.match(/(청암야담|마님야화|평양데스크|북쪽창문)입니다/g);
+  var greetingMatches = script.match(/(청암야담|마님야화|평양데스크|평양수첩|북쪽창문)입니다/g);
   if (greetingMatches && greetingMatches.length > 1) {
     issues.push({ type: 'duplicate_greeting', count: greetingMatches.length, msg: '채널멘트 중복 ' + greetingMatches.length + '회' });
     deductions += (greetingMatches.length - 1) * 5;
@@ -1067,7 +1069,7 @@ window.buildNKIntroSystemPrompt = function buildNKIntroSystemPrompt(typeKey, dna
   
   if (channelHint) {
     prompt += '\n【채널멘트 위치】\n';
-    prompt += '- 인트로 본문(5~9줄) 끝 → 질문 → 채널멘트("' + channelHint + '입니다. 구독과 좋아요...")\n';
+    prompt += '- 인트로 본문(5~9줄) 끝 → 질문 → 채널멘트("구독과 좋아요는 큰 힘이 됩니다." 형태, 채널명 언급 없이)\n';
     prompt += '- 인트로 시작에 채널멘트 X\n';
   }
   
@@ -1956,7 +1958,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.3.1 로드완료 (2026-06-14 빌드: 직업별 배경 매칭 + 썸네일문구 키워드주입 버그수정) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.5.0 로드완료 (2026-06-14 빌드: ★D 프롬프트경로 2모드 구조공식 교체 - 인물모드 실루엣 / 직업모드 / split screen 폐기) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2314,7 +2316,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
     
     // v20.35 Phase5: NK 채널명 설정
     const NK_CHANNELS = {
-      bukchang: { name: "북쪽창문", subscribers: "신규채널", signatureSubtitle: "북쪽 너머의 진짜 이야기, 북쪽창문" },
+      bukchang: { name: "평양수첩", subscribers: "신규채널", signatureSubtitle: "북녘 너머의 진짜 이야기, 평양수첩" },
       pyongyang: { name: "평양데스크", subscribers: "신규채널", signatureSubtitle: "탈북민이 직접 전하는 평양 실화, 평양데스크" }
     };
 
@@ -3281,11 +3283,11 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
     // ========== v20.11: 인트로 템플릿 (채널명 변수 포함) ==========
     const getIntroTemplates = (channelName) => ({
       nk: [
-        `${channelName}입니다. 구독과 좋아요는 큰 힘이 됩니다.`,
-        `${channelName}입니다. 구독과 좋아요, 댓글 한 줄이 증언자분께 큰 위로가 됩니다.`,
-        `${channelName}입니다. 구독과 좋아요, 그리고 댓글로 어디에서 듣고 계신지 남겨주시면 오늘 사연의 주인공께 큰 힘이 됩니다.`,
-        `${channelName}입니다. 구독과 좋아요는 무료입니다. 댓글 한 마디가 오늘 이야기의 주인공께 따뜻한 응원이 됩니다.`,
-        `${channelName}입니다. 구독과 좋아요 눌러주시고, 댓글로 응원 한 줄 남겨주시면 증언자분께 큰 힘이 됩니다.`
+        `구독과 좋아요는 큰 힘이 됩니다.`,
+        `구독과 좋아요, 댓글 한 줄이 증언자분께 큰 위로가 됩니다.`,
+        `구독과 좋아요, 그리고 댓글로 어디에서 듣고 계신지 남겨주시면 오늘 사연의 주인공께 큰 힘이 됩니다.`,
+        `구독과 좋아요는 무료입니다. 댓글 한 마디가 오늘 이야기의 주인공께 따뜻한 응원이 됩니다.`,
+        `구독과 좋아요 눌러주시고, 댓글로 응원 한 줄 남겨주시면 증언자분께 큰 힘이 됩니다.`
       ],
       yadam: [
         `더 많은 이야기를 놓치지 않으시려면 구독과 좋아요, 그리고 알림 설정까지 부탁드립니다. 여러분의 관심이 큰 힘이 됩니다.`,
@@ -3815,10 +3817,14 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           }
           // 채널멘트 강제
           var _chHint = (typeof currentChannelName !== 'undefined' && currentChannelName) ? currentChannelName : '';
+          var _isYadamCh = (typeof isYadam !== 'undefined') ? isYadam : (typeof isYadamMode !== 'undefined' ? isYadamMode : false);
           if (_chHint && system.indexOf('[r9-28 채널멘트]') < 0) {
+            var _mentLine = _isYadamCh
+              ? "- 1막 인트로 3인칭 훅 후 반드시 '" + _chHint + "입니다. 구독과 좋아요...' 형태의 채널멘트 포함\n"
+              : "- 1막 인트로 3인칭 훅 후 반드시 '구독과 좋아요는 큰 힘이 됩니다.' 형태의 채널멘트 포함 (채널명 언급 없이, 채널명 절대 쓰지 말 것)\n";
             system += "\n\n[r9-28 채널멘트 필수]\n" +
-              "- 1막 인트로 3인칭 훅 후 반드시 '" + _chHint + "입니다. 구독과 좋아요...' 형태의 채널멘트 포함\n" +
-              "- 다른 채널명(북쪽창문/평양데스크/마님야화 등) 절대 사용 금지\n" +
+              _mentLine +
+              "- 다른 채널명(북쪽창문/평양수첩/평양데스크/마님야화 등) 절대 사용 금지\n" +
               // r5.0.9 H-1: 채널멘트 1회만 강제 (중복 방지)
               "- ★r5.0.9 H-1★ 채널멘트는 대본 전체에서 정확히 1회만 등장 (1막 끝에만)\n" +
               "- 채널멘트가 2회 이상 나오면 시청자 이탈 위험, 반드시 1회만\n" +
@@ -4836,10 +4842,10 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             if (_v21_targetChannel === '마님야화') _v21_wrongChannels.push('청암야담');
             else _v21_wrongChannels.push('마님야화');
           } else {
-            _v21_targetChannel = (typeof nkChannel !== 'undefined' && nkChannel === 'pyongyang') ? '평양데스크' : '북쪽창문';
+            _v21_targetChannel = (typeof nkChannel !== 'undefined' && nkChannel === 'pyongyang') ? '평양데스크' : '평양수첩';
             _v21_wrongChannels = ['마님야화', '청암야담'];
             // NK 간 교차 오염 방지
-            if (_v21_targetChannel === '평양데스크') _v21_wrongChannels.push('북쪽창문');
+            if (_v21_targetChannel === '평양데스크') _v21_wrongChannels.push('평양수첩');
             else _v21_wrongChannels.push('평양데스크');
           }
           // 잘못된 채널명 → 올바른 채널명으로 치환 (최대 10회 제한)
@@ -4858,7 +4864,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         result = result.replace(/입니다의$/gm, '입니다.');
         result = result.replace(/입니다의,/g, '입니다,');
         // 북쪽창문입니다의/평양데스크입니다의/마님야화입니다의/청암야담입니다의 같은 오타
-        result = result.replace(/(북쪽창문|평양데스크|마님야화|청암야담)입니다의/g, '$1입니다.');
+        result = result.replace(/(북쪽창문|평양수첩|평양데스크|마님야화|청암야담)입니다의/g, '$1입니다.');
         
         // ========== v21.0 A-2 Fix: 채널멘트 7회 중복 → 1회로 제한 ==========
         try {
@@ -5501,6 +5507,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
               if (_nkLines2[_nki].includes('입니다. 무료 구독과 좋아요') ||
                   _nkLines2[_nki].includes('구독과 좋아요는 무료') ||
                   _nkLines2[_nki].includes('북쪽창문입니다') ||
+                  _nkLines2[_nki].includes('평양수첩입니다') ||
                   _nkLines2[_nki].includes('평양데스크입니다')) {
                 _nkMentLine = _nki;
                 break;
@@ -5609,7 +5616,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         if (!isYadamMode) {
           var _nkLines = result.split('\n');
           var _nkMentIdx = -1;
-          var _nkMentPatterns = ['입니다. 무료 구독', '입니다. 구독과 좋아요', '북쪽창문입니다', '평양데스크입니다'];
+          var _nkMentPatterns = ['입니다. 무료 구독', '입니다. 구독과 좋아요', '북쪽창문입니다', '평양수첩입니다', '평양데스크입니다'];
           for (var _ni = 0; _ni < _nkLines.length; _ni++) {
             if (_nkMentPatterns.some(function(p) { return _nkLines[_ni].includes(p); })) {
               _nkMentIdx = _ni;
@@ -5635,7 +5642,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           var _nkAllLines = result.split('\n');
           // 채널멘트 이후 줄 번호 찾기 (Fix-NK2가 처리한 인트로 제외)
           var _nkFix3StartIdx = 0;
-          var _nkMentPats2 = ['북쪽창문입니다', '평양데스크입니다', '입니다. 구독과 좋아요', '입니다. 무료 구독'];
+          var _nkMentPats2 = ['북쪽창문입니다', '평양수첩입니다', '평양데스크입니다', '입니다. 구독과 좋아요', '입니다. 무료 구독'];
           for (var _fi = 0; _fi < _nkAllLines.length; _fi++) {
             if (_nkMentPats2.some(function(p) { return _nkAllLines[_fi].includes(p); })) {
               _nkFix3StartIdx = _fi + 1; // 채널멘트 다음 줄부터
@@ -5810,7 +5817,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           }
           const _chName = isYadamMode
             ? (yadamChannel === 'manim' ? '마님야화' : '청암야담')
-            : (nkChannel === 'bukchang' ? '북쪽창문' : '평양데스크');
+            : (nkChannel === 'bukchang' ? '평양수첩' : '평양데스크');
           const _actTexts = _safeScenes.map((s, i) => '[' + (i+1) + '막: ' + (s.title || '') + '] ' + (s.summary || '')).join(' / ');
           const _castDesc = (castData || []).map(c => c.name + '(' + c.role + ')').join(', ');
 
@@ -7439,7 +7446,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
         [/아래\s*(?:두|세|네)?\s*(?:가지\s*)?안\s*중[^\n]*/g, /[ABC]\s*안\s*[\(\uFF08][^\)\uFF09]*[\)\uFF09][^\n]*/g, /^\s*(?:옵션|제안|버전)\s*[0-9]+[)\s:\.].*/gm, /^\s*[0-9]+\s*안\s*\)[^\n]*/gm, /^\s*[A-C]안[^녕\s][^\n]*/gm, /완성된\s*문장\s*[\(\uFF08]?\s*[0-9]+\s*(?:가지\s*)?버전[^\n]*/g].forEach(p => { result = result.replace(p, ''); });
         result = result.replace(/\n{3,}/g, '\n\n');
 
-        const introKeywords = ['구독', '좋아요', '찾아주셔서', '채널에 오신', '이야기꾼', '전기수', '북쪽창문', '평양데스크', '마님야화', '청암야담'];
+        const introKeywords = ['구독', '좋아요', '찾아주셔서', '채널에 오신', '이야기꾼', '전기수', '북쪽창문', '평양수첩', '평양데스크', '마님야화', '청암야담'];
         const hasIntroKeyword = introKeywords.some(kw => result.slice(0, 2000).includes(kw));
         
         if (introTpl && !hasIntroKeyword) {
@@ -8775,7 +8782,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
               result += `📌 사용 위치: 인트로 첫 5초 / 엔딩 마지막 5초 / 영상 중간 강조 자막\n\n`;
             }
           } else {
-            _r502_chKey = (typeof currentChannelName !== 'undefined' && currentChannelName === '북쪽창문') ? 'bukchang' :
+            _r502_chKey = (typeof currentChannelName !== 'undefined' && (currentChannelName === '평양수첩' || currentChannelName === '북쪽창문')) ? 'bukchang' :
                           (typeof currentChannelName !== 'undefined' && currentChannelName === '평양데스크') ? 'pyongyang' : '';
             var _r502_nkData = (typeof NK_CHANNELS !== 'undefined' && _r502_chKey) ? NK_CHANNELS[_r502_chKey] : null;
             if (_r502_nkData && _r502_nkData.signatureSubtitle) {
@@ -12981,7 +12988,8 @@ ${completedInfo}
 
 ⚠️ ${actNum}막 본문만 작성. 제목/막번호 없이. 1막부터 다시 시작 금지!
 ${actNum === totalChapters && !isYadam ? '[Fix-S3 9막 필수 포함] ①한국 공원/거리 구체 장면 1개 ②사망자/행방불명 소식 언급 ③마무리 멘트 → 이 3가지 없으면 실패!\n[Fix-9막 절대금지] 8막 이전 내용(은신처/탈출과정/중국/제3국) 9막에서 재서술 절대 금지! 9막은 한국 정착 장면만!' : ''}
-${actNum === 2 && !isYadam ? '[r9-24 Fix-NK-2막 독립성 필수] 2막은 오직 다음 3가지만 포함:\n① 자기소개 3~5문장 (예: "저는 평양시 보위부에서...담당했던 최준혁입니다")\n② 채널 CTA 1줄 (예: "북쪽창문입니다. 구독과 좋아요는 큰 힘이 됩니다")\n③ 다음 이야기 전환 문장 1줄 (예: "모든 것은 2년 전부터 시작되었습니다")\n⚠️ 2막 절대 금지: 탈출/도망/국경/결심/브로커/보위부 체포/돈 언급\n⚠️ 2막 분량: 800~1100자 엄수 (다른 막보다 짧게!)\n⚠️ 2막은 과거 사건 상세 금지 (3막에서 다룸)' : ''}
+${(actNum >= 5 && actNum <= 7) && !isYadam ? '[r6.4 C-1 탈출경로 일관성 필수] 탈출 경로는 대본 전체에서 단 하나로 통일! 다음 두 경로를 절대 섞지 말 것:\\n① 국제대회/해외출장 망명 경로 (예: 도쿄/베이징 대회 → 호텔 이탈 → 대사관 망명)\\n② 국경 도강 경로 (예: 압록강/두만강 도강 → 중국 → 제3국)\\n⚠️ 앞 막에서 정한 경로를 끝까지 유지. 5막이 도쿄 망명이면 6·7막도 도쿄/대사관 흐름, 절대 압록강 도강으로 바꾸지 말 것!\\n⚠️ 반대도 마찬가지: 압록강 도강으로 시작했으면 도쿄/해외대회 등장 금지!' : ''}
+${actNum === 2 && !isYadam ? '[r9-24 Fix-NK-2막 독립성 필수] 2막은 오직 다음 3가지만 포함:\n① 자기소개 3~5문장 (예: "저는 평양시 보위부에서...담당했던 최준혁입니다")\n② 채널 CTA 1줄 (예: "구독과 좋아요는 큰 힘이 됩니다")\n③ 다음 이야기 전환 문장 1줄 (예: "모든 것은 2년 전부터 시작되었습니다")\n⚠️ 2막 절대 금지: 탈출/도망/국경/결심/브로커/보위부 체포/돈 언급\n⚠️ 2막 분량: 800~1100자 엄수 (다른 막보다 짧게!)\n⚠️ 2막은 과거 사건 상세 금지 (3막에서 다룸)' : ''}
 ${actNum < totalChapters ? '[Fix-S2 이번 막 사건 1개만] 시놉시스에 명시된 핵심 사건 1개만 서술. 다음 막 내용 절대 미리 쓰지 말 것!' + (isYadam && actNum === 1 ? ' [1막 구조 필수] 아래 구조를 반드시 따를 것:\n[좋은예시]\n충격 대사 1~2줄 → 현재 장면 묘사 2~3문장 → 상황 요약 1문장 → 시간역행 문장 1줄\n예시: "어미야!" 아이의 손이 끌려갔습니다. 향이의 세상이 무너졌지요. 한 줌의 빚이 25년의 피눈물을 만든 것이었습니다. 이야기는 그보다 오 년 전으로 거슬러 올라간답니다.\n[규칙] 총 250~350자 내외. 시간역행 전 본문 내용 절대 미리 쓰지 말 것. 1막 훅에서 나온 장면은 이후 막에서 새로운 시점/앵글로 서술할 것(동일 장면 반복 금지)!\n[야담 대사 형식] 대사는 반드시 "대사" 따옴표로만! "인물명. 대사" "인물명: 대사" "인물명 대사" 형식 절대 금지!' : '') + (!isYadam && actNum === 1 ? ' [NK 1막 필수] 인트로 훅은 반드시 3인칭으로 서술. "저는/제가/저희" 절대 사용 금지. 반드시 주인공 이름 또는 "그/그녀"로 시작.\n[좋은예시] "2025년 11월, 오광일은 서버실로 향했습니다. 그의 손이 키보드 위에서 멈췄습니다. 그것은 탈출의 봉화였습니다. 그 이유는 몇 달 전의 과거 속에 있었습니다."\n훅 마지막에 반드시 "지금부터 그 이야기를 들려드리겠습니다" 또는 "그 이유는 몇 달 전의 과거 속에 있었습니다" 같은 전환 문장으로 끝낼 것!' : '') + (!isYadam ? ' [NK 저희 금지] 나레이션에서 타인 지칭 시 "저희"는 절대 금지! 반드시 "그들/그 사람들/그/그녀"로 표현. 대화문 내부에서만 "저희" 허용.' : '') + (isYadam && actNum === totalChapters ? ' [8막 필수] 에필로그는 단일 장면 1개만. 같은 내용 반복/중복 서술 절대 금지! 교훈 대사는 1회만! 완결 후 새로운 사건/인물 추가 절대 금지! 결말은 반드시 1개만!' : '') + (isYadam && useBMode && selectedTitle ? '\n[STEP5 B방식] 이 대본의 제목은 「' + selectedTitle + '」입니다. 제목의 핵심 키워드가 반드시 대본 전체에 자연스럽게 반영되어야 합니다.' : '') : ''} 시놉시스에 없는 인물·사건 절대 추가 금지! 시놉시스에 없는 인물·사건 절대 추가 금지!
 
 ⚠️ 반복표현 금지: "등줄기에 식은땀" 최대1회, "더 이상 이렇게 살 수는 없습니다" 최대1회\n⚠️ v20.66 r9-1: "제 딸은 이런 엄마를 원하지 않을 겁니다" 전체 대본에서 1회만! 이미 앞 막에서 썼으면 이번 막에서 사용 금지!
@@ -15660,6 +15668,81 @@ ${chunkScript}`;
           }
           // ========== r5.0.6 #2 끝 ==========
 
+          // ========== 🆕 r6.4 C-2: 핵심 문장 근접 중복 제거 ==========
+          // 문제: 한승철 연락 등 문단이 살짝 변형되어 반복 → 완전동일 매칭 못잡음
+          //   + "준비가 되었습니다" 같은 짧은 핵심문장 반복 (80자 미만이라 기존 로직 통과)
+          // 해결: 40자+ 문장 단위로, 정규화 후 동일하면 후행 제거 (근접 500자 내)
+          try {
+            if (fullScript && fullScript.length > 2000) {
+              const _c2_before = fullScript.length;
+              const _c2_sents = fullScript.split(/(?<=[.!?。])\s+/);
+              const _c2_seen = new Map();
+              const _c2_skip = new Set();
+              let _c2_removed = 0;
+              for (let _ci = 0; _ci < _c2_sents.length; _ci++) {
+                const _cs = _c2_sents[_ci].trim();
+                if (_cs.length < 30) continue;
+                const _cnorm = _cs.replace(/\s+/g, '').replace(/[.,!?…""''「」]/g, '').slice(0, 50);
+                if (_cnorm.length < 22) continue;
+                if (_c2_seen.has(_cnorm)) {
+                  const _prevIdx = _c2_seen.get(_cnorm);
+                  // 근접(8문장 내) 반복만 제거 (의도적 리듬 반복 보호)
+                  if (_ci - _prevIdx <= 8) {
+                    _c2_skip.add(_ci);
+                    _c2_removed++;
+                  } else {
+                    _c2_seen.set(_cnorm, _ci);
+                  }
+                } else {
+                  _c2_seen.set(_cnorm, _ci);
+                }
+              }
+              if (_c2_removed > 0) {
+                fullScript = _c2_sents.filter(function(_s, _i) { return !_c2_skip.has(_i); }).join(' ');
+                fullScript = fullScript.replace(/\n{3,}/g, '\n\n');
+                console.log('[r6.4 C-2 문장중복제거] ✅ ' + _c2_removed + '개 근접 중복문장 제거 (' + _c2_before + '자 → ' + fullScript.length + '자)');
+              } else {
+                console.log('[r6.4 C-2 문장중복제거] 근접 중복문장 없음 (정상)');
+              }
+            }
+          } catch(_c2_e) {
+            console.warn('[r6.4 C-2 문장중복제거] 오류:', _c2_e.message);
+          }
+          // ========== r6.4 C-2 끝 ==========
+
+          // ========== 🆕 r6.4 C-3: 조사 오타 교정 (을/를, 은/는, 이/가, 와/과) ==========
+          // 문제: "김정은를"(받침O인데 를) 같은 조사 오타
+          // 해결: 받침 유무에 따라 조사 자동 교정
+          try {
+            if (fullScript) {
+              const _c3_before = fullScript;
+              const _hasJong = function(ch) {
+                const code = ch.charCodeAt(0);
+                if (code < 0xAC00 || code > 0xD7A3) return null; // 한글 아님
+                return (code - 0xAC00) % 28 !== 0; // true=받침O
+              };
+              // 받침 규칙이 절대적이고 오인 위험 없는 을/를만 교정
+              const _josaPairs = [
+                { jong: '을', noJong: '를' }
+              ];
+              fullScript = fullScript.replace(/([가-힣])(을|를)(?=[\s.,!?…"'」])/g, function(m, ch, josa) {
+                const jong = _hasJong(ch);
+                if (jong === null) return m;
+                for (const p of _josaPairs) {
+                  if (josa === p.jong && jong === false) return ch + p.noJong; // 받침X인데 받침O조사 → 교정
+                  if (josa === p.noJong && jong === true) return ch + p.jong;  // 받침O인데 받침X조사 → 교정
+                }
+                return m;
+              });
+              if (fullScript !== _c3_before) {
+                console.log('[r6.4 C-3 조사교정] ✅ 조사 오타 교정 완료');
+              }
+            }
+          } catch(_c3_e) {
+            console.warn('[r6.4 C-3 조사교정] 오류:', _c3_e.message);
+          }
+          // ========== r6.4 C-3 끝 ==========
+
           // ========== r5.0.7 NK-1: 단락 중복 감지 강화 (막 내부) ==========
           // 목적: r5.0.6 #2가 \n\n 단락만 검사 → 막 내부 단일 줄바꿈 중복 못 잡음
           //   사례: NK 5막 "장마당 브로커" 단락이 \n\n 없이 한 막 안에서 두 번 등장
@@ -15737,7 +15820,7 @@ ${chunkScript}`;
               const _r43_chName = (typeof config !== 'undefined' && config.channelName) ? config.channelName : '';
               
               // 채널멘트 키워드 (둘 중 하나라도 있으면 통과)
-              const _r43_chCueWords = ['구독', '좋아요', '알림', '채널입니다', '야담입니다', '데스크입니다', '북쪽창문입니다'];
+              const _r43_chCueWords = ['구독', '좋아요', '알림', '채널입니다', '야담입니다', '데스크입니다', '북쪽창문입니다', '평양수첩입니다'];
               const _r43_hasChCue = _r43_chCueWords.some(w => fullScript.indexOf(w) !== -1);
               
               if (!_r43_hasChCue && _r43_chName) {
@@ -16388,7 +16471,7 @@ Return JSON only:
             
             if (!isYadam) {
               // v20.35 Phase2: 북한 대본 기반 Split Screen - 위기 3장면 + 북한국기 배경
-              setMsg("2/3 북한 대본 기반 위기 3장면 썸네일 생성 중...");
+              setMsg("2/3 북한 r6 구조공식 썸네일 생성 중...");
               
               // AI에게 대본에서 위기 장면 3개 추출 요청
               const nkIntroSystem = `<role>북한 탈북 대본 시각화 전문가 - 위기 장면 추출</role>
@@ -16510,19 +16593,25 @@ JSON 형식:
                 _b1Clothing = _b1Map[_b1Job] || '';
                 if (_b1Clothing) console.log('B-1: 직업복장 →', _b1Clothing);
               }
-              // [r5.5 실존인물 얼굴] 실존인물 모드면 오른쪽에 그 인물 얼굴 사용 (어그로 강화)
-              var _rpFaceTag = '';
+              // [r6.4 D] 실존인물 = 검은 실루엣 (사칭 회피). 인물별 성별/차림으로 구분, 얼굴 절대 없음
+              var _rpSilhouette = '';
               try {
-                if (useRealPerson && selectedRealPerson && realPersonMode === 'side') {
-                  _rpFaceTag = (typeof RP_FACE_DESC !== 'undefined' && RP_FACE_DESC[selectedRealPerson]) ? RP_FACE_DESC[selectedRealPerson] : '';
+                if (useRealPerson && selectedRealPerson) {
+                  var _silMap = {
+                    '김정은': 'an authoritarian leader man in a suit',
+                    '김여정': 'a slender woman with a short bob haircut',
+                    '리설주': 'an elegant woman in a formal dress with updo hair',
+                    '현송월': 'a woman in a formal military-style dress uniform',
+                    '최룡해': 'an older heavy-set man in a military-style uniform with peaked cap',
+                    '김정일': 'an older man with bouffant hair in a plain cadre suit',
+                    '김정숙': 'a woman in modest traditional clothing'
+                  };
+                  var _silDesc = _silMap[selectedRealPerson] || 'an authoritarian leader figure in a suit';
+                  _rpSilhouette = `a large dark BLACK SILHOUETTE of ${_silDesc}, head and upper torso chest-up, COMPLETELY SOLID pure black, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, thin orange rim light along shoulders, ominous`;
                 }
-              } catch(_rpfe){}
-              // [r5.7 좌우반전] 실존인물 모드: 왼쪽=실존인물 얼굴, 오른쪽=국기+주인공
-              // 일반 모드: 오른쪽=주인공+국기 (기존 유지)
+              } catch(_sile){}
               var _protagonistOnFlag = `${char1Tag}${_b1Clothing ? ' ' + _b1Clothing + ',' : ''} portrait with determined yet fearful expression, flat front lighting on face, no shadows, evenly lit subject, face fully illuminated, against North Korean flag background with red blue white stripes and red star, cinematic red lighting`;
-              var _realPersonFace = _rpFaceTag
-                ? `${_rpFaceTag}, EXTREME CLOSE-UP on face filling 40-50% of frame, vivid bright lighting, clear face lighting, dark dramatic background`
-                : '';
+              var _realPersonFace = _rpSilhouette;
               let rightSide = _protagonistOnFlag;
               // v20.52d L패치: NK 오른쪽 인원수 반영 (ES6)
               if (escapeConfig && escapeConfig.escapeType) {
@@ -16567,19 +16656,21 @@ JSON 형식:
                 }
               }
               
-              thumbnailPrompts = ` 인트로 훅 (썸네일용) - v20.35 북한 위기 3장면 + 국기 배경 \n\n`;
+              thumbnailPrompts = ` 인트로 훅 (썸네일용) - r6 구조공식 (인물모드/직업모드) \n\n`;
               
               scenes.forEach((s, idx) => {
                 const leftScene = fixScene(s.scene);
-                const leftSideDesc = char2Tag 
-                  ? `${char1Tag} and ${char2Tag} ${leftScene}` 
-                  : `${char1Tag} ${leftScene}`;
-                // [r5.7 좌우반전] 실존인물 모드면 왼쪽=실존인물 얼굴, 오른쪽=국기+주인공
+                // [r6.4 D] 2모드 구조공식. 배경(앞장면)은 scenes에서 추출된 문구맞춤 장면 활용
                 let promptBase;
                 if (_realPersonFace) {
-                  promptBase = `Split screen cinematic composition. Left side: ${_realPersonFace}, North Korean atmosphere. Right side: ${_protagonistOnFlag}.`;
+                  // 인물모드: 문구맞춤 배경 + 중앙 인물 검은실루엣(얼굴X) + 북한국기
+                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. BACKGROUND: a large vivid North Korean flag (red blue white stripes with bright red star) filling the right and upper background, with ${leftScene} blended into the lower-left, smoke and dramatic glow. CENTER-RIGHT MAIN: ${_realPersonFace}, positioned center-right. On the LEFT over the scene, a thin hollow circle with bright RED stroke highlighting a point, clearly visible, opposite side from the silhouette. TOP-LEFT empty space for caption.`;
                 } else {
-                  promptBase = `Split screen cinematic composition. Left side: ${leftSideDesc}, brightly lit characters, clear face lighting, dark night background, North Korean military atmosphere. Right side: ${rightSide}.`;
+                  // 직업모드: 좌 직업장면 + 중 익명실루엣 + 우 주인공얼굴 + 국기
+                  const leftSideDesc = char2Tag
+                    ? `${char1Tag} and ${char2Tag} ${leftScene}`
+                    : `${char1Tag} ${leftScene}`;
+                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. LEFT 33%: ${leftSideDesc}, brightly lit and in sharp focus, North Korean atmosphere. CENTER: a large dark BLACK SILHOUETTE of an anonymous figure, chest-up, COMPLETELY SOLID pure black, absolutely NO face NO features whatsoever, flat black shape, thin orange rim light. UPPER-RIGHT BACKGROUND: a vivid North Korean flag (red blue white stripes, bright red star) visible. RIGHT 33% MAIN: ${rightSide}. A thin hollow RED CIRCLE outline near the main subject's shoulder. TOP-LEFT empty space for caption.`;
                 }
                 // [N-신규] 제목 글씨 2줄 분할 (야담처럼 TEXT OVERLAY)
                 let _nkL1 = '', _nkL2 = '';
@@ -16636,11 +16727,11 @@ JSON 형식:
                   }
                 } catch (_nkte) { _nkL1 = ''; _nkL2 = ''; }
                 const _nkTextOverlay = _nkL1
-                  ? ` TEXT OVERLAY at bottom area, MASSIVE EXTREMELY LARGE Korean text with thick black outline 12px: Line 1 (color #FFFFFF white, GIGANTIC bold font): "${_nkL1}", Line 2 (color #FFEB3B bright yellow, 1.3x bigger): "${_nkL2}". TEXT RULES: horizontal straight alignment, no tilt, Line 2 larger, centered, fits within frame, ultra-bold Korean sans-serif, solid color, high contrast, bottom 25%.`
-                  : ` TEXT OVERLAY at bottom area: large Korean title text, white Line 1 + yellow Line 2 (1.3x bigger), ultra-bold Korean sans-serif, thick black outline, high contrast, bottom 25%.`;
-                const promptA = `${promptBase}${_nkTextOverlay} Photorealistic, 8k, dramatic lighting, high contrast --ar 16:9 --v 6.1 --style raw --stylize 250`;
-                const promptB = `${promptBase} NO TEXT, NO LETTERS, NO Korean characters anywhere in image, leaving bottom 25% space for future text overlay. Photorealistic, 8k, dramatic lighting, high contrast --ar 16:9 --v 6.1 --style raw --stylize 250 --no text --no korean text --no letters --no words`;
-                thumbnailPrompts += `[앵글 ${idx + 1} - ${s.label || '위기 장면'}]\n\uD83C\uDD70\uFE0F 버전 A (글씨 포함):\n${promptA}\n\n\uD83C\uDD71\uFE0F 버전 B (글씨 없음, Canva용):\n${promptB}\n\n`;
+                  ? ` BOTTOM 28% dark bar reserved for text, MASSIVE thick Korean text two lines heavy black outline 10px: Line 1 (color #FFFFFF white, gigantic bold): "${_nkL1}", Line 2 (color #3AD0E0 cyan, bigger bold): "${_nkL2}". TEXT RULES: horizontal straight, no tilt, centered, fits within frame, ultra-bold Korean sans-serif, edge to edge.`
+                  : ` BOTTOM 28% dark bar reserved for text: large Korean text two lines, white Line 1 + cyan #3AD0E0 Line 2 (bigger), ultra-bold Korean sans-serif, thick black outline.`;
+                const promptA = `${promptBase}${_nkTextOverlay} Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230`;
+                const promptB = `${promptBase} BOTTOM 28% darkened empty for text overlay. NO TEXT, NO LETTERS, NO Korean characters anywhere in image. Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230 --no text --no korean text --no letters --no words`;
+                thumbnailPrompts += `[앵글 ${idx + 1} - ${_realPersonFace ? '인물모드' : '직업모드'}: ${s.label || '장면'}]\n\uD83C\uDD70\uFE0F 버전 A (글씨 포함):\n${promptA}\n\n\uD83C\uDD71\uFE0F 버전 B (글씨 없음, Canva용):\n${promptB}\n\n`;
                 if (idx === 0) setConvertedThumbPrompt(promptA);
               });
               
@@ -16648,7 +16739,7 @@ JSON 형식:
               // 야담 (벤치마킹 썸네일 없을 때): 기존 AI 생성 방식
               const introSystem = `조선시대 야담의 첫 장면(훅)을 영어로 묘사.`;
               // v20.33: 0막(훅) 텍스트만 추출
-              const hkMarkers = ["구독과 좋아요", "이야기꾼의 양식", "채널에 오신", "오늘 이야기", "들려드리겠습니다", "북쪽창문", "평양데스크"];
+              const hkMarkers = ["구독과 좋아요", "이야기꾼의 양식", "채널에 오신", "오늘 이야기", "들려드리겠습니다", "북쪽창문", "평양수첩", "평양데스크"];
               let hkEndIdx = fullScript.length;
               hkMarkers.forEach(m => { const i = fullScript.indexOf(m); if (i > 0 && i < hkEndIdx) hkEndIdx = i; });
               const hkText = fullScript.slice(0, Math.min(hkEndIdx, 1500));
@@ -16762,7 +16853,7 @@ JSON 형식:
 
           fullScript=fullScript.replace(/(?:\uC54C\uB9BC \uC124\uC815\uD558\uC2DC\uACE0|\uCC44\uB110 \uACE0\uC815\uD574 \uC8FC\uC2DC\uBA74|\uAD6C\uB3C5\uACFC \uC88B\uC544\uC694 \uBD80\uD0C1\uB4DC\uB9BD\uB2C8\uB2E4)[^\n]*[.!]?\s*/g,"").replace(/(?:\uB2E4\uC74C \uC774\uC57C\uAE30\uB3C4 \uAE30\uB300|\uB2E4\uC74C \uC601\uC0C1\uC5D0\uC11C \uB9CC\uB098)[^\n]*[.!]?\s*/g,"").replace(/(?:\uC624\uB298 \uC774\uC57C\uAE30\uB294 \uC5EC\uAE30\uAE4C\uC9C0|\uC7AC\uBBF8\uB09C \uC774\uC57C\uAE30\uB85C \uCC3E\uC544\uBDF5|\uB2E4\uC74C\uC5D0 \uB610 \uB9CC\uB098|\uC774\uB9CC \uC904\uC774\uACA0\uC2B5\uB2C8\uB2E4)[^\n]*[.!]?\s*/g,"");fullScript=fullScript.replace(/(?:알림 설정하시고|채널 고정해 주시면|구독과 좋아요 부탁드립니다)[^\n]*[.!]?\s*/g,"").replace(/(?:다음 이야기도 기대해주세요|다음 영상에서 만나요)[^\n]*[.!]?\s*/g,"").replace(/(?:오늘 이야기는 여기까지|재미난 이야기로 찾아뵙)[^\n]*[.!]?\s*/g,"").replace(/^(?:제 이야기가 궁금하시다면|계속 들어주십시오|채널을 고정해주십시오|시청해주셔서 감사합니다)[^\n]*[.!]?\s*/gm,"")/*수정1*/;
 // v20.65 수정2: CTA 멘트 강제 삽입 (없을 때만)
-if(!fullScript.includes('지금부터 그 이야기를') && !fullScript.includes('북쪽창문입니다') && !fullScript.includes('평양데스크입니다') && !fullScript.includes('마님야화입니다') && !fullScript.includes('청암야담입니다') && !fullScript.includes('이야기꾼을 찾아') && !fullScript.includes('구독과 좋아요는') && !fullScript.includes('무료 구독과 좋아요') && !fullScript.includes('이야기꾼의 양식') && !fullScript.includes('이야기가 궁금하시다면') && !fullScript.includes('오늘 이야기 한번') && !fullScript.includes('힘이 됩니다')){
+if(!fullScript.includes('지금부터 그 이야기를') && !fullScript.includes('북쪽창문입니다') && !fullScript.includes('평양수첩입니다') && !fullScript.includes('평양데스크입니다') && !fullScript.includes('마님야화입니다') && !fullScript.includes('청암야담입니다') && !fullScript.includes('이야기꾼을 찾아') && !fullScript.includes('구독과 좋아요는') && !fullScript.includes('무료 구독과 좋아요') && !fullScript.includes('이야기꾼의 양식') && !fullScript.includes('이야기가 궁금하시다면') && !fullScript.includes('오늘 이야기 한번') && !fullScript.includes('힘이 됩니다')){
   var _ctaBreakPos=fullScript.indexOf('\n\n');
   if(_ctaBreakPos>50&&_ctaBreakPos<1500){
     var _ctaFixText='지금부터 그 이야기를 들려 드리겠습니다.\n무료 구독과 좋아요를 눌러 주시면 오늘 사연의 주인공께 큰 응원이 되겠습니다.';
@@ -17659,7 +17750,7 @@ setBodyText(isYadam ? window._fixYadamSpeechLevel(window._stripActTags(fullScrip
             // 체크 2: 선택된 채널명이 대본에 정확히 포함되는가
             const _v21_expectedChannel = isYadam
               ? (yadamChannel === 'manim' ? '마님야화' : '청암야담')
-              : (nkChannel === 'pyongyang' ? '평양데스크' : '북쪽창문');
+              : (nkChannel === 'pyongyang' ? '평양데스크' : '평양수첩');
             // r3.4: 공백/조사/따옴표 모두 무시한 유연한 감지
             // 각 글자 사이 공백 허용 (예: "청 암 야 담", "청암\n야담" 등)
             const _r34_channelPattern = new RegExp(
@@ -18568,7 +18659,7 @@ thumbnails는 4개, clickRate 높은 순서로 정렬.\n\n[#19 팀워크 원칙 
         
         // PhaseA: 인트로/채널멘트 검증 (v20.65 수정1: _ctaInserted 플래그 제거 → 텍스트 3중 체크)
         var f500 = reviewed.substring(0, 500);
-        var _hasChannelMent = f500.includes("지금부터") || f500.includes("구독과 좋아요") || f500.includes("북쪽창문") || f500.includes("평양데스크") || f500.includes("마님야화") || f500.includes("청암야담") || f500.includes("이야기꾼을 찾아"); // v20.65 수정3: 4개 채널명 하드코딩
+        var _hasChannelMent = f500.includes("지금부터") || f500.includes("구독과 좋아요") || f500.includes("북쪽창문") || f500.includes("평양수첩") || f500.includes("평양데스크") || f500.includes("마님야화") || f500.includes("청암야담") || f500.includes("이야기꾼을 찾아"); // v20.65 수정3: 4개 채널명 하드코딩
         if (!isYadamMode && !f500.includes("[1막") && !f500.includes("1막:") && !f500.includes("발견했습니다") && !_hasChannelMent) {
           console.warn("PhaseA: 인트로 훅 누락 → 자동 삽입 시도");
           var introHook = "";
@@ -19561,14 +19652,14 @@ ${check.reason}
           // Fix-NK1 r9-13: NK 채널멘트 K패치 독립 실행 (패턴 보강 + 폴백 강화)
           try {
             if (!isYadam) {
-              var _nkChannelName = reviewed.includes('평양데스크') ? '평양데스크' : '북쪽창문';
+              var _nkChannelName = reviewed.includes('평양데스크') ? '평양데스크' : '평양수첩';
               // Fix3 r9-13: 무료 제거 → 표준 형식으로 통일
               var _nkMentFixed = _nkChannelName + '입니다. 구독과 좋아요는 큰 힘이 됩니다.';
               var _nkLines = reviewed.split('\n');
               // Fix-채널멘트앞 r9-25: 채널멘트 바로 앞 줄이 파편/나레이션이면 제거
               // 예: "저는 고개를 끄덕였습니다.\n북쪽창문입니다." → 앞 문장 제거
               // 예: "도.\n평양데스크입니다." → "도." 파편 제거
-              var _nkMentCheckPatterns = ['입니다. 구독과 좋아요', '입니다. 무료 구독', '북쪽창문입니다', '평양데스크입니다'];
+              var _nkMentCheckPatterns = ['입니다. 구독과 좋아요', '입니다. 무료 구독', '북쪽창문입니다', '평양수첩입니다', '평양데스크입니다'];
               for (var _nmc = 0; _nmc < _nkLines.length; _nmc++) {
                 if (_nkMentCheckPatterns.some(function(p) { return _nkLines[_nmc].includes(p); })) {
                   // 바로 앞 줄이 완성된 나레이션 or 짧은 파편이면 제거
@@ -19614,6 +19705,7 @@ ${check.reason}
                 return l.includes('입니다. 무료 구독과 좋아요') ||
                        l.includes('구독과 좋아요는 무료') ||
                        l.includes('북쪽창문입니다') ||
+                       l.includes('평양수첩입니다') ||
                        l.includes('평양데스크입니다');
               });
               if (!_nkHasMent) {
@@ -20034,9 +20126,9 @@ ${reviewed.slice(-3000)}
           // v20.52e fix4v2: 채널명 합쳐짐 방지 (H6 논평 이후 최종 적용)
           reviewed = reviewed.replace(/북쪽창문평양데스크/g, '북쪽창문');
           reviewed = reviewed.replace(/평양데스크북쪽창문/g, '평양데스크');
-          reviewed = reviewed.replace(/(북쪽창문|평양데스크|청암야담|마님야화)([\s.,])*(북쪽창문|평양데스크|청암야담|마님야화)/g, '$1');
+          reviewed = reviewed.replace(/(북쪽창문|평양수첩|평양데스크|청암야담|마님야화)([\s.,])*(북쪽창문|평양수첩|평양데스크|청암야담|마님야화)/g, '$1');
           // "채널명이었습니다" 정규화
-          reviewed = reviewed.replace(/(북쪽창문|평양데스크|청암야담|마님야화)(이습니다|였습니다)/g, '$1이었습니다');
+          reviewed = reviewed.replace(/(북쪽창문|평양수첩|평양데스크|청암야담|마님야화)(이습니다|였습니다)/g, '$1이었습니다');
           console.log('fix4v2: 채널명 정규식 최종 적용');
           
           // r9-24 Fix-NK-CH: 채널명 강제 통일 (UI 선택 ≠ 대본 출력 방지)
@@ -21368,6 +21460,7 @@ ${reviewed.slice(-3000)}
     var _n4a = 0;
     reviewed = reviewed.replace(/(평양데스크입니다\.)\s*\1/g, function(){ _n4a++; return '평양데스크입니다.'; });
     reviewed = reviewed.replace(/(북쪽창문입니다\.)\s*\1/g, function(){ _n4a++; return '북쪽창문입니다.'; });
+    reviewed = reviewed.replace(/(평양수첩입니다\.)\s*\1/g, function(){ _n4a++; return '평양수첩입니다.'; });
     // "안녕하세요, 평양데스크입니다. 평양데스크입니다."
     reviewed = reviewed.replace(/(안녕하세요[^\n]{0,10}평양데스크입니다\.)\s*평양데스크입니다\./g, function(){ _n4a++; return '$1'.replace('$1', arguments[1] || '안녕하세요, 평양데스크입니다.'); });
     if (_n4a > 0) _r31Log.push('N4채널멘트중복:' + _n4a + '건');
@@ -21590,6 +21683,7 @@ ${reviewed.slice(-3000)}
       prevLen = reviewed.length;
       reviewed = reviewed.replace(/(평양데스크입니다\.)\s*\1/g, '$1');
       reviewed = reviewed.replace(/(북쪽창문입니다\.)\s*\1/g, '$1');
+      reviewed = reviewed.replace(/(평양수첩입니다\.)\s*\1/g, '$1');
     }
     // 중복 개수 측정은 생략 (루프이므로)
     
@@ -22135,9 +22229,9 @@ ${reviewed.slice(-3000)}
               {/* v20.28.1: 북한 대본 기반 썸네일 안내 */}
               {!isYadam && (
                 <div style={{marginTop: '8px', padding: '10px', background: 'rgba(239,68,68,0.15)', borderRadius: '8px', fontSize: '11px', color: '#fca5a5', lineHeight: '1.5'}}>
-                  <div style={{fontWeight: 'bold', marginBottom: '4px'}}>🇰🇵 v20.35 북한 썸네일 방식:</div>
-                  <div>대본 위기 장면 3개 자동 추출 → Split Screen</div>
-                  <div style={{marginTop: '4px', fontSize: '10px', color: '#f87171'}}>왼쪽: 위기 3장면 (각각 다른 앵글) | 오른쪽: 북한국기 배경 + 주인공</div>
+                  <div style={{fontWeight: 'bold', marginBottom: '4px'}}>🇰🇵 r6 북한 썸네일 구조:</div>
+                  <div>실존인물모드: 문구맞춤 배경 + 인물 검은실루엣(얼굴X) + 북한국기</div>
+                  <div style={{marginTop: '4px', fontSize: '10px', color: '#f87171'}}>직업모드: 좌 직업장면 + 중 익명실루엣 + 우 주인공얼굴 + 국기 | 캡션 좌상단, 빨간동그라미 반대편</div>
                 </div>
               )}
             </section>
@@ -22228,8 +22322,8 @@ ${reviewed.slice(-3000)}
                 </div>
               )}
               
-              {/* v20.35 Phase5: NK 채널 선택 */}
-              {!isYadam && (
+              {/* v20.35 Phase5: NK 채널 선택 (r6.4: 채널명 미사용으로 UI 숨김, state는 유지) */}
+              {false && !isYadam && (
                 <div style={{marginBottom: '10px', padding: '10px', background: 'rgba(239,68,68,0.15)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)'}}>
                   <div className="label" style={{marginBottom: '8px', color: '#fca5a5'}}>📺 NK 채널 선택</div>
                   <div className="channel-radio-group">
@@ -22241,7 +22335,7 @@ ${reviewed.slice(-3000)}
                         checked={nkChannel === 'bukchang'}
                         onChange={e => setNkChannel(e.target.value)}
                       />
-                      <span>북쪽창문</span>
+                      <span>평양수첩</span>
                     </label>
                     <label className="channel-radio">
                       <input 
@@ -23315,7 +23409,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.3.1 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.5.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
