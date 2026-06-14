@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r5.9 로드완료 (2026-06-12 빌드: 실존인물 프로필 얼굴강화·나이모순·필름표현 수정) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.0 로드완료 (2026-06-14 빌드: NK 썸네일 벤치마킹 스타일·실존인물 실루엣·문구이미지 분리) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -9099,9 +9099,54 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         })();
         const _nkPortraitDesc = `upper body portrait of ${_nkCharDesc2}, facing camera directly, bright natural front lighting, calm dignified composed expression, quiet resolve, upper body fully visible and dominant against flag`;
 
-        result += `[앵글 1 - 탈출+인공기]\nSplit-screen YouTube thumbnail. Left panel: dramatic action scene of ${_nkEscapeAction}, cinematic wide shot, shot on 35mm film, natural film grain, raw documentary style. Right panel: large vivid North Korean flag (red blue white star) filling entire background, ${_nkPortraitDesc}. Bold red arrow at center pointing left toward escape scene. '!!' bold white upper right. ${_nkTextOverlay} --no illustration --no painting --no cartoon --no 3d render --no western faces --no English letters --no Korean letters in background, thick bright bold yellow border frame around entire image --ar 16:9 --s 250\n\n`;
-        result += `[앵글 2 - 탈출+인공기 (야간강조)]\nSplit-screen YouTube thumbnail. Left panel: ${_nkEscapeAction}, shot on 35mm film, natural film grain, raw documentary style, extreme urgency. Right panel: large vivid North Korean flag filling entire background, ${_nkPortraitDesc}. Bold red arrow pointing left. '!!' bold white upper right. ${_nkTextOverlay} --no illustration --no painting --no cartoon --no 3d render --no western faces --no English letters --no Korean letters in background, thick bright bold yellow border frame around entire image --ar 16:9 --s 250\n\n`;
-        result += `[앵글 3 - 탈출+인공기 (인물강조)]\nSplit-screen YouTube thumbnail. Left panel: ${_nkEscapeAction}, strong white rim light outlining body, shot on 35mm film, natural film grain, raw documentary style. Right panel: large vivid North Korean flag filling entire background, ${_nkPortraitDesc}, strong warm golden-white spotlight on face, natural vivid skin tones, white rim light outlining body. Bold red arrow pointing left. '!!' bold white upper right. ${_nkTextOverlay} --no illustration --no painting --no cartoon --no 3d render --no western faces --no English letters --no Korean letters in background, thick bright bold yellow border frame around entire image --ar 16:9 --s 250\n\n`;
+        // ========== r6.0: NK 썸네일 벤치마킹 스타일 (photojournalism + 실존인물 실루엣 + 화염톤 + 빨간동그라미 + 상단캡션 + 하단2줄) ==========
+        // [인물 처리] 실존정치인(김정은 등)=검은 실루엣(얼굴 없음, 사칭 회피) / 가상 주인공=일반 동양인 얼굴 O
+        // [배경] 키워드 우선 → 대본 핵심 장면(_nkEscapeAction/직업) 반영
+        // [텍스트] 키워드(김정은 등) 그대로 문구에 사용 가능 (언급은 OK, 얼굴 사실묘사만 회피)
+        var _r6_realPersonList = ['김정은','김여정','리설주','현송월','김주애','최룡해','김정일','김정숙'];
+        var _r6_isRealPersonSubject = false;
+        try {
+          // 실존인물 모드(side/self)이거나, 제목/캐스트에 실존정치인이 주체로 포함되면 실루엣 처리
+          if (typeof selectedRealPerson !== 'undefined' && selectedRealPerson && useRealPerson) _r6_isRealPersonSubject = true;
+          for (var _ri = 0; _ri < _r6_realPersonList.length; _ri++) {
+            if ((_nkTitle && _nkTitle.indexOf(_r6_realPersonList[_ri]) >= 0)) { _r6_isRealPersonSubject = true; break; }
+          }
+        } catch(_r6e){}
+
+        // 인물 묘사: 실존정치인이면 완전 검은 실루엣 / 아니면 가상 주인공 얼굴
+        var _r6_figureDesc = _r6_isRealPersonSubject
+          ? `a large authoritarian leader man figure in a dark suit, facing forward, rendered as a COMPLETELY SOLID PURE BLACK SILHOUETTE, total shadow, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, only a thin orange rim light along the shoulders from the fire behind`
+          : `close-up of an East Asian ${_nkGender2} in his 30s-40s, fictional ordinary North Korean face (not resembling any real person), ${_jobCostume2}, weary intense determined expression, dramatic side lighting, head and shoulders visible, natural realistic skin texture`;
+
+        // 배경: 대본 핵심 장면(탈출 액션) + 화염/연기 다큐톤 (벤치마킹 톤)
+        var _r6_bg = `${_nkEscapeAction}, with thick dark billowing smoke and orange fire glow in the background atmosphere, muted desaturated documentary tones, gritty realistic press-photo atmosphere, overcast dim cinematic lighting`;
+
+        // 상단 캡션 (괄호) — 주체에 맞게
+        var _r6_caption = _r6_isRealPersonSubject
+          ? `(${(typeof selectedRealPerson !== 'undefined' && selectedRealPerson) ? selectedRealPerson : '북한 내부'} 충격 상황)`
+          : `(${_jobName2 || '북한'} 충격 증언)`;
+
+        // 공통 베이스 (photojournalism, 빨간 동그라미, 실사 강제)
+        var _r6_base = `Photojournalism style YouTube thumbnail, 16:9, real news press photograph aesthetic, authentic documentary photo. BACKGROUND: ${_r6_bg}. CENTER-RIGHT subject: ${_r6_figureDesc}. A thin hollow RED CIRCLE outline near the subject's shoulder highlighting a background detail. TOP CENTER small white caption text in parentheses "${_r6_caption}".`;
+        var _r6_real = `Realistic documentary photography, authentic film grain, natural smoke and fire textures, cinematic muted color grade, high contrast, 8k, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 200`;
+
+        // 하단 2줄 텍스트 오버레이 (흰색 1줄 + 하늘색 2줄, 두꺼운 검은 외곽선) — 벤치마킹 색공식
+        var _r6_textA = _nkTitle ? `\nBOTTOM 28% dark bar, MASSIVE thick Korean text two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (cyan #3AD0E0, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
+        var _r6_textB = `\nNO TEXT, NO LETTERS, NO Korean characters anywhere, bottom area left empty and darkened for later text overlay, complete background scenery throughout. --no text --no letters --no words`;
+
+        // 앵글 3종 (장면 강조점만 다르게) × A(글씨)/B(글씨없음)
+        var _r6_angles = [
+          { name: '핵심 장면 (탈출 절정)', extra: 'most dramatic climax moment, extreme tension' },
+          { name: '인물 강조 (표정/실루엣)', extra: 'strong dramatic rim lighting on the subject, intense focal emphasis on the figure' },
+          { name: '배경 강조 (혼돈/화염)', extra: 'wider chaotic scene, heavier smoke and fire, crowd or turmoil in background' }
+        ];
+        for (var _ai = 0; _ai < _r6_angles.length; _ai++) {
+          var _ang = _r6_angles[_ai];
+          var _r6_full = `${_r6_base} ${_ang.extra}.`;
+          result += `[앵글 ${_ai+1} - ${_ang.name}]\n`;
+          result += `🅰️ 버전 A (글씨 포함):\n${_r6_full}${_r6_textA} ${_r6_real}\n\n`;
+          result += `🅱️ 버전 B (글씨 없음, Canva용):\n${_r6_full}${_r6_textB} ${_r6_real}\n\n`;
+        }
 
         if (_nkTitle) {
           result += ` 썸네일 텍스트 문구 \n`;
@@ -23140,7 +23185,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r5.9 (2026-06-12 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
