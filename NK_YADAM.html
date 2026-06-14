@@ -1958,7 +1958,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.5.0 로드완료 (2026-06-14 빌드: ★D 프롬프트경로 2모드 구조공식 교체 - 인물모드 실루엣 / 직업모드 / split screen 폐기) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.6.0 로드완료 (2026-06-14 빌드: ★P1-c 탈북루트 일관성(DMZ/압록강/해외/해상) + C-2b 블록중복제거 + 썸네일배경 루트연동 + 키워드/직업 모드안내 + 태그정리) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -9660,7 +9660,7 @@ ${assignedNames.map(n => '- ' + n.role + ': ' + n.name + ' (' + n.gender + ', ' 
           const J_ALL_JOBS = ['보위부 중장', '보위부 해외공작국 과장', '보위부 감청실 책임자', '보위부 대좌 조사관', '보위부 국경단속 총책임자', '보위부 정치범수용소 관리 간부', '보위부 경제담당 지도원', '보위부 내부 검열부장', '보위부 체포·심문 전담 장교', '보위성 해외 요원 관리 책임자', '정찰총국 해외공작원', '정찰총국 사이버전부 책임자', '정찰총국 무기밀매 담당 간부', '정찰총국 공작원 양성교관', '정찰총국 여권·신분세탁 담당자', '정찰총국 대외공작금 결재 담당', '정찰총국 8국 요원', '정찰총국 아시아지역 공작 지부장', '정찰총국 대만/홍콩 라인 담당자', '정찰총국 외화 밀반입 총책', '김정은 경호원', '근위사단 대대장', '근위사단 저격중대 중대장', '김정은 이동경호 사전정찰조 팀장', '김정은 전용열차 보안 책임자', '생활총국 고위 간부', '김정은 집사 역할 담당자', '평양 1호 경호국 참모', '김정은 전속 요리사', '김정은 의전 담당 비서국 간부', '조선인민군 참모총장', '군단 부참모장', '포병 지휘국 작전참모', '총정치국 고급간부', '전략군 미사일 지휘소 책임자', '특수작전군 대대장', '항공 및 방공군 전투기 조종사', '해군 잠수함 함장', '공군 지휘센터 레이더 책임관', '군수공장 총기사륜 기사장', '🟫 핵·미사일·과학기술 기밀 분야', '국방과학원 핵실험실 연구사', '탄도미사일 설계 책임자', '위성발사소 통제실 기술원', '화학무기 연구소 소장', '핵연료 운송 보안 책임자', '군수공장 기밀 설비 기사', '로켓 추진체 개발 간부', '생물무기 연구팀 의사', '핵 시설 지도부 문건관리원', '미사일 발사대 통제 요원', '39호실 외화벌이 총책', '나진·선봉 무역회사 사장', '중국 파견 무역대표부 부대표', '해외 식당 총책임자', '평양 무역성 중동사업 담당자', '광물 수출 라인 책임자', '국영 무역회사 외화청구 담당관', '담배·주류 해외밀수 총괄', '해외 파견 IT 인력 관리자', '광산 해외영업 책임자', '당 조직지도부 검열원', '당 선전선동부 고위 간부', '당 국제부 연락책', '당 중앙위원회 비서', '당 출판보도국 검열관', '청년동맹 고위 간부', '여맹 지도원', '중앙당 서기실 문서 담당', '평양 선전물 영상 감독', '혁명역사연구소 연구사', '🟫 평양 상류층·특권 계급', '봉화진료소 의사', '고위층 전용 요양소 의무장', '류경호텔 관리자', '고위층 전용마트 수입품 담당', '평양 엘리트 예술단 감독', '해외 공연단 단장', '상류층 자녀 학교 교원', '고위 당 간부 운전기사', '평양 고급 식당 총지배인', '고위층 빌라 관리 책임자', '전용열차 기관사', '국제전화 감청 담당자', '국가통신부 암호관리 책임자', '위성통신 통제소 요원', '외화발송 국제우편 검열 담당', '공항 VIP경호팀 요원', '군·당 통신망 유지 기술자', '대외방송국 기술감독', '정보보안 교육 담당관', '평양 IT개발센터 책임 프로그래머', '국경경비대 대대장', '마약 밀수 감시 책임 보위원', '밀수조직 보위부 침투 담당', '특수 임무 담당 스나이퍼', '고위층 주택구역 경비대장', '보위부 특수체포조 지휘관', '지하시설 비밀 건설 책임기술자', '외교관 신분 대남공작원', '해외 위장회사 운영 간부', '최고지도부 전용 식품 검사관'];
           const J_HOT_KEYWORDS = ['북한 보위부 중장 일가족 탈북', '북한 참모부 중장 일가족 탈북', '북한 기쁨조 탈북', '북한 김여정 최측근 탈북', '북한 리설주 최측근 탈북', '북한 현송월 최측근 탈북', '북한 최전방 군인 단체 탈북', '북한 군인들 단체 탈북', '북한 최고위 간부 일가족 탈북', '북한 핵가발 과학자 일가족 탈북', '북한 고려항공 승무원 탈북', '북한 간판 아나운서 탈북', '북한 김일성종합대학생 단체 탈북', '북한 숨겨왔던 김정은의 자식 등장', '북한 최전방 마을주민 단체 탈북', '북한 보위부 중장 딸 탈북', '북한 여군 탈북', '북한 김정은 전담 승무원 탈북', '북한 2인자 최룡해 실종? 숙청?', '북한 2인자 김여정 실종? 숙청?', '북한 2인자 리설주 실종? 숙청?', '북한 2인자 현송월 실종? 숙청?', '북한 여성수감자 단체 탈북', '북한 대규모 숙청이 시작되었다', '북한 노동당 중장 일가족 탈북', '북한 최전방 고성 군인 탈북', '북한 최전방 철원 북한군 탈북', '북한 리설주가 사라진 충격적인 이유', '북한 핵개발자 일가족 단체 탈북', '북한 노동자 일가족 단체 탈북', '북한 김여정 경호부장 탈북', '김일성종합대 여대생 단체 탈북', '북한응원단 여성단장 탈북', '북한 1년안에 붕괴된다', '북한 옛 개성공단 근로자 단체 탈북', '북한 원양어선 선장 일당 탈북', '북한 핵개발 책임 장교의 탈북', '북한 탁구선수들 단체 탈북', '북한 엘리트 유학생들 단체 탈북', '북한 외무성 외교관 단체 탈북', '북한 전략사령부 소좌 타룹ㄱ', '북한 아나운서 여성 탈북', '북한 안전보위성 중장 탈북', '북한 여자축구 대표선수 단체 탈북', '북한 청년들 단체 탈북', '북한 국경지역 군인들 단체 탈북', '북한 핵잠수한 개발자 탈북', '북한군 11명 집단 단체 탈북', '북한 핵심 지휘부 중장 탈북', '한국 휴게소에 충격받은 북한 응원단', '북한 0.1% 엘리트 아나운서 탈북', '북한 동해바다로 헤엄쳐 건너 탈북', '북한 최초 여성 아나운서 탈북', '북한 여성 외교관 단체 탈북', '평양 1달안에 붕괴 됩니다', '북한 중장급 최고위 간부 일가족 탈북', '북한 남파 공작원 최고간부 탈북', '북한 최초 여성 장군 탈북', '북한 국경 경비 간부 탈북', '북한 김정은 전담 요리사 탈북', '김정은 비밀별장에 끌려간 고위층 유부녀', '김정은의 전담 주치의 충격적인 고백', '북한 김정은 충격적인 대역설의 진실', '북한 제거 대상 1순위 김한솔 탈북', '북한 최고 엘리트 학생들 단체 탈북', '북한 해커의 충격적인 고백'];
           const J_SUB_PHRASES = ['남한에 도착하자마자 놀란 이유', '한국에 도착하자마자 놀란이유', '남한에 도착하자마자 3초만에 놀란이유', '한국에 도착하자마자 3초만에 놀란이유', '국정원에 도착하자마자 오열한 이유', '국정원에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 탈북 루트', '국정원도 놀란 충격적인 탈북 방법', '탈북하자마자 한국군 보고 충격받은 이유', '탈북하자마자 한국 길거리에 충격받은 이유', '한국 아파트 보자마자 놀란 이유', '한국 인천공항에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 USB의 정체', '한국 서울대 도착하자마자 3초만에 놀란 이유', '남한 교실에서 3초만에 충격받은 이유', '한국 아파트를 보자마자 충격받은 이유', '한국 편의점에서 오열한 충격적인 이유', '탈북하자마자 북한이 발칵 뒤집힌 이유', '북한 붕괴 이번엔 진짜다!', '한반도에 피바람이 불기 시작했다', '북한은 이제 끝났습니다', '곧 한반도 정세가 요동칩니다', '남한 기차를 보고 3초 만에 놀란 이유', '남한 KTX를 보고 3초 만에 놀란 이유', '남한 도착하고 기절초풍한 이유', '국정원도 놀란 충격적인 탈북과정', '국정원조차 기겁한 북한 상황', '북한에서 가져온 충격적인 물건', '한국군함 처음 타고 충격받은 이유', '탈북민들의 충격적인 비밀', '한국 길거리 걷다 충격받은 이유', '한국 도착 직후 놀라운 반응', '국정원 조사중에 오열한 이유', '국정원 조사중에 기절한 이유', '북한에서 걸려온 충격적인 전화', '보고도 믿지 못할 충격적인 이야기', '남한에 도착하자마자 자동차 보고 놀란 이유'];
-          const J_TAGS = ['#북한', '#김정은', '#탈북', '#탈북민', '#탈북사연', '#탈북자', '#리설주', '#현송월', '#김주애', '#북한이야기', '#북한탈북', '#북한실화'];
+          const J_TAGS = ['#북한', '#탈북', '#탈북민', '#탈북사연', '#탈북자', '#북한실화', '#북한이야기', '#북한탈북', '#탈북스토리', '#북한내부', '#탈북다큐', '#북한주민'];
 
           // J패치: 벤치마킹 제목에서 직업 키워드 자동 추출
           // ========== r6.1: 키워드→직업 연관어 매칭 ==========
@@ -12803,6 +12803,37 @@ const _NK_EXTRA=['가족이별','자수/투항','은신/잠복','신분위장'];
             // v20.31: 만자 단일 설정 (고정값)
             const hardshipMinChars = 2500;
             const escapeMinChars = 2500;
+
+            // ========== 🆕 r6.6 P1-c: 탈북루트 일관성 규칙 (루트 타입별 정답/금지 경로) ==========
+            let _routeRule = '';
+            try {
+              if (!isYadam && (actNum >= 4 && actNum <= totalChapters)) {
+                var _rType = (escapeConfig && escapeConfig.route && escapeConfig.route.type) ? String(escapeConfig.route.type) : '';
+                var _rName = (escapeConfig && escapeConfig.route && escapeConfig.route.name) ? String(escapeConfig.route.name) : '';
+                // 루트 키워드로 타입 보정
+                var _rt = _rType.toLowerCase();
+                var _isRiver = /river|압록강|두만강|도강|국경/.test(_rt + _rName);
+                var _isDMZ = /dmz|gp|jsa|군사분계|휴전선|철책/.test(_rt + _rName);
+                var _isOverseas = /overseas|defect|망명|해외|대회|출장/.test(_rt + _rName);
+                var _isDiplomat = /diplomat|외교|대사관|공관/.test(_rt + _rName);
+                var _isSea = /sea|boat|해상|배|어선|바다/.test(_rt + _rName);
+                if (_isDMZ) {
+                  _routeRule = '[r6.6 탈북루트 강제: DMZ 직접 돌파] 이 대본의 탈출 경로는 휴전선(DMZ/철책) 직접 돌파입니다.\\n⚠️ DMZ를 넘으면 곧바로 한국(남한)에 도착합니다. 중국·단둥·압록강·두만강·제3국·베이징은 절대 등장 금지!\\n⚠️ 8·9막 도착지는 반드시 한국. 중국 경유 서술 절대 금지!';
+                } else if (_isOverseas || _isDiplomat) {
+                  _routeRule = '[r6.6 탈북루트 강제: 해외출장/망명] 이 대본의 탈출 경로는 해외 출장·대회 중 현지 이탈 후 대사관/제3국 망명입니다.\\n⚠️ 압록강·두만강 도강, DMZ 돌파는 절대 등장 금지! (이미 해외에 있으므로 국경 도강 불필요)\\n⚠️ 현지(개최국)에서 대사관 진입 또는 제3국 경유 → 한국 흐름으로 통일.';
+                } else if (_isSea) {
+                  _routeRule = '[r6.6 탈북루트 강제: 해상] 이 대본의 탈출 경로는 배(해상)를 통한 탈출입니다.\\n⚠️ 압록강·두만강 도강, DMZ 돌파는 절대 등장 금지! 바다/배 중심으로 통일.';
+                } else if (_isRiver) {
+                  _routeRule = '[r6.6 탈북루트 강제: 국경 도강] 이 대본의 탈출 경로는 압록강/두만강 도강 → 중국 → 제3국 → 한국입니다.\\n⚠️ DMZ 돌파, 해외 대회·출장 망명은 절대 등장 금지! 도강→중국 경유 흐름으로 통일.';
+                }
+                // 공통: 경로 혼합 금지
+                if (_routeRule) {
+                  _routeRule += '\\n⚠️ 한 대본에 두 종류의 탈출 경로를 절대 섞지 말 것. 앞 막에서 정한 경로를 끝까지 일관 유지!';
+                }
+              }
+            } catch(_rre){ _routeRule = ''; }
+            // ========== r6.6 P1-c 끝 ==========
+
             
             // v20.20: hookType 기반 고난막 판단
             const isYadamHardshipAct = isYadam && (actInfo.hookType === 'hardship1' || actInfo.hookType === 'hardship2' || actInfo.hookType === 'hardship3');
@@ -12988,7 +13019,7 @@ ${completedInfo}
 
 ⚠️ ${actNum}막 본문만 작성. 제목/막번호 없이. 1막부터 다시 시작 금지!
 ${actNum === totalChapters && !isYadam ? '[Fix-S3 9막 필수 포함] ①한국 공원/거리 구체 장면 1개 ②사망자/행방불명 소식 언급 ③마무리 멘트 → 이 3가지 없으면 실패!\n[Fix-9막 절대금지] 8막 이전 내용(은신처/탈출과정/중국/제3국) 9막에서 재서술 절대 금지! 9막은 한국 정착 장면만!' : ''}
-${(actNum >= 5 && actNum <= 7) && !isYadam ? '[r6.4 C-1 탈출경로 일관성 필수] 탈출 경로는 대본 전체에서 단 하나로 통일! 다음 두 경로를 절대 섞지 말 것:\\n① 국제대회/해외출장 망명 경로 (예: 도쿄/베이징 대회 → 호텔 이탈 → 대사관 망명)\\n② 국경 도강 경로 (예: 압록강/두만강 도강 → 중국 → 제3국)\\n⚠️ 앞 막에서 정한 경로를 끝까지 유지. 5막이 도쿄 망명이면 6·7막도 도쿄/대사관 흐름, 절대 압록강 도강으로 바꾸지 말 것!\\n⚠️ 반대도 마찬가지: 압록강 도강으로 시작했으면 도쿄/해외대회 등장 금지!' : ''}
+${_routeRule && !isYadam ? _routeRule : ''}
 ${actNum === 2 && !isYadam ? '[r9-24 Fix-NK-2막 독립성 필수] 2막은 오직 다음 3가지만 포함:\n① 자기소개 3~5문장 (예: "저는 평양시 보위부에서...담당했던 최준혁입니다")\n② 채널 CTA 1줄 (예: "구독과 좋아요는 큰 힘이 됩니다")\n③ 다음 이야기 전환 문장 1줄 (예: "모든 것은 2년 전부터 시작되었습니다")\n⚠️ 2막 절대 금지: 탈출/도망/국경/결심/브로커/보위부 체포/돈 언급\n⚠️ 2막 분량: 800~1100자 엄수 (다른 막보다 짧게!)\n⚠️ 2막은 과거 사건 상세 금지 (3막에서 다룸)' : ''}
 ${actNum < totalChapters ? '[Fix-S2 이번 막 사건 1개만] 시놉시스에 명시된 핵심 사건 1개만 서술. 다음 막 내용 절대 미리 쓰지 말 것!' + (isYadam && actNum === 1 ? ' [1막 구조 필수] 아래 구조를 반드시 따를 것:\n[좋은예시]\n충격 대사 1~2줄 → 현재 장면 묘사 2~3문장 → 상황 요약 1문장 → 시간역행 문장 1줄\n예시: "어미야!" 아이의 손이 끌려갔습니다. 향이의 세상이 무너졌지요. 한 줌의 빚이 25년의 피눈물을 만든 것이었습니다. 이야기는 그보다 오 년 전으로 거슬러 올라간답니다.\n[규칙] 총 250~350자 내외. 시간역행 전 본문 내용 절대 미리 쓰지 말 것. 1막 훅에서 나온 장면은 이후 막에서 새로운 시점/앵글로 서술할 것(동일 장면 반복 금지)!\n[야담 대사 형식] 대사는 반드시 "대사" 따옴표로만! "인물명. 대사" "인물명: 대사" "인물명 대사" 형식 절대 금지!' : '') + (!isYadam && actNum === 1 ? ' [NK 1막 필수] 인트로 훅은 반드시 3인칭으로 서술. "저는/제가/저희" 절대 사용 금지. 반드시 주인공 이름 또는 "그/그녀"로 시작.\n[좋은예시] "2025년 11월, 오광일은 서버실로 향했습니다. 그의 손이 키보드 위에서 멈췄습니다. 그것은 탈출의 봉화였습니다. 그 이유는 몇 달 전의 과거 속에 있었습니다."\n훅 마지막에 반드시 "지금부터 그 이야기를 들려드리겠습니다" 또는 "그 이유는 몇 달 전의 과거 속에 있었습니다" 같은 전환 문장으로 끝낼 것!' : '') + (!isYadam ? ' [NK 저희 금지] 나레이션에서 타인 지칭 시 "저희"는 절대 금지! 반드시 "그들/그 사람들/그/그녀"로 표현. 대화문 내부에서만 "저희" 허용.' : '') + (isYadam && actNum === totalChapters ? ' [8막 필수] 에필로그는 단일 장면 1개만. 같은 내용 반복/중복 서술 절대 금지! 교훈 대사는 1회만! 완결 후 새로운 사건/인물 추가 절대 금지! 결말은 반드시 1개만!' : '') + (isYadam && useBMode && selectedTitle ? '\n[STEP5 B방식] 이 대본의 제목은 「' + selectedTitle + '」입니다. 제목의 핵심 키워드가 반드시 대본 전체에 자연스럽게 반영되어야 합니다.' : '') : ''} 시놉시스에 없는 인물·사건 절대 추가 금지! 시놉시스에 없는 인물·사건 절대 추가 금지!
 
@@ -15710,6 +15741,51 @@ ${chunkScript}`;
           }
           // ========== r6.4 C-2 끝 ==========
 
+          // ========== 🆕 r6.6 C-2b: 연속 문장 블록(덩어리) 중복 제거 ==========
+          // 문제: 여러 문장이 한 덩어리로 반복되는데 중간에 문장이 끼어 단일문장 검사로는 안 잡힘
+          //   (홍명수 5막: "그걸 꺼내 상인 손에...출장 사흘 전...외부 접촉" 블록이 변형 반복)
+          // 해결: 연속 3문장을 묶어 정규화 → 동일 블록이 근접(15문장 내) 재등장하면 후행 블록 제거
+          try {
+            if (fullScript && fullScript.length > 3000) {
+              const _c2b_before = fullScript.length;
+              const _c2b_sents = fullScript.split(/(?<=[.!?。])\s+/);
+              const _c2b_seen = new Map();
+              const _c2b_skip = new Set();
+              let _c2b_removed = 0;
+              const _BLK = 3; // 연속 3문장 블록
+              for (let _bi = 0; _bi + _BLK <= _c2b_sents.length; _bi++) {
+                // 이미 제거 표시된 문장이 포함된 블록은 건너뜀
+                let _hasSkip = false;
+                for (let _k = 0; _k < _BLK; _k++) { if (_c2b_skip.has(_bi + _k)) { _hasSkip = true; break; } }
+                if (_hasSkip) continue;
+                const _blkText = _c2b_sents.slice(_bi, _bi + _BLK).join(' ').trim();
+                if (_blkText.length < 60) continue; // 너무 짧은 블록 제외
+                const _blkNorm = _blkText.replace(/\s+/g, '').replace(/[.,!?…""''「」]/g, '').slice(0, 80);
+                if (_blkNorm.length < 40) continue;
+                if (_c2b_seen.has(_blkNorm)) {
+                  const _prevBi = _c2b_seen.get(_blkNorm);
+                  if (_bi - _prevBi <= 15) {
+                    // 근접 중복 블록 → 후행 3문장 제거
+                    for (let _k = 0; _k < _BLK; _k++) { _c2b_skip.add(_bi + _k); }
+                    _c2b_removed += _BLK;
+                  }
+                } else {
+                  _c2b_seen.set(_blkNorm, _bi);
+                }
+              }
+              if (_c2b_removed > 0) {
+                fullScript = _c2b_sents.filter(function(_s, _i) { return !_c2b_skip.has(_i); }).join(' ');
+                fullScript = fullScript.replace(/\n{3,}/g, '\n\n');
+                console.log('[r6.6 C-2b 블록중복제거] ✅ ' + _c2b_removed + '개 문장(덩어리) 제거 (' + _c2b_before + '자 → ' + fullScript.length + '자)');
+              } else {
+                console.log('[r6.6 C-2b 블록중복제거] 블록 중복 없음 (정상)');
+              }
+            }
+          } catch(_c2b_e) {
+            console.warn('[r6.6 C-2b 블록중복제거] 오류:', _c2b_e.message);
+          }
+          // ========== r6.6 C-2b 끝 ==========
+
           // ========== 🆕 r6.4 C-3: 조사 오타 교정 (을/를, 은/는, 이/가, 와/과) ==========
           // 문제: "김정은를"(받침O인데 를) 같은 조사 오타
           // 해결: 받침 유무에 따라 조사 자동 교정
@@ -16518,15 +16594,16 @@ JSON 형식:
                 if (_cb.action) nkIntroPromptFinal += '\n- 핵심행동: "' + _cb.action + '" 관련 장면을 1막 훅으로 활용';
                 console.log('D-3: 궁금증 주입 완료 →', _cb.curiosity[0]);
               }
-              // Phase B-3: NK 탈출 장면 연동 - 루트별 환경 힌트
+              // Phase B-3: NK 탈출 장면 연동 - 루트별 환경 힌트 (r6.6: key+type+name 종합 판정)
               if (escapeConfig && escapeConfig.route) {
-                var _b3Route = escapeConfig.route.key || '';
+                var _b3Route = ((escapeConfig.route.key || '') + ' ' + (escapeConfig.route.type || '') + ' ' + (escapeConfig.route.name || '')).toLowerCase();
                 var _b3Env = '';
-                if (/air/.test(_b3Route)) _b3Env = 'Include aircraft cockpit or runway in at least one scene.';
-                else if (/sea/.test(_b3Route)) _b3Env = 'Include ocean waves or fishing boat in at least one scene.';
-                else if (/dmz/.test(_b3Route)) _b3Env = 'Include barbed wire fence or military watchtower in at least one scene.';
-                else if (/river/.test(_b3Route)) _b3Env = 'Include dark river crossing or border river in at least one scene.';
-                else if (/overseas/.test(_b3Route)) _b3Env = 'Include foreign city or embassy in at least one scene.';
+                // 우선순위: dmz > overseas > river > sea > air (구체적인 것 먼저)
+                if (/dmz|gp|jsa|군사분계|휴전선|철책/.test(_b3Route)) _b3Env = 'Include barbed wire fence or military watchtower in at least one scene. Do NOT include ocean, sea, river crossing, or fishing boat.';
+                else if (/overseas|defect|diplomat|망명|해외|대회|출장|외교|대사관/.test(_b3Route)) _b3Env = 'Include foreign city or embassy in at least one scene. Do NOT include ocean, river crossing, or DMZ.';
+                else if (/river|압록강|두만강|도강|국경/.test(_b3Route)) _b3Env = 'Include dark river crossing or border river (Yalu/Tumen) in at least one scene. Do NOT include ocean, fishing boat, or DMZ.';
+                else if (/sea|boat|해상|어선|바다/.test(_b3Route)) _b3Env = 'Include ocean waves or fishing boat in at least one scene. Do NOT include river crossing or DMZ.';
+                else if (/air|항공|비행/.test(_b3Route)) _b3Env = 'Include aircraft cockpit or runway in at least one scene.';
                 if (_b3Env) {
                   nkIntroPromptFinal += '\n⚠️ ' + _b3Env;
                   console.log('B-3: 탈출장면 환경 → ' + _b3Env);
@@ -16792,13 +16869,17 @@ JSON 형식:
             // 결말/한국 장소는 어그로에 부적합 (썸네일은 북한 내부 긴장 배경 유지)
             var _badPlace = _d6Place && /대사관|embassy|한국|korea|공항|airport|하나원|서울|seoul/i.test(_d6Place);
             if (_isRPbg && _badPlace) { _d6Place = ''; }
+            // [r6.6 F] 장소(place) 주입 제거: 배경 장면은 scenes/B-3이 이미 담당하므로
+            //   D-6 place 중복 주입이 배경과 모순 유발(예: ocean 배경 + "set in Yalu River").
+            //   소품(prop)만 주입하여 충돌 방지.
+            _d6Place = '';
             if (_d6Prop || _d6Place) {
               let _d6Extra = '';
               if (_d6Prop) _d6Extra += ', featuring ' + _d6Prop + ' as key prop';
               if (_d6Place) _d6Extra += ', set in ' + _d6Place;
               if (_d6Extra && thumbnailPrompts && thumbnailPrompts.indexOf(_d6Prop) < 0) {
                 thumbnailPrompts = thumbnailPrompts.replace(/--ar 16:9/g, _d6Extra + ' --ar 16:9');
-                console.log('D-6: 이미지에 소품/장소 주입 → ' + _d6Extra);
+                console.log('D-6: 이미지에 소품 주입 → ' + _d6Extra);
               }
             }
           }
@@ -22678,6 +22759,11 @@ ${reviewed.slice(-3000)}
                   <div style={{fontSize: '9px', color: '#6b7280', marginTop: '6px'}}>
                     ※ 직업에 맞는 탈출 루트와 탈북 유형이 자동 매칭됩니다
                   </div>
+                  <div style={{marginTop:'4px',fontSize:'11px',color: useRealPerson ? '#fca5a5' : '#86efac',lineHeight:'1.4'}}>
+                    {useRealPerson
+                      ? '💡 직업 = 증언자(주인공) 설정. 정치 주제면 권력 근처 직업 추천 (예: 보위부, 당 간부, 외교관)'
+                      : '💡 직업 = 썸네일 메인 주인공. 대본·썸네일의 핵심 (예: 체육선수, 광부, 군인)'}
+                  </div>
                 </div>
               )}
 
@@ -22782,6 +22868,13 @@ ${reviewed.slice(-3000)}
                   className="api-input"
                   style={{width:'100%',padding:'8px',fontSize:'13px'}}
                 />
+                {!isYadam && (
+                  <div style={{marginTop:'4px',fontSize:'11px',color: useRealPerson ? '#fca5a5' : '#86efac',lineHeight:'1.4'}}>
+                    {useRealPerson
+                      ? '💡 인물모드: 정치·인물 키워드 (예: 쿠데타, 체제붕괴, 권력투쟁, 숙청, 측근)'
+                      : '💡 직업모드: 직업·일반 키워드 (예: 국가대표 선수단, 월드컵, 탈출, 가족, 단체탈북)'}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleAnalyze}
@@ -23409,7 +23502,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.5.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.6.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
