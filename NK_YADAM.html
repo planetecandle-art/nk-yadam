@@ -1956,7 +1956,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.0 로드완료 (2026-06-14 빌드: NK 썸네일 벤치마킹 스타일·실존인물 실루엣·문구이미지 분리) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.3 로드완료 (2026-06-14 빌드: 직업별 배경 자동매칭·체육선수=경기장 등) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2450,6 +2450,40 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
     ];
 
     // ========== v20.18: 직업군별 설정 ==========
+    // ========== r6.1: 키워드→직업키 전역 매핑 (다시뽑기/구조추출에서 사용) ==========
+    const KEYWORD_TO_JOBKEY = [
+      { key: 'athlete', kw: ['선수','축구','월드컵','국가대표','체육','올림픽','경기','레슬링','역도','유도','체조','구단','운동선수','스포츠'] },
+      { key: 'diplomat', kw: ['외교','대사','외무','영사','공관','외교관','수교','참사관'] },
+      { key: 'medical', kw: ['의사','의료','병원','수술','진료','내과','외과','임상','의료인','간호','간호사'] },
+      { key: 'artist', kw: ['예술단','무용','악단','배우','연주','공연단','예술단원','가수','성악','노래'] },
+      { key: 'teacher', kw: ['교사','교원','선생','학교','교육'] },
+      { key: 'miner', kw: ['광부','탄광','광산','채굴'] },
+      { key: 'farmer', kw: ['농민','농장','농사','협동농장'] },
+      { key: 'fisherman', kw: ['어부','어선','조업','수산'] },
+      { key: 'factory_worker', kw: ['공장','노동자','생산직','방직','건설','공사'] },
+      { key: 'overseas_worker', kw: ['해외파견','파견노동','해외노동','벌목'] },
+      { key: 'trader', kw: ['무역','사업가','장사','돈주','무역상','상인','장마당','시장'] },
+      { key: 'party_official', kw: ['당간부','간부','당위원','책임비서'] },
+      { key: 'technician', kw: ['기술자','엔지니어','정비','과학자','연구원'] },
+      { key: 'driver', kw: ['운전사','운전기사','기관사','열차','철도'] },
+      { key: 'cook', kw: ['요리사','조리','주방'] },
+      { key: 'frontline_soldier', kw: ['군인','병사','최전방','전방','부대'] },
+      { key: 'navy_soldier', kw: ['해군','수병','함정'] },
+      { key: 'fighter_pilot', kw: ['조종사','전투기','파일럿','공군'] },
+      { key: 'gp_guard', kw: ['gp','초소','dmz','비무장','경비'] },
+      { key: 'civilian', kw: ['주민','평민','일반인','서민','밀수','꽃제비'] }
+    ];
+    const findJobKeyFromKeywords = (kwStr) => {
+      if (!kwStr || !kwStr.trim()) return null;
+      const lower = kwStr.toLowerCase();
+      for (const entry of KEYWORD_TO_JOBKEY) {
+        for (const k of entry.kw) {
+          if (lower.includes(k.toLowerCase())) return entry.key;
+        }
+      }
+      return null;
+    };
+
     const JOB_CATEGORIES = {
       // 항공 직업군
       fighter_pilot: { 
@@ -9114,17 +9148,55 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         } catch(_r6e){}
 
         // 인물 묘사: 실존정치인이면 완전 검은 실루엣 / 아니면 가상 주인공 얼굴
-        var _r6_figureDesc = _r6_isRealPersonSubject
-          ? `a large authoritarian leader man figure in a dark suit, facing forward, rendered as a COMPLETELY SOLID PURE BLACK SILHOUETTE, total shadow, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, only a thin orange rim light along the shoulders from the fire behind`
-          : `close-up of an East Asian ${_nkGender2} in his 30s-40s, fictional ordinary North Korean face (not resembling any real person), ${_jobCostume2}, weary intense determined expression, dramatic side lighting, head and shoulders visible, natural realistic skin texture`;
+        // [r6.2] 실존인물 조연(side) + 가상 주인공 직업 → 2인 배치(좌:실존 실루엣 / 우:주인공 얼굴)
+        var _r6_isSideMode = (typeof selectedRealPerson !== 'undefined' && selectedRealPerson && useRealPerson && typeof realPersonMode !== 'undefined' && realPersonMode === 'side');
+        var _r6_protagFace = `close-up of an East Asian ${_nkGender2} in his 30s-40s, fictional ordinary North Korean face (not resembling any real person), ${_jobCostume2}, weary intense determined expression, dramatic side lighting, head and shoulders visible, natural realistic skin texture`;
+        var _r6_silhouette = `a large authoritarian leader man figure in a dark suit, rendered as a COMPLETELY SOLID PURE BLACK SILHOUETTE, total shadow, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, only a thin orange rim light along the shoulders`;
+        var _r6_figureDesc;
+        if (_r6_isSideMode) {
+          // 2인 배치: 좌측 실존인물 실루엣 + 우측 주인공 얼굴 (벤치마킹 2인 구조)
+          _r6_figureDesc = `TWO figures side by side. LEFT side: ${_r6_silhouette} (the real political figure, face hidden). RIGHT side as MAIN focus: ${_r6_protagFace} (the protagonist, ${_jobName2||'주인공'})`;
+        } else if (_r6_isRealPersonSubject) {
+          // 김정은 등이 주제(주인공 직업 없음/키워드만) → 실루엣 단독
+          _r6_figureDesc = `${_r6_silhouette}, facing forward, ominous, center-right`;
+        } else {
+          // 가상 주인공 → 얼굴 단독
+          _r6_figureDesc = _r6_protagFace + ', center-right main focus';
+        }
 
-        // 배경: 대본 핵심 장면(탈출 액션) + 화염/연기 다큐톤 (벤치마킹 톤)
-        var _r6_bg = `${_nkEscapeAction}, with thick dark billowing smoke and orange fire glow in the background atmosphere, muted desaturated documentary tones, gritty realistic press-photo atmosphere, overcast dim cinematic lighting`;
+        // 배경: [r6.3] 직업별 무대 우선 → 없으면 탈출루트 후순위 (+화염/연기 다큐톤)
+        var _r6_jobBg = (function(){
+          var j = _jobName2 || '';
+          if (j.indexOf('체육')>=0 || j.indexOf('선수')>=0 || j.indexOf('축구')>=0) return 'a North Korean national soccer team in red uniforms lined up on a stadium pitch, empty stadium stands behind, floodlights, sports stadium setting';
+          if (j.indexOf('의')>=0 || j.indexOf('간호')>=0) return 'a dim North Korean hospital ward interior, old medical equipment, sterile bleak setting';
+          if (j.indexOf('군')>=0 || j.indexOf('병사')>=0 || j.indexOf('저격')>=0) return 'a North Korean military base or barracks, soldiers and military vehicles, stern martial setting';
+          if (j.indexOf('조종')>=0 || j.indexOf('공군')>=0) return 'a North Korean military airbase with fighter jets on the tarmac';
+          if (j.indexOf('해군')>=0) return 'a North Korean naval port with warships, harbor setting';
+          if (j.indexOf('광부')>=0 || j.indexOf('광')>=0) return 'a dark North Korean coal mine entrance, coal dust, grim industrial setting';
+          if (j.indexOf('농')>=0) return 'a bleak North Korean rural collective farm field, worn farmland, poor countryside';
+          if (j.indexOf('어')>=0) return 'a North Korean fishing port with old wooden boats at dusk, harbor';
+          if (j.indexOf('공장')>=0 || j.indexOf('노동')>=0) return 'a grimy North Korean factory interior, old machinery, industrial setting';
+          if (j.indexOf('교')>=0) return 'a worn North Korean schoolroom or school building, propaganda posters';
+          if (j.indexOf('외교')>=0 || j.indexOf('외무')>=0) return 'a formal government building or embassy interior, official setting';
+          if (j.indexOf('당')>=0 || j.indexOf('간부')>=0) return 'a grand North Korean party government hall with red banners and portraits';
+          if (j.indexOf('과학')>=0 || j.indexOf('기술')>=0) return 'a North Korean research laboratory or technical facility, equipment';
+          if (j.indexOf('예술')>=0 || j.indexOf('가수')>=0) return 'a North Korean grand theater stage with red curtains, performance hall';
+          if (j.indexOf('장마당')>=0 || j.indexOf('상인')>=0 || j.indexOf('무역')>=0) return 'a crowded shabby North Korean street market (jangmadang), makeshift stalls';
+          if (j.indexOf('경호')>=0 || j.indexOf('호위')>=0) return 'a tense formal Pyongyang government compound, security setting';
+          if (j.indexOf('기관사')>=0 || j.indexOf('철도')>=0) return 'a North Korean train station platform with an old locomotive';
+          if (j.indexOf('운전')>=0) return 'a Pyongyang street with an old official black car';
+          if (j.indexOf('요리')>=0) return 'a large institutional kitchen, North Korean elite banquet setting';
+          return '';
+        })();
+        var _r6_bgScene = _r6_jobBg || _nkEscapeAction; // 직업무대 우선, 없으면 탈출루트
+        var _r6_bg = `${_r6_bgScene}, with thick dark billowing smoke and orange fire glow in the background atmosphere, muted desaturated documentary tones, gritty realistic press-photo atmosphere, overcast dim cinematic lighting`;
 
         // 상단 캡션 (괄호) — 주체에 맞게
-        var _r6_caption = _r6_isRealPersonSubject
-          ? `(${(typeof selectedRealPerson !== 'undefined' && selectedRealPerson) ? selectedRealPerson : '북한 내부'} 충격 상황)`
-          : `(${_jobName2 || '북한'} 충격 증언)`;
+        var _r6_caption = _r6_isSideMode
+          ? `(${(typeof selectedRealPerson !== 'undefined' && selectedRealPerson) ? selectedRealPerson : ''} ${_jobName2 || '측근'}의 증언)`
+          : (_r6_isRealPersonSubject
+            ? `(${(typeof selectedRealPerson !== 'undefined' && selectedRealPerson) ? selectedRealPerson : '북한 내부'} 충격 상황)`
+            : `(${_jobName2 || '북한'} 충격 증언)`);
 
         // 공통 베이스 (photojournalism, 빨간 동그라미, 실사 강제)
         var _r6_base = `Photojournalism style YouTube thumbnail, 16:9, real news press photograph aesthetic, authentic documentary photo. BACKGROUND: ${_r6_bg}. CENTER-RIGHT subject: ${_r6_figureDesc}. A thin hollow RED CIRCLE outline near the subject's shoulder highlighting a background detail. TOP CENTER small white caption text in parentheses "${_r6_caption}".`;
@@ -9584,6 +9656,51 @@ ${assignedNames.map(n => '- ' + n.role + ': ' + n.name + ' (' + n.gender + ', ' 
           const J_TAGS = ['#북한', '#김정은', '#탈북', '#탈북민', '#탈북사연', '#탈북자', '#리설주', '#현송월', '#김주애', '#북한이야기', '#북한탈북', '#북한실화'];
 
           // J패치: 벤치마킹 제목에서 직업 키워드 자동 추출
+          // ========== r6.1: 키워드→직업 연관어 매칭 ==========
+          // 키워드에 직업 관련 단어가 있으면 그 직업으로 우선 배치 (예: "선수단/월드컵" → 체육 선수)
+          const JOB_KEYWORD_MAP = [
+            { job: '체육 선수', kw: ['선수','축구','월드컵','국가대표','체육','올림픽','경기','레슬링','역도','유도','체조','구단','운동선수','스포츠'] },
+            { job: '외교관', kw: ['외교','대사','외무','영사','공관','외교관','수교','참사관'] },
+            { job: '의료인', kw: ['의사','의료','병원','수술','진료','내과','외과','임상'] },
+            { job: '간호사', kw: ['간호','간호사','병동'] },
+            { job: '예술단원', kw: ['예술단','무용','악단','배우','연주','공연단'] },
+            { job: '예술단원 (가수)', kw: ['가수','성악','노래','보컬'] },
+            { job: '교사', kw: ['교사','교원','선생','학교','교육'] },
+            { job: '광부', kw: ['광부','탄광','광산','채굴'] },
+            { job: '농민', kw: ['농민','농장','농사','협동농장'] },
+            { job: '어부', kw: ['어부','어선','조업','수산'] },
+            { job: '공장 노동자', kw: ['공장','노동자','생산직','방직'] },
+            { job: '건설 노동자', kw: ['건설','공사','막노동','토목'] },
+            { job: '해외파견 노동자', kw: ['해외파견','파견노동','해외노동','벌목공'] },
+            { job: '무역상/사업가', kw: ['무역','사업가','장사','돈주','무역상'] },
+            { job: '장마당 상인', kw: ['장마당','상인','시장','매대'] },
+            { job: '당 간부', kw: ['당간부','간부','당위원','책임비서'] },
+            { job: '기술자', kw: ['기술자','엔지니어','정비'] },
+            { job: '과학자', kw: ['과학자','연구원','핵개발','미사일개발'] },
+            { job: '운전사', kw: ['운전사','운전기사','기사'] },
+            { job: '기관사', kw: ['기관사','열차','철도'] },
+            { job: '요리사', kw: ['요리사','조리','주방'] },
+            { job: '최전방 군인', kw: ['군인','병사','최전방','전방','부대'] },
+            { job: '해군 병사', kw: ['해군','수병','함정'] },
+            { job: '전투기 조종사', kw: ['조종사','전투기','파일럿','공군'] },
+            { job: 'GP 초소 근무자', kw: ['gp','초소','dmz','비무장'] },
+            { job: '경비원', kw: ['경비','경비원','보초'] },
+            { job: '밀수꾼', kw: ['밀수','밀거래','국경무역'] },
+            { job: '벌목공', kw: ['벌목','목재','시베리아'] },
+            { job: '꽃제비 출신', kw: ['꽃제비','거리아이','부랑'] },
+            { job: '일반 주민', kw: ['주민','평민','일반인','서민'] }
+          ];
+          const extractJobFromKeywords = (kwStr) => {
+            if (!kwStr || !kwStr.trim()) return null;
+            const lower = kwStr.toLowerCase();
+            for (const entry of JOB_KEYWORD_MAP) {
+              for (const k of entry.kw) {
+                if (lower.includes(k.toLowerCase())) return entry.job;
+              }
+            }
+            return null;
+          };
+
           const extractJobFromTitle = (title) => {
             if (!title) return null;
             for (const job of J_ALL_JOBS) {
@@ -11003,21 +11120,28 @@ console.log('I+J v2: 이름 선배정 검증 완료, 캐스트 구축 진행');
             const benchTitleEl = document.querySelectorAll('.api-input[placeholder*="북한"]');
             const benchTitle = benchTitleEl.length > 0 ? benchTitleEl[0].value : '';
             const titleExtractedJob = extractJobFromTitle(benchTitle);
+            // r6.1: 키워드에서 직업 추출 (키워드 우선)
+            const kwExtractedJob = (typeof mustKeywords !== 'undefined') ? extractJobFromKeywords(mustKeywords) : null;
             
             let finalJob = null;
             let jobSource = '';
             
-            // 1순위: 드롭다운 직접 선택 (random이 아닌 값)
+            // 1순위: 드롭다운 직접 선택 (random이 아닌 값) — 사용자가 명시적으로 고른 것
             if (selectedJob && selectedJob !== 'random' && escapeConfig && escapeConfig.job) {
               finalJob = escapeConfig.job.name;
               jobSource = '드롭다운 직접선택';
             }
-            // 2순위: 벤치마킹 제목에서 추출
+            // 2순위 (r6.1): 자동(random)일 때 키워드에 직업 연관어 있으면 그걸로
+            else if ((!selectedJob || selectedJob === 'random') && kwExtractedJob) {
+              finalJob = kwExtractedJob;
+              jobSource = '키워드 연관어 매칭';
+            }
+            // 3순위: 벤치마킹 제목에서 추출
             else if (titleExtractedJob) {
               finalJob = titleExtractedJob;
               jobSource = '벤치마킹 제목 추출';
             }
-            // 3순위: 드롭다운 랜덤 (escapeConfig에서)
+            // 4순위: 드롭다운 랜덤 (escapeConfig에서)
             else if (escapeConfig && escapeConfig.job) {
               finalJob = escapeConfig.job.name;
               jobSource = '랜덤 자동매칭';
@@ -22433,13 +22557,19 @@ ${reviewed.slice(-3000)}
                     style={{marginTop: '8px', padding: '8px'}}
                     onClick={() => {
                       if (selectedJob === 'random') {
-                        const allJ102Keys = Object.keys(J102_ESCAPE_MAP);
-                        const allJobKeys = [...Object.keys(JOB_CATEGORIES), ...allJ102Keys];
-                        const randomKey = allJobKeys[Math.floor(Math.random() * allJobKeys.length)];
-                        if (randomKey.startsWith('j102_')) {
-                          setEscapeConfig(getJ102EscapeConfig(randomKey));
+                        // r6.1: 키워드에 직업 연관어 있으면 그 직업 우선
+                        var _kwJobKey = (typeof mustKeywords !== 'undefined') ? findJobKeyFromKeywords(mustKeywords) : null;
+                        if (_kwJobKey && JOB_CATEGORIES[_kwJobKey]) {
+                          setEscapeConfig(getValidEscapeConfig(_kwJobKey));
                         } else {
-                          setEscapeConfig(getValidEscapeConfig(randomKey));
+                          const allJ102Keys = Object.keys(J102_ESCAPE_MAP);
+                          const allJobKeys = [...Object.keys(JOB_CATEGORIES), ...allJ102Keys];
+                          const randomKey = allJobKeys[Math.floor(Math.random() * allJobKeys.length)];
+                          if (randomKey.startsWith('j102_')) {
+                            setEscapeConfig(getJ102EscapeConfig(randomKey));
+                          } else {
+                            setEscapeConfig(getValidEscapeConfig(randomKey));
+                          }
                         }
                       } else if (selectedJob.startsWith('j102_')) {
                         setEscapeConfig(getJ102EscapeConfig(selectedJob));
@@ -23185,7 +23315,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.0 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.3 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
