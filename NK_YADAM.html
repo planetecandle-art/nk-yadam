@@ -1493,10 +1493,10 @@ window.buildYadamThumbnailPrompt = function(data, version, channel) {
   prompt += 'traditional Joseon courtyard scene.\n\n';
   
   // 인물 슬롯
-  prompt += 'LEFT (35%): ' + left + '\n';
-  prompt += 'CENTER (10%): ' + center + '\n';
-  prompt += 'RIGHT (55%): ' + right + '\n';
-  prompt += 'BACKGROUND: ' + background + '\n';
+  prompt += 'On the left (about a third of the frame): ' + left + '\n';
+  prompt += 'In the middle (a narrow strip): ' + center + '\n';
+  prompt += 'On the right (the larger half): ' + right + '\n';
+  prompt += 'In the background: ' + background + '\n';
   
   // 버전 분기
   if (version === 'A' && line1 && line2) {
@@ -1512,7 +1512,7 @@ window.buildYadamThumbnailPrompt = function(data, version, channel) {
     prompt += 'Bottom 20% of frame should be visually less busy (for text overlay later in Canva/Photoshop).\n';
   }
   
-  prompt += '\n--ar 16:9 --v 6';
+  prompt += '\n--ar 16:9 --v 6 --no layout labels --no annotation words --no english text labels --no percentages';
   
   return prompt;
 };
@@ -1603,11 +1603,34 @@ window._fixYadamSpeechLevel = function(s) {
   s = s.replace(/\u0001D(\d+)\u0001/g, function(m,i){ return dialogues[parseInt(i)]; });
   return s;
 };
+window.sanitizeThumbText = function(s) {
+  // [r6.7 NK-9] 썸네일 문구 폭력어 순화 (클릭임팩트 유지, 그래픽 폭력어만 제거)
+  if (!s || typeof s !== 'string') return s;
+  return s
+    .replace(/피바다/g, '발칵 뒤집힘')
+    .replace(/피바람/g, '대혼란')
+    .replace(/피투성이|피범벅/g, '아수라장')
+    .replace(/잔혹한 참극|참극/g, '충격적인 일')
+    .replace(/학살|몰살/g, '대숙청')
+    .replace(/처형장의 피|피를 부른/g, '발칵 뒤집은');
+};
+window.sanitizeThumbList = function(arr) {
+  if (!Array.isArray(arr)) return arr;
+  return arr.map(function(t){
+    if (t && typeof t === 'object') {
+      if (t.top) t.top = window.sanitizeThumbText(t.top);
+      if (t.bottom) t.bottom = window.sanitizeThumbText(t.bottom);
+      return t;
+    }
+    if (typeof t === 'string') return window.sanitizeThumbText(t);
+    return t;
+  });
+};
 window.buildYadamSceneImages = function(fullScript) {
   // [v21.0 r5.1.3-3] 9개 작업 통합 (①②③⑤⑥⑦)
   try {
     if (!fullScript || typeof fullScript !== 'string') return '';
-    var BASE_BODY = "Korean traditional storybook watercolor illustration, soft delicate brushwork with hanji paper texture, muted warm earth tones with vivid accent colors for visibility, NO manga, NO anime, NO photorealism, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO wool coat, NO supernatural lightning, NO magical glow";
+    var BASE_BODY = "Vivid Korean webtoon/manhwa style, sharp clean digital art, saturated bright colors, bold clean lineart, high contrast for thumbnail readability, NO watercolor, NO hanji texture, NO soft brushwork, NO photorealism, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO wool coat, NO supernatural lightning, NO magical glow";
     var NEG = "--no photorealism --no 3d render --no western faces --no modern clothes --no trousers --no suit --no blazer --no reading glasses --no jeans --no t-shirt --no sneakers --no wristwatch --no english text --no korean text --no text --no letters --no writing --no speech bubbles --no supernatural lightning --ar 16:9 --s 250";
 
     // [② 영문 변환] 한국어 → 영문 키워드 매핑 (핵심 80개)
@@ -1958,7 +1981,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.6.1 로드완료 (2026-06-14 빌드: ★P1-c 탈북루트 일관성(DMZ/압록강/해외/해상) + C-2b 블록중복제거 + 썸네일배경 루트연동 + 키워드/직업 모드안내 + 태그정리 + 시놉단계 루트강제(8막 중국모순 차단)) ★","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.7.4 로드완료 (2026-06-17 빌드: 5차묶음(최종) — 야담-1 두 여성인물(처+양어머니/시어머니) 별도캐스트 분리+역할태깅(병합버그 P6 해결) + 야담-3 버림키워드(버렸더니/내쫓다/조강지처 등) 감지시 가해=주인공(남편) 클릭공식 강제(버림+반전 구조))","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2062,7 +2085,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         thumbs: [
           {top:"김여정 숨겨둔 가족 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
           {top:"북한 2인자 김여정 최측근", bottom:"탈북 한마디에 평양 발칵 뒤집혔다"},
-          {top:"김여정이 감춘 충격 비밀", bottom:"측근 탈북에 북한 피바람 불었다"}
+          {top:"김여정이 감춘 충격 비밀", bottom:"측근 탈북에 평양 발칵 뒤집혔다"}
         ],
         eventHint: "김여정의 비밀 외교/숙청/권력암투 사건을 측근 화자가 직접 목격하고 연루되어 탈북"
       },
@@ -2079,7 +2102,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         jobs: ["j102_김정은 경호원","j102_김정은 이동경호 사전정찰조 팀장","j102_김정은 전용열차 보안 책임자","j102_김정은 집사 역할 담당자","j102_39호실 외화벌이 총책"],
         thumbs: [
           {top:"김정은 비자금 담당자 탈북", bottom:"도착 3초 만에 국정원도 경악했다"},
-          {top:"사라진 김정은 두고", bottom:"곧 평양이 피바다 된다는 소문"},
+          {top:"사라진 김정은 두고", bottom:"곧 평양이 발칵 뒤집힌다는 소문"},
           {top:"김정은 일가 측근 탈북", bottom:"그 집안 비밀이 싹 다 드러났다"}
         ],
         eventHint: "김정은 일가의 비자금/내부 동요 사건을 측근 화자가 목격하고 연루되어 탈북"
@@ -2088,7 +2111,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         jobs: ["j102_김정은 경호원","j102_평양 1호 경호국 참모","j102_생활총국 고위 간부","j102_고위층 주택구역 경비대장","j102_예술단원"],
         thumbs: [
           {top:"북한 리설주 최측근 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
-          {top:"리설주 전담 경호원 탈북", bottom:"북한에 피바람이 불기 시작했다"},
+          {top:"리설주 전담 경호원 탈북", bottom:"북한이 크게 술렁이기 시작했다"},
           {top:"리설주가 감춘 충격 비밀", bottom:"측근 한마디에 평양 발칵 뒤집혔다"}
         ],
         eventHint: "리설주 주변의 특권층 실상/권력 갈등을 측근 화자가 목격하고 연루되어 탈북"
@@ -2096,9 +2119,9 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       "현송월": {
         jobs: ["j102_예술단원","j102_대외방송국 기술감독","j102_당 선전선동부 고위 간부","j102_평양 1호 경호국 참모","j102_생활총국 고위 간부"],
         thumbs: [
-          {top:"북한 2인자 현송월 숙청", bottom:"그 가족에게 벌어진 잔혹한 참극"},
+          {top:"북한 2인자 현송월 숙청", bottom:"그 가족에게 벌어진 충격적인 일"},
           {top:"현송월 전담 비서 탈북", bottom:"도착 3초 만에 국정원도 놀랐다"},
-          {top:"현송월 부모 사라진 그날", bottom:"평양에 피바람이 불기 시작했다"}
+          {top:"현송월 부모 사라진 그날", bottom:"평양이 발칵 뒤집히기 시작했다"}
         ],
         eventHint: "현송월 가족 숙청/권력 견제 사건을 측근 화자가 목격하고 연루되어 탈북"
       },
@@ -2106,7 +2129,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         jobs: ["j102_김정은 경호원","j102_김정은 이동경호 사전정찰조 팀장","j102_생활총국 고위 간부","j102_고위층 주택구역 경비대장","j102_의료인"],
         thumbs: [
           {top:"김주애 사라진 충격 이유", bottom:"전담 경호원 탈북에 평양 발칵"},
-          {top:"후계자 김주애 전담 경호원", bottom:"탈북 한마디에 북한 피바람 불었다"},
+          {top:"후계자 김주애 전담 경호원", bottom:"탈북 한마디에 북한 발칵 뒤집혔다"},
           {top:"북한이 숨긴 김주애 진실", bottom:"측근 탈북에 국정원도 경악했다"}
         ],
         eventHint: "김주애 후계 구도/특권층 실상을 측근 화자가 목격하고 연루되어 탈북"
@@ -3332,7 +3355,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       '현송월': 'Hyon Song-wol, North Korean female official and music director in her 50s, long black hair styled in voluminous updo, defined dark eyeliner, mature elegant face, military dress uniform or elegant dark coat, dignified confident expression',
       '김주애': 'Kim Ju-ae, North Korean girl around 13 years old, early teenager, chubby round face with full puffy cheeks, black hair pulled back, adult-style dark coat, mature serious expression for her young age, clearly a young teenage girl not an adult'
     };
-    const YADAM_IMAGE_STYLE = "Korean traditional storybook watercolor illustration style, Joseon dynasty late period, soft delicate brushwork with hanji paper texture, muted warm earth tones with vivid accent colors for visibility, NO manga, NO anime, NO webtoon, NO photorealism, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO pearl earrings, NO wool coat, clear facial features matching role and age, INTENSE expressive emotions when scene requires, strong color contrast for thumbnail readability, clear face, unobstructed view, no text, no speech bubbles, no letters, no Korean characters";
+    const YADAM_IMAGE_STYLE = "Vivid Korean webtoon/manhwa style, Joseon dynasty late period, sharp clean digital art with bold clean lineart, saturated bright colors with strong color contrast for thumbnail readability, NO watercolor, NO hanji texture, NO soft brushwork, NO photorealism, traditional Korean hanbok ONLY (jeogori chima jjokjin meori bun for women, dopo gat for men), NO western modern clothes, NO trousers, NO suit, NO blazer, NO reading glasses, NO pearl earrings, NO wool coat, clear facial features matching role and age, INTENSE expressive emotions when scene requires, clear face, unobstructed view, no text, no speech bubbles, no letters, no Korean characters";
 
     const IconLoader = () => <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4m-8-10h4m12 0h4m-3.5-6.5-2.8 2.8m-7.4 7.4-2.8 2.8m0-13.1 2.8 2.8m7.4 7.4 2.8 2.8"/></svg>;
     const IconCopy = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
@@ -5832,10 +5855,10 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           // r9-33: 야담 = 수채화 / NK = 실사 다큐
           // v21.0 r2 D안: 야담 수채화 하드 강제 + 현대복장 블랙리스트
           const _cSys = isYadamMode
-            ? `조선시대 야담 장면을 한국 전통 수채화 스타일 영어 이미지 프롬프트로 변환하는 전문가.
+            ? `조선시대 야담 장면을 선명한 한국 웹툰/만화풍 스타일 영어 이미지 프롬프트로 변환하는 전문가.
 
 [필수 스타일 키워드 - 모든 프롬프트에 자동 포함]
-"detailed watercolor-style digital illustration, semi-realistic, Korean traditional setting, soft cinematic lighting, clean line art, expressive facial features, Joseon dynasty clothing, East Asian only, strictly Korean ethnicity, historical accuracy, 8K quality, hyper-detailed"
+"vivid Korean webtoon/manhwa style digital illustration, sharp clean digital art, saturated bright colors, bold clean lineart, Korean traditional setting, dramatic cinematic lighting, expressive facial features, Joseon dynasty clothing, East Asian only, strictly Korean ethnicity, historical accuracy, high contrast for readability, 8K quality, hyper-detailed, NO watercolor, NO hanji texture, NO soft brushwork"
 
 [신분별 복장 템플릿 - 자동 적용]
 - 남성 양반: "hanbok with dopo (scholar's overcoat) and gat, sangtu (topknot)"
@@ -5978,8 +6001,8 @@ JSON만 출력.`;
 각 씬 필드:
 - narration: 12초 분량 한글 2~3문장 (메인 여성 나레이터가 읽음)
 - shotType: 샷 종류 (예: Close-up, Wide, Medium)
-- imagePrompt: 영어 이미지 프롬프트 (${isYadamMode ? '한국 전통 수채화 일러스트 스타일, watercolor-style digital illustration, Joseon dynasty, 한복 필수, 현대복장 금지' : '실사 다큐 스타일 + 복장 반영'})
-- videoPrompt: 영어 동영상 동작 프롬프트 (${isYadamMode ? '조용한 수채화 카메라 움직임' : '다큐 핸드헬드 스타일'})
+- imagePrompt: 영어 이미지 프롬프트 (${isYadamMode ? '선명한 한국 웹툰/만화풍 스타일, vivid Korean webtoon/manhwa style digital illustration, sharp clean digital art, saturated colors, Joseon dynasty, 한복 필수, 현대복장 금지, NO watercolor' : '실사 다큐 스타일 + 복장 반영'})
+- videoPrompt: 영어 동영상 동작 프롬프트 (${isYadamMode ? '선명한 웹툰풍 카메라 움직임' : '다큐 핸드헬드 스타일'})
 - voiceGuide: "메인 나레이션 - 동일 여성 보이스" (씬마다 동일 텍스트)
 - dialogue: 캐릭터 대사가 있다면 {character: "이름", text: "대사", voiceHint: "성별/나이"} 형식, 없으면 null
 
@@ -6011,13 +6034,19 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
               let r = prompt;
               if (isYadamM) {
                 // 야담: 실사/다큐 키워드를 수채화 키워드로 강제 치환
-                r = r.replace(/\bphotorealistic\b/gi, 'watercolor illustration');
-                r = r.replace(/\bphoto-realistic\b/gi, 'watercolor illustration');
-                r = r.replace(/\brealistic photo\b/gi, 'watercolor painting');
-                r = r.replace(/\bphotograph\b/gi, 'traditional painting');
-                r = r.replace(/\bdocumentary style\b/gi, 'traditional Korean art');
-                r = r.replace(/\bKBS documentary camera style\b/gi, 'Korean watercolor style');
-                r = r.replace(/\bcinematic realism\b/gi, 'cinematic watercolor');
+                r = r.replace(/\bphotorealistic\b/gi, 'vivid webtoon illustration');
+                r = r.replace(/\bphoto-realistic\b/gi, 'vivid webtoon illustration');
+                r = r.replace(/\brealistic photo\b/gi, 'vivid webtoon art');
+                r = r.replace(/\bphotograph\b/gi, 'webtoon illustration');
+                r = r.replace(/\bdocumentary style\b/gi, 'Korean webtoon style');
+                r = r.replace(/\bKBS documentary camera style\b/gi, 'Korean webtoon/manhwa style');
+                r = r.replace(/\bcinematic realism\b/gi, 'cinematic webtoon');
+                // r6.7: 야담 수채화 잔재 → 웹툰 강제 치환
+                r = r.replace(/\bwatercolor[- ]?(style|illustration|painting)?\b/gi, 'vivid webtoon illustration');
+                r = r.replace(/\bhanji(\s*paper)?(\s*texture)?\b/gi, 'clean digital art');
+                r = r.replace(/\bsoft (delicate )?brushwork\b/gi, 'sharp clean lineart');
+                r = r.replace(/\bsoft ink wash\b/gi, 'sharp clean lineart');
+                r = r.replace(/\bmuted (warm )?earth(y)? tones?\b/gi, 'saturated bright colors');
                 r = r.replace(/\b3d render\b/gi, 'hand-drawn');
                 r = r.replace(/\b3D render\b/g, 'hand-drawn');
                 
@@ -6056,6 +6085,16 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
                 r = r.replace(/\bclosed-toe heels\b/gi, 'traditional Korean shoes');
                 r = r.replace(/\bbusiness casual\b/gi, 'traditional attire');
                 r = r.replace(/\bmodern (suit|shirt|clothes)/gi, 'traditional hanbok');
+                // [r6.7 야담-5] 현대복장 차단 강화: 조선 한복만 강제
+                r = r.replace(/\bdark trousers\b/gi, 'traditional Korean baji pants');
+                r = r.replace(/\btrousers\b/gi, 'traditional baji');
+                r = r.replace(/\bwool coat\b/gi, 'traditional dopo coat');
+                r = r.replace(/\breading glasses\b/gi, '');
+                r = r.replace(/\bpearl earrings\b/gi, '');
+                r = r.replace(/\bdress shirt\b/gi, 'jeogori');
+                r = r.replace(/\bsuit jacket\b/gi, 'dopo coat');
+                r = r.replace(/\bnecktie\b|\btie\b/gi, '');
+                r = r.replace(/\bbriefcase\b/gi, 'cloth bundle (보따리)');
               } else {
                 // NK: 수채화/만화 키워드를 실사 키워드로 강제 치환
                 r = r.replace(/\bwatercolor-style\b/gi, 'photorealistic');
@@ -6066,6 +6105,8 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
                 r = r.replace(/\banime-inspired\b/gi, 'photorealistic');
                 r = r.replace(/\bmanga\b/gi, 'documentary');
                 r = r.replace(/\bcartoon\b/gi, 'realistic');
+                r = r.replace(/\bwebtoon[\/ ]?(manhwa)?\b/gi, 'photorealistic documentary');
+                r = r.replace(/\bmanhwa\b/gi, 'documentary');
                 r = r.replace(/\bhand-drawn\b/gi, 'photographed');
               }
               
@@ -6661,7 +6702,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             for (let _si2 = 0; _si2 < _r44_newScenes.length; _si2++) {
               const _scn = _r44_newScenes[_si2];
               const _baseStyle = isYadamMode
-                ? 'Soft Korean watercolor illustration, hand-drawn ink wash style, muted earthy tones, semi-realistic, Joseon dynasty setting, East Asian only, strictly Korean ethnicity'
+                ? 'Vivid Korean webtoon/manhwa style illustration, sharp clean digital art, bold clean lineart, saturated bright colors, Joseon dynasty setting, East Asian only, strictly Korean ethnicity, NO watercolor, NO ink wash, NO muted tones'
                 : 'Photorealistic documentary cinematic, 8K, KBS documentary style, gritty realism, harsh fluorescent lighting, North Korean setting, East Asian only';
               
               const _kw = _r44_extractKeywords(_scn.narration);
@@ -8267,7 +8308,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           const faceIdx = (castOffset + charIdx) % YADAM_FACE_POOL.length;
           appearance += `, ${YADAM_FACE_POOL[faceIdx]}`;
           
-          return `Character portrait of a Korean ${genderWord} ${agePhrase}, ${costume}, ${appearance}, ${background}, traditional Korean painting style, soft ink wash colors, delicate brushwork, Joseon dynasty late period aesthetic, clear face visible, ${YADAM_IMAGE_STYLE}, --ar 1:1 --v 6.1 --stylize 250 --no text watermark logo`;
+          return `Character portrait of a Korean ${genderWord} ${agePhrase}, ${costume}, ${appearance}, ${background}, vivid Korean webtoon/manhwa style, sharp clean digital art, bold clean lineart, saturated bright colors, Joseon dynasty late period aesthetic, clear face visible, ${YADAM_IMAGE_STYLE}, --ar 1:1 --v 6.1 --stylize 250 --no text watermark logo`;
         } else {
           //  북한 실사 - 역할별 복장/외모 세분화
           let costume = "wearing worn civilian clothes";
@@ -8939,9 +8980,9 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             : '';
           
           // 🆕 r4.6: 만화 스타일 → 영문 키워드
-          // [v21.0 2단계 야담수채화] 야담은 무조건 수채화로 강제 (만화체/사진체 차단, 본문 이미지와 통일)
+          // [r6.7 야담웹툰] 야담은 무조건 선명한 웹툰/만화풍으로 강제 (수채화 차단, 본문 이미지와 통일)
           const _r46_styleKw = (typeof isYadam !== 'undefined' && isYadam)
-            ? 'soft Korean traditional storybook watercolor illustration, gentle delicate brushwork, muted warm earth tones, hanji paper texture, NO manga, NO thick lineart, NO anime'
+            ? 'vivid Korean webtoon/manhwa style, sharp clean digital art, bold clean lineart, saturated bright colors, high contrast for thumbnail readability, NO watercolor, NO hanji texture, NO soft brushwork, NO muted tones'
             : _r46_cartoonStyle === 'exaggerated-manga'
             ? 'EXAGGERATED MANGA/COMIC style with bold thick lineart, expressive cartoon faces, anger marks and sweat drops, vibrant flat colors'
             : _r46_cartoonStyle === 'clean-anime'
@@ -8954,9 +8995,9 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           let _r46_dnaStyle = _r46_dna 
             ? `${_r46_dna.artStyle || ''}, ${_r46_dna.colorPalette || ''}, ${_r46_dna.lighting || ''}, ${_r46_dna.atmosphere || ''}, ${_r46_dna.background || ''}`
             : 'Bright colorful Korean historical anime illustration style, vivid colors, warm paper lantern lighting, dramatic atmosphere';
-          // [v21.0 2단계 야담수채화] 야담은 DNA 스타일에서도 만화/사진 단어 제거 → 수채화 통일
+          // [r6.7 야담웹툰] 야담은 DNA 스타일에서 수채화/사진 단어 제거 → 선명 웹툰 통일
           if (typeof isYadam !== 'undefined' && isYadam) {
-            _r46_dnaStyle = _r46_dnaStyle.replace(/webtoon manhwa(\s*influence)?|manhwa|manga|anime|realistic photograph(ic|y)?|comic|cartoon/gi, 'soft watercolor');
+            _r46_dnaStyle = _r46_dnaStyle.replace(/watercolor(\s*style)?|hanji(\s*paper)?(\s*texture)?|soft (delicate )?brushwork|soft ink wash|muted (warm )?earth(y)? tones?|realistic photograph(ic|y)?|photorealistic/gi, 'vivid webtoon/manhwa style sharp clean digital art');
           }
           
           // 🆕 r4.6: 텍스트 위치 좌표 매핑
@@ -9206,12 +9247,12 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
             : `(${_jobName2 || '북한'} 충격 증언)`);
 
         // 공통 베이스 (photojournalism, 빨간 동그라미, 실사 강제)
-        var _r6_base = `Photojournalism style YouTube thumbnail, 16:9, real news press photograph aesthetic, authentic documentary photo. BACKGROUND: ${_r6_bg}. CENTER-RIGHT subject: ${_r6_figureDesc}. A thin hollow RED CIRCLE outline near the subject's shoulder highlighting a background detail. TOP CENTER small white caption text in parentheses "${_r6_caption}".`;
+        var _r6_base = `Photojournalism style YouTube thumbnail, 16:9, real news press photograph aesthetic, authentic documentary photo. The background shows ${_r6_bg}. The subject ${_r6_figureDesc} is positioned toward the right of center. On the left side of the frame, opposite the subject, a thin hollow circle with bright red stroke highlights a background detail. A small white caption in parentheses sits near the top center: "${_r6_caption}".`;
         var _r6_real = `Realistic documentary photography, authentic film grain, natural smoke and fire textures, cinematic muted color grade, high contrast, 8k, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 200`;
 
         // 하단 2줄 텍스트 오버레이 (흰색 1줄 + 하늘색 2줄, 두꺼운 검은 외곽선) — 벤치마킹 색공식
-        var _r6_textA = _nkTitle ? `\nBOTTOM 28% dark bar, MASSIVE thick Korean text two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (cyan #3AD0E0, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
-        var _r6_textB = `\nNO TEXT, NO LETTERS, NO Korean characters anywhere, bottom area left empty and darkened for later text overlay, complete background scenery throughout. --no text --no letters --no words`;
+        var _r6_textA = _nkTitle ? `\nAcross the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (cyan #3AD0E0, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
+        var _r6_textB = `\nNO TEXT, NO LETTERS, NO Korean characters anywhere, the lower area left empty and darkened for later text overlay, complete background scenery throughout. --no text --no letters --no words --no layout labels --no annotation words --no english text labels`;
 
         // 앵글 3종 (장면 강조점만 다르게) × A(글씨)/B(글씨없음)
         var _r6_angles = [
@@ -9476,7 +9517,8 @@ ${inputScript.slice(0, 12000)}
           if (_ya4IsYadam && _titleForGender) {
             const _fKw = ['어머니','어미','엄마','소녀','여종','씨받이','며느리','아내','과부','딸','여인','아씨','마님','시어머니','부인','새댁','규수','본처','첩','정실','소실','후처','마누라','정부인','안방마님','과수댁','며느님','어멈','정처','측실','후실','낭자','처녀','미망인','할멈','노파','노할미','계모','의붓어미','시누이','할미','무당','침모','식모','계집종','요부','색녀','다모','관기','주모','산파','시모','시집살이','어미','부녀','마나님','사모님','사부인','시앗','오라비','형수','동서','올케','이모','고모','이쁜이','색시'];
             const _mKw = ['아버지','아비','아빠','총각','사내','홀아비','아들','영감','선비','양반','남편','도령','오라비','소년','사또','원님','대감','판서','정승','영의정','임금','주상','왕','세자','어사','암행어사','포도대장','장군','무관','나으리','어르신','할아범','노인장','형','아우','동생','사대부','상인','백정','노비','거지','객주','거상','약장수','화가','광대','검계','협객','사냥꾼','포수','나무꾼','어부','대장장이','유배인','머슴','일꾼','승려','스님','중','홍문관','대제학','참판','참의','정랑','좌랑','어사','어른','노승','문관','시종','내시','별감','포졸','관졸','수령','부사','목사','관찰사','우의정','좌의정','광대','악공','농부','초군','뱃사람','홀애비','삼촌','외삼촌','시아버지','시부','아저씨','삼이','한량'];
-            const _objP = ['을','를','에게','으로','로','의','과','와'];
+            // [r6.7 야담-4] 과/와는 병렬조사(예: "본처와 첩")이므로 목적격 제외 대상에서 뺀다 → 여성키워드 누락 방지
+            const _objP = ['을','를','에게','으로','로','의'];
             const _isObj = function(kw){ var i=_titleForGender.indexOf(kw); if(i<0)return false; var a=_titleForGender.slice(i+kw.length,i+kw.length+2); return _objP.some(function(p){return a.startsWith(p);}); };
             const _endH = _titleForGender.slice(Math.floor(_titleForGender.length/2));
             const _isF = _fKw.some(function(kw){return _titleForGender.includes(kw)&&!_isObj(kw)&&_endH.includes(kw);}) || _fKw.some(function(kw){return _titleForGender.includes(kw)&&!_isObj(kw)&&!_mKw.some(function(mk){return _titleForGender.includes(mk)&&!_isObj(mk);});});
@@ -9572,6 +9614,46 @@ ${inputScript.slice(0, 12000)}
               { name: mainName, role: '주인공', gender: mainGender === 'male' ? '남' : '여', age: _mainAge, isMain: true, starRole: '주인공' },
               { name: helperName, role: '핵심조력자', gender: helperGender === 'male' ? '남' : '여', age: _helperAge, isMain: false, starRole: '핵심조연1' }
             ];
+            // ========== [r6.7 야담-1] 두 여성 인물 별도 캐스트 분리 + 역할 태깅 ==========
+            // 한 작품에 역할이 다른 여성 2명(예: 처/조강지처 + 양어머니/시어머니)이 있으면
+            // 한 슬롯으로 병합되어 이름·역할이 섞이는 버그(P6) 방지 → 각각 별도 캐스트로 분리
+            try {
+              if (isYadam && _titleForGender) {
+                // 아내류(배우자) vs 모친류(어른) — 서로 다른 역할군
+                var _ya1_wifeKw = ['아내','처','조강지처','본처','정실','정처','부인','마누라','새댁','며느리','첩','소실','후처','측실','정부인','색시','아낙'];
+                var _ya1_motherKw = ['어머니','양어머니','수양어머니','시어머니','계모','의붓어미','친정어머니','노모','모친','어미','시모','장모','유모'];
+                var _ya1_hasWife = _ya1_wifeKw.some(function(kw){ return _titleForGender.indexOf(kw) >= 0; });
+                var _ya1_hasMother = _ya1_motherKw.some(function(kw){ return _titleForGender.indexOf(kw) >= 0; });
+                // 매칭된 구체 역할명 추출 (태깅용)
+                var _ya1_wifeRole = _ya1_wifeKw.find(function(kw){ return _titleForGender.indexOf(kw) >= 0; }) || '아내';
+                var _ya1_motherRole = _ya1_motherKw.find(function(kw){ return _titleForGender.indexOf(kw) >= 0; }) || '양어머니';
+                // 두 역할군이 동시에 등장 → 여성 2명 분리 필요
+                if (_ya1_hasWife && _ya1_hasMother) {
+                  // 이미 배정된 여성 이름과 겹치지 않는 새 여성 이름 확보
+                  var _usedNames = preAssignedNames.map(function(n){ return n.name; });
+                  var _secondFemaleName = (_shufF || []).find(function(nm){ return _usedNames.indexOf(nm) < 0; }) || (_shufF && _shufF[1]) || (_shufF && _shufF[0]);
+                  // 주인공/조력자 중 이미 여성인 쪽의 역할을 구체화(태깅)하고, 나머지 여성역할을 별도 슬롯으로 추가
+                  // 주인공이 남성(남편)인 일반적 케이스: 아내·양어머니 둘 다 추가 분리
+                  var _femaleSlots = preAssignedNames.filter(function(n){ return n.gender === '여'; });
+                  if (_femaleSlots.length >= 1) {
+                    // 기존 여성 슬롯 1개 → 아내(처)로 역할 태깅
+                    _femaleSlots[0].role = _ya1_wifeRole + '(처/배우자)';
+                    _femaleSlots[0].starRole = _femaleSlots[0].isMain ? '주인공' : '핵심조연1(처)';
+                  }
+                  // 두 번째 여성(양어머니/시어머니 등) 별도 캐스트 추가
+                  preAssignedNames.push({
+                    name: _secondFemaleName,
+                    role: _ya1_motherRole + '(어른/모친)',
+                    gender: '여',
+                    age: '50대',
+                    isMain: false,
+                    starRole: '핵심조연2(모친)'
+                  });
+                  console.log('[r6.7 야담-1] 여성 2명 분리: ' + _ya1_wifeRole + '(처) + ' + _ya1_motherRole + '(모친=' + _secondFemaleName + ')');
+                }
+              }
+            } catch(_ya1_err) { console.warn('[r6.7 야담-1] 여성 분리 오류:', _ya1_err.message); }
+            // ========== 야담-1 끝 ==========
           }
           
           // assignedNames를 여기서 확정 (나중에 캐스트/대본에서 그대로 사용)
@@ -9659,7 +9741,7 @@ ${assignedNames.map(n => '- ' + n.role + ': ' + n.name + ' (' + n.gender + ', ' 
           };
           const J_ALL_JOBS = ['보위부 중장', '보위부 해외공작국 과장', '보위부 감청실 책임자', '보위부 대좌 조사관', '보위부 국경단속 총책임자', '보위부 정치범수용소 관리 간부', '보위부 경제담당 지도원', '보위부 내부 검열부장', '보위부 체포·심문 전담 장교', '보위성 해외 요원 관리 책임자', '정찰총국 해외공작원', '정찰총국 사이버전부 책임자', '정찰총국 무기밀매 담당 간부', '정찰총국 공작원 양성교관', '정찰총국 여권·신분세탁 담당자', '정찰총국 대외공작금 결재 담당', '정찰총국 8국 요원', '정찰총국 아시아지역 공작 지부장', '정찰총국 대만/홍콩 라인 담당자', '정찰총국 외화 밀반입 총책', '김정은 경호원', '근위사단 대대장', '근위사단 저격중대 중대장', '김정은 이동경호 사전정찰조 팀장', '김정은 전용열차 보안 책임자', '생활총국 고위 간부', '김정은 집사 역할 담당자', '평양 1호 경호국 참모', '김정은 전속 요리사', '김정은 의전 담당 비서국 간부', '조선인민군 참모총장', '군단 부참모장', '포병 지휘국 작전참모', '총정치국 고급간부', '전략군 미사일 지휘소 책임자', '특수작전군 대대장', '항공 및 방공군 전투기 조종사', '해군 잠수함 함장', '공군 지휘센터 레이더 책임관', '군수공장 총기사륜 기사장', '🟫 핵·미사일·과학기술 기밀 분야', '국방과학원 핵실험실 연구사', '탄도미사일 설계 책임자', '위성발사소 통제실 기술원', '화학무기 연구소 소장', '핵연료 운송 보안 책임자', '군수공장 기밀 설비 기사', '로켓 추진체 개발 간부', '생물무기 연구팀 의사', '핵 시설 지도부 문건관리원', '미사일 발사대 통제 요원', '39호실 외화벌이 총책', '나진·선봉 무역회사 사장', '중국 파견 무역대표부 부대표', '해외 식당 총책임자', '평양 무역성 중동사업 담당자', '광물 수출 라인 책임자', '국영 무역회사 외화청구 담당관', '담배·주류 해외밀수 총괄', '해외 파견 IT 인력 관리자', '광산 해외영업 책임자', '당 조직지도부 검열원', '당 선전선동부 고위 간부', '당 국제부 연락책', '당 중앙위원회 비서', '당 출판보도국 검열관', '청년동맹 고위 간부', '여맹 지도원', '중앙당 서기실 문서 담당', '평양 선전물 영상 감독', '혁명역사연구소 연구사', '🟫 평양 상류층·특권 계급', '봉화진료소 의사', '고위층 전용 요양소 의무장', '류경호텔 관리자', '고위층 전용마트 수입품 담당', '평양 엘리트 예술단 감독', '해외 공연단 단장', '상류층 자녀 학교 교원', '고위 당 간부 운전기사', '평양 고급 식당 총지배인', '고위층 빌라 관리 책임자', '전용열차 기관사', '국제전화 감청 담당자', '국가통신부 암호관리 책임자', '위성통신 통제소 요원', '외화발송 국제우편 검열 담당', '공항 VIP경호팀 요원', '군·당 통신망 유지 기술자', '대외방송국 기술감독', '정보보안 교육 담당관', '평양 IT개발센터 책임 프로그래머', '국경경비대 대대장', '마약 밀수 감시 책임 보위원', '밀수조직 보위부 침투 담당', '특수 임무 담당 스나이퍼', '고위층 주택구역 경비대장', '보위부 특수체포조 지휘관', '지하시설 비밀 건설 책임기술자', '외교관 신분 대남공작원', '해외 위장회사 운영 간부', '최고지도부 전용 식품 검사관'];
           const J_HOT_KEYWORDS = ['북한 보위부 중장 일가족 탈북', '북한 참모부 중장 일가족 탈북', '북한 기쁨조 탈북', '북한 김여정 최측근 탈북', '북한 리설주 최측근 탈북', '북한 현송월 최측근 탈북', '북한 최전방 군인 단체 탈북', '북한 군인들 단체 탈북', '북한 최고위 간부 일가족 탈북', '북한 핵가발 과학자 일가족 탈북', '북한 고려항공 승무원 탈북', '북한 간판 아나운서 탈북', '북한 김일성종합대학생 단체 탈북', '북한 숨겨왔던 김정은의 자식 등장', '북한 최전방 마을주민 단체 탈북', '북한 보위부 중장 딸 탈북', '북한 여군 탈북', '북한 김정은 전담 승무원 탈북', '북한 2인자 최룡해 실종? 숙청?', '북한 2인자 김여정 실종? 숙청?', '북한 2인자 리설주 실종? 숙청?', '북한 2인자 현송월 실종? 숙청?', '북한 여성수감자 단체 탈북', '북한 대규모 숙청이 시작되었다', '북한 노동당 중장 일가족 탈북', '북한 최전방 고성 군인 탈북', '북한 최전방 철원 북한군 탈북', '북한 리설주가 사라진 충격적인 이유', '북한 핵개발자 일가족 단체 탈북', '북한 노동자 일가족 단체 탈북', '북한 김여정 경호부장 탈북', '김일성종합대 여대생 단체 탈북', '북한응원단 여성단장 탈북', '북한 1년안에 붕괴된다', '북한 옛 개성공단 근로자 단체 탈북', '북한 원양어선 선장 일당 탈북', '북한 핵개발 책임 장교의 탈북', '북한 탁구선수들 단체 탈북', '북한 엘리트 유학생들 단체 탈북', '북한 외무성 외교관 단체 탈북', '북한 전략사령부 소좌 타룹ㄱ', '북한 아나운서 여성 탈북', '북한 안전보위성 중장 탈북', '북한 여자축구 대표선수 단체 탈북', '북한 청년들 단체 탈북', '북한 국경지역 군인들 단체 탈북', '북한 핵잠수한 개발자 탈북', '북한군 11명 집단 단체 탈북', '북한 핵심 지휘부 중장 탈북', '한국 휴게소에 충격받은 북한 응원단', '북한 0.1% 엘리트 아나운서 탈북', '북한 동해바다로 헤엄쳐 건너 탈북', '북한 최초 여성 아나운서 탈북', '북한 여성 외교관 단체 탈북', '평양 1달안에 붕괴 됩니다', '북한 중장급 최고위 간부 일가족 탈북', '북한 남파 공작원 최고간부 탈북', '북한 최초 여성 장군 탈북', '북한 국경 경비 간부 탈북', '북한 김정은 전담 요리사 탈북', '김정은 비밀별장에 끌려간 고위층 유부녀', '김정은의 전담 주치의 충격적인 고백', '북한 김정은 충격적인 대역설의 진실', '북한 제거 대상 1순위 김한솔 탈북', '북한 최고 엘리트 학생들 단체 탈북', '북한 해커의 충격적인 고백'];
-          const J_SUB_PHRASES = ['남한에 도착하자마자 놀란 이유', '한국에 도착하자마자 놀란이유', '남한에 도착하자마자 3초만에 놀란이유', '한국에 도착하자마자 3초만에 놀란이유', '국정원에 도착하자마자 오열한 이유', '국정원에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 탈북 루트', '국정원도 놀란 충격적인 탈북 방법', '탈북하자마자 한국군 보고 충격받은 이유', '탈북하자마자 한국 길거리에 충격받은 이유', '한국 아파트 보자마자 놀란 이유', '한국 인천공항에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 USB의 정체', '한국 서울대 도착하자마자 3초만에 놀란 이유', '남한 교실에서 3초만에 충격받은 이유', '한국 아파트를 보자마자 충격받은 이유', '한국 편의점에서 오열한 충격적인 이유', '탈북하자마자 북한이 발칵 뒤집힌 이유', '북한 붕괴 이번엔 진짜다!', '한반도에 피바람이 불기 시작했다', '북한은 이제 끝났습니다', '곧 한반도 정세가 요동칩니다', '남한 기차를 보고 3초 만에 놀란 이유', '남한 KTX를 보고 3초 만에 놀란 이유', '남한 도착하고 기절초풍한 이유', '국정원도 놀란 충격적인 탈북과정', '국정원조차 기겁한 북한 상황', '북한에서 가져온 충격적인 물건', '한국군함 처음 타고 충격받은 이유', '탈북민들의 충격적인 비밀', '한국 길거리 걷다 충격받은 이유', '한국 도착 직후 놀라운 반응', '국정원 조사중에 오열한 이유', '국정원 조사중에 기절한 이유', '북한에서 걸려온 충격적인 전화', '보고도 믿지 못할 충격적인 이야기', '남한에 도착하자마자 자동차 보고 놀란 이유'];
+          const J_SUB_PHRASES = ['남한에 도착하자마자 놀란 이유', '한국에 도착하자마자 놀란이유', '남한에 도착하자마자 3초만에 놀란이유', '한국에 도착하자마자 3초만에 놀란이유', '국정원에 도착하자마자 오열한 이유', '국정원에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 탈북 루트', '국정원도 놀란 충격적인 탈북 방법', '탈북하자마자 한국군 보고 충격받은 이유', '탈북하자마자 한국 길거리에 충격받은 이유', '한국 아파트 보자마자 놀란 이유', '한국 인천공항에 도착하자마자 놀란 이유', '국정원도 놀란 충격적인 USB의 정체', '한국 서울대 도착하자마자 3초만에 놀란 이유', '남한 교실에서 3초만에 충격받은 이유', '한국 아파트를 보자마자 충격받은 이유', '한국 편의점에서 오열한 충격적인 이유', '탈북하자마자 북한이 발칵 뒤집힌 이유', '북한 붕괴 이번엔 진짜다!', '한반도 정세가 요동치기 시작했다', '북한은 이제 끝났습니다', '곧 한반도 정세가 요동칩니다', '남한 기차를 보고 3초 만에 놀란 이유', '남한 KTX를 보고 3초 만에 놀란 이유', '남한 도착하고 기절초풍한 이유', '국정원도 놀란 충격적인 탈북과정', '국정원조차 기겁한 북한 상황', '북한에서 가져온 충격적인 물건', '한국군함 처음 타고 충격받은 이유', '탈북민들의 충격적인 비밀', '한국 길거리 걷다 충격받은 이유', '한국 도착 직후 놀라운 반응', '국정원 조사중에 오열한 이유', '국정원 조사중에 기절한 이유', '북한에서 걸려온 충격적인 전화', '보고도 믿지 못할 충격적인 이야기', '남한에 도착하자마자 자동차 보고 놀란 이유'];
           const J_TAGS = ['#북한', '#탈북', '#탈북민', '#탈북사연', '#탈북자', '#북한실화', '#북한이야기', '#북한탈북', '#탈북스토리', '#북한내부', '#탈북다큐', '#북한주민'];
 
           // J패치: 벤치마킹 제목에서 직업 키워드 자동 추출
@@ -10005,6 +10087,29 @@ ${escapeConfig.escapeType.type === 'group' ? '단체 탈북: 동료 역할/관�
             }
           }
 
+          // ========== [r6.7 야담-3] 클릭공식 강제: 버림(가해) + 반전 구조 ==========
+          // "버렸더니/내쫓다" 류 키워드 감지 시 → 가해자=주인공(남편) 구조로 시놉 강제
+          // (가해자가 장인·제3자로 빠지면 "조강지처 버렸더니" 문구와 대본이 불일치 → 클릭 후 이탈)
+          var _ya3_clickFormula = '';
+          try {
+            if (isYadam) {
+              var _ya3_src = ((selectedTitle || '') + ' ' + (mustKeywords || '')).trim();
+              var _ya3_abandonKw = ['버렸더니','버리고','버린','내쫓','쫓아내','소박','조강지처','구박','내친','파혼','폐출','쫓겨'];
+              var _ya3_hasAbandon = _ya3_abandonKw.some(function(kw){ return _ya3_src.indexOf(kw) >= 0; });
+              if (_ya3_hasAbandon) {
+                _ya3_clickFormula = '\n\n━━ [★클릭공식 절대강제 - 버림+반전 구조] ━━\n'
+                  + '제목/키워드에 "버림"(버렸더니/내쫓다/소박/조강지처 구박 등)이 있습니다. 검증된 떡상 공식을 반드시 따르세요:\n'
+                  + '① 가해(버림)의 주체 = 반드시 주인공인 "남편 본인". 장인·시어머니·제3자의 음모로 빠지지 마라. 남편이 자기 의지로 조강지처를 버리거나 내쳐야 한다.\n'
+                  + '② 반전 = 버려진 아내 곁에 다른 인연(첫사랑/새 배필/은인/심판자)이 나타나거나, 아내가 더 잘 되고 남편이 몰락·후회하는 구조.\n'
+                  + '③ 제목의 "버렸더니"와 대본 내용이 정확히 일치해야 한다 (클릭 후 이탈 방지).\n'
+                  + '[good 구조] 남편이 출세욕/오해로 조강지처를 버림 → 아내는 다른 인연을 만나 행복 / 남편은 뒤늦게 후회하며 몰락.\n'
+                  + '[bad 구조 - 금지] 착한 부부인데 장인/시어머니/간신이 음모를 꾸며 둘을 갈라놓음 (가해자가 남편이 아니므로 "버렸더니" 문구와 불일치).\n';
+                console.log('[r6.7 야담-3] 버림 키워드 감지 → 가해=주인공(남편) 클릭공식 강제 주입');
+              }
+            }
+          } catch(_ya3_err) { console.warn('[r6.7 야담-3] 클릭공식 감지 오류:', _ya3_err.message); }
+          // ========== 야담-3 끝 ==========
+
           const synopsisChildGender = Math.random() > 0.5 ? 'male' : 'female';
           const synopsisChildName = YADAM_CHILD_NAMES[synopsisChildGender][Math.floor(Math.random() * YADAM_CHILD_NAMES[synopsisChildGender].length)];
           
@@ -10155,6 +10260,12 @@ ${(function(){
 })()}
  시간 흐름 규칙 \\n- 1막은 플래시포워드이므로 절대날짜 허용! (예: "2025년 12월", "2026년 2월")\\n- 2막~9막은 반드시 상대적 시간 표현! (예: "그로부터 석 달이 지났습니다", "반년이 흐른 어느 날")\\n- 절대 날짜(연도+월)는 1막 또는 탈출 당일/직전/직후에만 허용!\\n- 시간 흐름은 2막→9막 순방향 유지! 이전 막보다 과거로 가면 안 됨!${realPerson && realPersonMode === "side" ? `\n⚠️ ${realPerson.value}는 조연으로 등장! 주인공은 새로운 가상 인물!` : ''}${escapeConfig ? `\n\n⛔ [최종 확인] 주인공 직업 = "${escapeConfig.job.name}". 시놉시스에서 이 직업이 아닌 다른 직업(교사/농부/어부 등)으로 나오면 실패입니다!` : ''}
 {"scenes":[{"act":1,"title":"막제목","summary":"200자 시놉시스","emotion":"감정","death":null}]}`;
+
+          // [r6.7 야담-3] 버림+반전 클릭공식 강제 룰 주입 (감지된 경우만)
+          if (_ya3_clickFormula && synopsisPrompt) {
+            synopsisPrompt += _ya3_clickFormula;
+            console.log('[r6.7 야담-3] synopsisPrompt에 클릭공식 주입 완료 (+' + _ya3_clickFormula.length + '자)');
+          }
 
           // Fix-B방식로그 r9-7: selectedTitle 주입 확인
           if (isYadam && useBMode && selectedTitle) {
@@ -12263,14 +12374,14 @@ JSON만: {"titles":["제목1","제목2","제목3","제목4","제목5"]}`;
               for (var _ki = 0; _ki < Math.min(_kwList.length, 2); _ki++) {
                 var _kw = _kwList[_ki];
                 var _kwTop = _rpKey + ' ' + _kw + ' 충격 폭로';
-                var _kwBot = (_ki === 0) ? '측근 탈북에 평양 발칵 뒤집혔다' : '측근 탈북에 북한 피바람 불었다';
+                var _kwBot = (_ki === 0) ? '측근 탈북에 평양 발칵 뒤집혔다' : '측근 탈북에 북한 크게 술렁였다';
                 // 글자수 균형 체크 (윗줄 13~16 권장)
                 if (_kwTop.length <= 16) {
                   _rpThumbs.push({top:_kwTop, bottom:_kwBot, why1:_rpKey+'+'+_kw+' 어그로', why2:'키워드 연계', clickRate:93});
                 }
               }
             }
-            setYoutubeMetadata(function(prev){ return Object.assign({}, prev, {thumbnailTexts: _rpThumbs}); });
+            setYoutubeMetadata(function(prev){ return Object.assign({}, prev, {thumbnailTexts: window.sanitizeThumbList(_rpThumbs)}); });
             setResultTab('youtube');
             console.log('실존인물 본인모드: ' + _rpKey + ' 어그로 썸네일 ' + _rpThumbs.length + '개 주입');
             setMsg(_rpKey + ' 어그로 썸네일 ' + _rpThumbs.length + '개 생성! [제목/태그] 탭 확인');
@@ -12294,6 +12405,7 @@ JSON만: {"titles":["제목1","제목2","제목3","제목4","제목5"]}`;
             const _m = _cleaned.match(/\{[\s\S]*\}/);
             const _parsed = JSON.parse(_m ? _m[0] : _cleaned);
             if (_parsed.thumbnails && _parsed.thumbnails.length > 0) {
+              _parsed.thumbnails = window.sanitizeThumbList(_parsed.thumbnails);
               setYoutubeMetadata(function(prev){ return Object.assign({}, prev, {thumbnailTexts: _parsed.thumbnails}); });
               setResultTab('youtube');
               console.log('D-2-b: NK 썸네일 문구 ' + _parsed.thumbnails.length + '개 생성 완료');
@@ -12358,7 +12470,7 @@ JSON만: {"titles":["제목1","제목2","제목3","제목4","제목5"]}`;
             // 🆕 r4.6: Vision 분석 11개 항목으로 확장 (인물 표정/말풍선/얼굴크기 추가)
             const _visionPrompt = `이 이미지의 시각적 DNA만 분석해서 JSON으로 출력하세요. 인물의 구체적인 얼굴/복장은 분석하지 마세요 (교체될 것이므로).
 {
-  "artStyle": "화풍 (예: Korean traditional storybook watercolor / webtoon manhwa comic / exaggerated manga / clean anime illustration / realistic photography)",
+  "artStyle": "화풍 (예: vivid webtoon manhwa / sharp clean digital art / exaggerated manga / clean anime illustration / realistic photography / Korean traditional painting)",
   "colorPalette": "색감 (warm earth tones / vivid neon colors / muted pastel / dramatic high contrast 등)",
   "lighting": "조명 (자연광/촛불/횃불/석양/형광등 등)",
   "composition": "구도 (single character close-up / two characters side by side / group of 3+ / split screen)",
@@ -15237,6 +15349,54 @@ ${_nextSents}
             }
           }
 
+          // ========== [r6.7 NK-4] 막 경계 문장 완결성 최종 검증 ==========
+          // 막 분할/조립 후에도 막 끝에 미완성 문장 파편(예: "그리고 그 길")이 남으면
+          // 마지막 완결 문장까지 절삭해 자연스럽게 닫는다. (AF/AP가 놓친 경계 안전망)
+          try {
+            // 막 블록 단위로 분리 (막태그 유지 상태에서 \n\n\n 경계)
+            var _nk4_blocks = fullScript.split('\n\n\n');
+            // 문장 완결 판정: 종결어미/구두점으로 끝나는가
+            var _nk4_endsClean = function(t) {
+              var s = (t || '').trim();
+              if (!s) return true;
+              return /(?:[.!?…]["'」』)\]]*|(?:습니다|답니다|었지요|더군요|랍니다|이지요|군요|네요|겠지요|는답니다))$/.test(s);
+            };
+            // 마지막 완결 문장 끝 위치 찾기
+            var _nk4_lastSentenceEnd = function(t) {
+              var re = /(?:습니다|답니다|었지요|더군요|랍니다|이지요|는답니다|군요|네요)[.!?…]?["'」』)\]]*|[.!?…]["'」』)\]]*/g;
+              var m, last = -1;
+              while ((m = re.exec(t)) !== null) { last = m.index + m[0].length; }
+              return last;
+            };
+            var _nk4_fixCount = 0;
+            _nk4_blocks = _nk4_blocks.map(function(block) {
+              // 막태그 줄과 본문 분리 (태그는 보존)
+              var _tagMatch = block.match(/^(\[\d+막:[^\]]*\]\n)/);
+              var _tag = _tagMatch ? _tagMatch[1] : '';
+              var _body = _tag ? block.slice(_tag.length) : block;
+              var _trimmed = _body.replace(/\s+$/, '');
+              if (_trimmed && !_nk4_endsClean(_trimmed)) {
+                var _cut = _nk4_lastSentenceEnd(_trimmed);
+                // 본문의 절반 이상 위치에서만 절삭 (과도한 손실 방지)
+                if (_cut > _trimmed.length * 0.5) {
+                  var _fragment = _trimmed.slice(_cut).trim();
+                  // 파편이 실제로 짧은 미완 조각일 때만 절삭 (15자 이내)
+                  if (_fragment.length > 0 && _fragment.length <= 15) {
+                    _body = _trimmed.slice(0, _cut);
+                    _nk4_fixCount++;
+                    console.log('[r6.7 NK-4] 막 끝 미완 파편 절삭: "' + _fragment + '"');
+                  }
+                }
+              }
+              return _tag + _body;
+            });
+            if (_nk4_fixCount > 0) {
+              fullScript = _nk4_blocks.join('\n\n\n');
+              console.log('[r6.7 NK-4] 막 경계 문장 완결성 보정 ' + _nk4_fixCount + '건');
+            }
+          } catch(_nk4_err) { console.warn('[r6.7 NK-4] 막 경계 완결성 검증 오류:', _nk4_err.message); }
+          // ========== NK-4 끝 ==========
+
           fullScript = finalPostProcess(fullScript, mainChar, newCast, introTpl, ctaTpl, isYadam);
           // r4.8 #15 [DEPRECATED-r4.8-fix]: 막 태그 삽입 이전이라 작동 안 함, 새 위치로 이동
           // fullScript = window.injectPersona(fullScript, window.resolveChannelKey(isYadam), isYadam); // OLD
@@ -16029,14 +16189,23 @@ ${chunkScript}`;
                     // 첫 문장 끝(첫 마침표) 위치 찾기
                     var _firstPeriod = fullScript.indexOf('.');
                     if (_firstPeriod > 0 && _firstPeriod < 200) {
+                      // [r6.7 NK-3] 받침 유무로 조사 자연화 (을/를, 과/와) — "탈북를" 같은 조사오타 방지
+                      var _hasJong = function(word){
+                        if (!word) return false;
+                        var ch = word.charCodeAt(word.length - 1);
+                        if (ch < 0xAC00 || ch > 0xD7A3) return false; // 한글 음절 아니면 받침판정 불가 → false
+                        return ((ch - 0xAC00) % 28) !== 0;
+                      };
+                      var _josaEulReul = function(word){ return _hasJong(word) ? '을' : '를'; };
+                      var _josaGwaWa = function(word){ return _hasJong(word) ? '과' : '와'; };
                       // 키워드 1~2개를 자연스러운 한 문장으로 삽입
                       var _kw1 = _kwArr[0];
                       var _kw2 = _kwArr.length > 1 ? _kwArr[1] : '';
                       var _kwSentence = _kw2
-                        ? ' ' + _kw1 + '과 ' + _kw2 + '를 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.'
-                        : ' ' + _kw1 + '을 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.';
+                        ? ' ' + _kw1 + _josaGwaWa(_kw1) + ' ' + _kw2 + _josaEulReul(_kw2) + ' 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.'
+                        : ' ' + _kw1 + _josaEulReul(_kw1) + ' 둘러싼 소문이 평양을 뒤흔들던 그 무렵의 일입니다.';
                       fullScript = fullScript.slice(0, _firstPeriod + 1) + _kwSentence + fullScript.slice(_firstPeriod + 1);
-                      console.log('[r5.4 인트로 키워드 강제] 첫 문장 뒤 삽입 → ' + _kw1 + (_kw2 ? ', ' + _kw2 : ''));
+                      console.log('[r5.4 인트로 키워드 강제] 첫 문장 뒤 삽입(조사자연화) → ' + _kw1 + (_kw2 ? ', ' + _kw2 : ''));
                     }
                   } else if (_hasKwInIntro) {
                     console.log('[r5.4 인트로 키워드] ✅ 이미 인트로에 키워드 존재');
@@ -16757,13 +16926,13 @@ JSON 형식:
                 let promptBase;
                 if (_realPersonFace) {
                   // 인물모드: 문구맞춤 배경 + 중앙 인물 검은실루엣(얼굴X) + 북한국기
-                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. BACKGROUND: a large vivid North Korean flag (red blue white stripes with bright red star) filling the right and upper background, with ${leftScene} blended into the lower-left, smoke and dramatic glow. CENTER-RIGHT MAIN: ${_realPersonFace}, positioned center-right. On the LEFT over the scene, a thin hollow circle with bright RED stroke highlighting a point, clearly visible, opposite side from the silhouette. TOP-LEFT empty space for caption.`;
+                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. A large vivid North Korean flag (red blue white stripes with bright red star) fills the right side and upper part of the background, with ${leftScene} blended into the lower-left area, smoke and dramatic glow. The main subject ${_realPersonFace} is positioned toward the right of center. On the left side, over the scene and far away from the flag, a thin hollow circle with bright red stroke highlights a point, clearly visible. An empty space at the upper area is left for a caption.`;
                 } else {
                   // 직업모드: 좌 직업장면 + 중 익명실루엣 + 우 주인공얼굴 + 국기
                   const leftSideDesc = char2Tag
                     ? `${char1Tag} and ${char2Tag} ${leftScene}`
                     : `${char1Tag} ${leftScene}`;
-                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. LEFT 33%: ${leftSideDesc}, brightly lit and in sharp focus, North Korean atmosphere. CENTER: a large dark BLACK SILHOUETTE of an anonymous figure, chest-up, COMPLETELY SOLID pure black, absolutely NO face NO features whatsoever, flat black shape, thin orange rim light. UPPER-RIGHT BACKGROUND: a vivid North Korean flag (red blue white stripes, bright red star) visible. RIGHT 33% MAIN: ${rightSide}. A thin hollow RED CIRCLE outline near the main subject's shoulder. TOP-LEFT empty space for caption.`;
+                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. On the left third of the frame: ${leftSideDesc}, brightly lit and in sharp focus, North Korean atmosphere. In the middle stands a large dark black silhouette of an anonymous figure, chest-up, completely solid pure black, absolutely no face and no features whatsoever, a flat black shape with a thin orange rim light. A vivid North Korean flag (red blue white stripes, bright red star) is visible in the upper-right background. On the right third is the main subject: ${rightSide}. On the left side over the scene, far from the flag, a thin hollow circle with bright red stroke highlights a point clearly. An empty space at the upper area is left for a caption.`;
                 }
                 // [N-신규] 제목 글씨 2줄 분할 (야담처럼 TEXT OVERLAY)
                 let _nkL1 = '', _nkL2 = '';
@@ -16777,18 +16946,21 @@ JSON 형식:
                       if (_tt && _tt.length > 0) {
                         // [r5.4 앵글별 다른문구] 키워드 입력 있으면 앵글(idx)마다 다른 썸네일 문구 사용
                         // 키워드 버전 2개(보통 _tt[3],_tt[4]) + 어그로 1개 → 앵글 0,1,2에 배정
+                        // [r6.7 NK-2] 키워드 없을 때도 앵글1=문구1, 앵글2=문구2, 앵글3=문구3 으로 1:1 분배 (첫문구 복제 방지)
                         var _hasKw = (typeof mustKeywords !== 'undefined' && mustKeywords && mustKeywords.trim());
-                        var _pickIdx = 0;
+                        var _pickIdx = idx;  // 기본: 앵글 idx와 동일한 문구 (1:1 분배)
                         if (_hasKw && _tt.length >= 5) {
                           // 앵글0→키워드1(_tt[3]), 앵글1→키워드2(_tt[4]), 앵글2→어그로(_tt[0])
                           var _angleMap = [3, 4, 0];
-                          _pickIdx = _angleMap[idx] !== undefined ? _angleMap[idx] : 0;
+                          _pickIdx = _angleMap[idx] !== undefined ? _angleMap[idx] : idx;
                         } else if (_hasKw && _tt.length >= 4) {
                           // 키워드 1개만 있을 때: 앵글0→키워드(_tt[3]), 나머지→어그로
                           var _angleMap2 = [3, 0, 1];
-                          _pickIdx = _angleMap2[idx] !== undefined ? _angleMap2[idx] : 0;
+                          _pickIdx = _angleMap2[idx] !== undefined ? _angleMap2[idx] : idx;
                         }
-                        const _first = _tt[_pickIdx] || _tt[0];
+                        // 범위 초과 시 순환(모듈러)으로 안전 분배 — 문구가 앵글 수보다 적어도 첫문구 복제 최소화
+                        if (_pickIdx >= _tt.length) _pickIdx = idx % _tt.length;
+                        const _first = _tt[_pickIdx] || _tt[idx % _tt.length] || _tt[0];
                         if (_first && typeof _first === 'object' && (_first.top || _first.bottom)) {
                           // 어그로 썸네일 객체 형식 {top, bottom}
                           _nkL1 = (_first.top || '').trim();
@@ -16820,10 +16992,10 @@ JSON 형식:
                   }
                 } catch (_nkte) { _nkL1 = ''; _nkL2 = ''; }
                 const _nkTextOverlay = _nkL1
-                  ? ` BOTTOM 28% dark bar reserved for text, MASSIVE thick Korean text two lines heavy black outline 10px: Line 1 (color #FFFFFF white, gigantic bold): "${_nkL1}", Line 2 (color #3AD0E0 cyan, bigger bold): "${_nkL2}". TEXT RULES: horizontal straight, no tilt, centered, fits within frame, ultra-bold Korean sans-serif, edge to edge.`
-                  : ` BOTTOM 28% dark bar reserved for text: large Korean text two lines, white Line 1 + cyan #3AD0E0 Line 2 (bigger), ultra-bold Korean sans-serif, thick black outline.`;
+                  ? ` Across the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (color #FFFFFF white, gigantic bold): "${_nkL1}", Line 2 (color #3AD0E0 cyan, bigger bold): "${_nkL2}". TEXT RULES: horizontal straight, no tilt, centered, fits within frame, ultra-bold Korean sans-serif, edge to edge.`
+                  : ` Across the lower portion of the image runs a dark bar holding large Korean text on two lines, white Line 1 + cyan #3AD0E0 Line 2 (bigger), ultra-bold Korean sans-serif, thick black outline.`;
                 const promptA = `${promptBase}${_nkTextOverlay} Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230`;
-                const promptB = `${promptBase} BOTTOM 28% darkened empty for text overlay. NO TEXT, NO LETTERS, NO Korean characters anywhere in image. Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230 --no text --no korean text --no letters --no words`;
+                const promptB = `${promptBase} The lower portion of the image is darkened and kept empty for a text overlay added later. NO TEXT, NO LETTERS, NO Korean characters anywhere in image. Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230 --no text --no korean text --no letters --no words --no layout labels --no annotation words --no english text labels`;
                 thumbnailPrompts += `[앵글 ${idx + 1} - ${_realPersonFace ? '인물모드' : '직업모드'}: ${s.label || '장면'}]\n\uD83C\uDD70\uFE0F 버전 A (글씨 포함):\n${promptA}\n\n\uD83C\uDD71\uFE0F 버전 B (글씨 없음, Canva용):\n${promptB}\n\n`;
                 if (idx === 0) setConvertedThumbPrompt(promptA);
               });
@@ -17845,20 +18017,23 @@ setBodyText(isYadam ? window._fixYadamSpeechLevel(window._stripActTags(fullScrip
             }
             
             // 체크 2: 선택된 채널명이 대본에 정확히 포함되는가
-            const _v21_expectedChannel = isYadam
-              ? (yadamChannel === 'manim' ? '마님야화' : '청암야담')
-              : (nkChannel === 'pyongyang' ? '평양데스크' : '평양수첩');
-            // r3.4: 공백/조사/따옴표 모두 무시한 유연한 감지
-            // 각 글자 사이 공백 허용 (예: "청 암 야 담", "청암\n야담" 등)
-            const _r34_channelPattern = new RegExp(
-              _v21_expectedChannel.split('').map(function(ch){ 
-                return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
-              }).join('\\s*')
-            );
-            if (_r34_channelPattern.test(fullScript)) {
-              _v21_validationResults.passed.push(`채널명 "${_v21_expectedChannel}" 확인`);
+            // [r6.7 NK-8] NK는 채널명 제거가 의도된 설계 → 채널명 없음을 정상(pass)으로 처리
+            if (!isYadam) {
+              _v21_validationResults.passed.push('NK 채널멘트 정상 (채널명 미사용 설계 — 구독·좋아요만)');
             } else {
-              _v21_validationResults.warnings.push(`채널명 "${_v21_expectedChannel}" 대본에 없음 (A-1 후처리가 치환했을 것)`);
+              const _v21_expectedChannel = (yadamChannel === 'manim' ? '마님야화' : '청암야담');
+              // r3.4: 공백/조사/따옴표 모두 무시한 유연한 감지
+              // 각 글자 사이 공백 허용 (예: "청 암 야 담", "청암\n야담" 등)
+              const _r34_channelPattern = new RegExp(
+                _v21_expectedChannel.split('').map(function(ch){ 
+                  return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+                }).join('\\s*')
+              );
+              if (_r34_channelPattern.test(fullScript)) {
+                _v21_validationResults.passed.push(`채널명 "${_v21_expectedChannel}" 확인`);
+              } else {
+                _v21_validationResults.warnings.push(`채널명 "${_v21_expectedChannel}" 대본에 없음 (A-1 후처리가 치환했을 것)`);
+              }
             }
             
             // 체크 3: NK 모드 - 1인칭 나레이션 비율
@@ -18156,15 +18331,19 @@ thumbnails는 4개, clickRate 높은 순서로 정렬.\n\n[#19 팀워크 원칙 
                     console.log('T-1: NK 제목 ' + thumbResult.titles.length + '개 생성 (대본 기반 덮어쓰기)');
                   }
                   if (thumbResult.thumbnails && thumbResult.thumbnails.length > 0) {
+                    thumbResult.thumbnails = window.sanitizeThumbList(thumbResult.thumbnails);
                     // [어그로 보존] 실존인물 어그로 썸네일이 이미 있으면 덮어쓰지 않음 (제목만 대본 기반)
+                    // [r6.7 NK-1] 먼저생성(useNKThumbFirst) ON이고 D-2-b 문구가 이미 있으면 T-1이 덮어쓰지 않음
+                    //   → 이미지에 박힌 문구(D-2-b)와 제목탭 문구를 한 벌로 통일
                     var _hasAggroThumb = false;
                     try {
                       var _existTT = (youtubeMetadata && youtubeMetadata.thumbnailTexts) ? youtubeMetadata.thumbnailTexts : null;
                       var _isRP = (useRealPerson && selectedRealPerson && realPersonMode === 'side');
-                      if (_isRP && _existTT && _existTT.length > 0) _hasAggroThumb = true;
+                      var _isThumbFirst = (typeof useNKThumbFirst !== 'undefined' && useNKThumbFirst);
+                      if ((_isRP || _isThumbFirst) && _existTT && _existTT.length > 0) _hasAggroThumb = true;
                     } catch(_aggE) {}
                     if (_hasAggroThumb) {
-                      console.log('T-1: 실존인물 어그로 썸네일 유지 → 대본기반 덮어쓰기 스킵 (제목만 갱신)');
+                      console.log('T-1: 먼저생성/어그로 썸네일 유지 → 대본기반 덮어쓰기 스킵 (제목만 갱신)');
                     } else {
                       _t1Update.thumbnailTexts = thumbResult.thumbnails;
                       console.log('T-1: NK 썸네일 문구 ' + thumbResult.thumbnails.length + '개 생성');
@@ -22880,7 +23059,7 @@ ${reviewed.slice(-3000)}
                   type="text"
                   value={mustKeywords}
                   onChange={e => setMustKeywords(e.target.value)}
-                  placeholder="예: 피바람, 스웨덴 협상, 325명 (비우면 자동)"
+                  placeholder="예: 숙청, 스웨덴 협상, 325명 (비우면 자동)"
                   className="api-input"
                   style={{width:'100%',padding:'8px',fontSize:'13px'}}
                 />
@@ -23518,7 +23697,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.6.1 (2026-06-14 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r6.7.4 (2026-06-17 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
