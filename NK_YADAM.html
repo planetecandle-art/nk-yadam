@@ -2297,7 +2297,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.9 로드완료 (2026-06-24 빌드) — 1단계: 감옥/왕/강 오역 정밀화 + 채널멘트 본문제거 + 고을/가을 글자탈락 + intense 차분표정 차단 / 본문 이미지 AI 장면생성(시놉 8막→16컷) koToEn 교체","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.9 로드완료 (2026-06-24 빌드) — 8개수정: ①인트로영상복구 ②썸네일에제목핵심행동반영 ③한복NEG깨짐 ④⑧글자탈락포괄패턴 ⑤본문AI대본생성직후자동표시 ⑥본문나이일치(캐스트나이주입) ⑦격분호칭(이년이) / B방식황당제목공식","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -4461,6 +4461,97 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         return null;
       };
 
+      // ⑤ r6.9: 야담 본문 AI 이미지 + 인트로 3컷 생성 (재사용 헬퍼)
+      // 대본생성 직후(handleGenerateScript)와 🎨버튼(handleRegeneratePrompts) 양쪽에서 호출
+      // 반환: "\n인트로3컷 + 본문16컷" 문자열, 실패 시 null (호출측에서 폴백 처리)
+      const buildYadamAIImagePrompts = async (sceneSrc, bodyTextArg, castArr) => {
+        try {
+          const _cast = castArr || [];
+          const _sceneSys =
+            "당신은 한국 사극(조선시대) 웹툰 콘티 작가입니다. 시놉시스를 보고 그림으로 그릴 핵심 장면을 골라 영어 이미지 프롬프트로 만듭니다.\n\n" +
+            "[규칙]\n" +
+            "1. 각 막(幕)에서 그림으로 그릴 핵심 장면을 정확히 2개씩 골라라. 시놉이 8막이면 총 16개.\n" +
+            "2. 각 장면은 '한 컷의 그림'이어야 한다 — 인물 + 행동 + 표정 + 배경을 구체적으로.\n" +
+            "3. 영어로 쓰되, 다음을 반드시 포함: 인물(나이/성별/한복), 무엇을 하는지(행동), 표정(감정), 장소.\n" +
+            "4. 조선시대 한복만. 현대 의상/소품 절대 금지.\n" +
+            "5. 절정·갈등 장면은 INTENSE한 표정(충격/분노/슬픔/결의). 차분·미소 금지. 마지막 막만 평온/따뜻함 허용.\n" +
+            "6. 시놉에 실제 나오는 사건·인물만. 지어내지 마라.\n" +
+            "7. [나이 일치 — 필수] 각 인물의 나이는 아래 [등장인물 나이표]를 그대로 따른다. 표에 없는 인물만 장면 맥락에 맞게 추정한다. 주인공·조력자의 나이를 임의로 바꾸지 마라.\n\n" +
+            "[good_example] (나이는 인물표 기준으로 채울 것)\n" +
+            "A Korean woman in her late 20s wearing dark hanbok, unfolding an old letter with trembling hands, shocked sorrowful face, dim inner room with candlelight\n" +
+            "[bad_example]\n" +
+            "woman, letter, room (← 단어 나열 금지)\n\n" +
+            "[출력 형식] JSON만. 마크다운/설명 금지:\n" +
+            '{"scenes":[{"act":1,"desc":"영어 장면묘사"},{"act":1,"desc":"..."},{"act":2,"desc":"..."}]}\n' +
+            "scenes는 막당 2개씩 순서대로. 막 번호(act)를 정확히 표기.";
+          const _ageToEn = function(a){
+            var s = String(a||'').trim();
+            if (!s) return null;
+            var km = s.match(/([1-9]0)\s*대/);
+            if (km) {
+              var dec = parseInt(km[1], 10);
+              var pos = "";
+              if (/초반/.test(s)) pos = "early ";
+              else if (/중반/.test(s)) pos = "mid ";
+              else if (/후반|말/.test(s)) pos = "late ";
+              if (dec < 20) return "a teenager (around age 18)";
+              return "in their " + pos + dec + "s";
+            }
+            var n = parseInt(s.replace(/[^0-9]/g,''), 10);
+            if (!n || isNaN(n)) return null;
+            if (n < 13) return "a child (around age " + n + ")";
+            if (n < 20) return "a teenager (around age " + n + ")";
+            var ndec = Math.floor(n/10)*10;
+            var npos = (n%10) <= 3 ? "early " : ((n%10) <= 6 ? "mid " : "late ");
+            if (n % 10 === 0) npos = "";
+            return "in their " + npos + ndec + "s";
+          };
+          const _ageTable = _cast.map(function(c){
+            var en = _ageToEn(c.age);
+            if (!c.name || !en) return null;
+            var g = (c.gender||'').indexOf('남') >= 0 ? "man" : ((c.gender||'').indexOf('여') >= 0 ? "woman" : "person");
+            return "- " + c.name + " (" + (c.role||'') + "): a Korean " + g + " " + en;
+          }).filter(Boolean).join("\n");
+          const _ageBlock = _ageTable ? ("\n\n[등장인물 나이표 — 이 나이를 그대로 사용]\n" + _ageTable + "\n") : "";
+          const _scenePrompt = "[시놉시스]\n" + String(sceneSrc||'').slice(0, 2500) + _ageBlock + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라. 인물 나이는 반드시 [등장인물 나이표]를 따른다.";
+          const _sceneRaw = await callClaude(_sceneSys, _scenePrompt, 4096, 'haiku', 0.6);
+          let _sceneJson = null;
+          try { _sceneJson = JSON.parse((_sceneRaw||"").replace(/```json|```/g, '').trim()); } catch(_e) { _sceneJson = null; }
+          if (!(_sceneJson && Array.isArray(_sceneJson.scenes) && _sceneJson.scenes.length > 0)) return null;
+          const _BASE = "2D anime illustration, Korean webtoon manhwa drawing, hand-drawn cartoon art, thick clean black outlines, flat cel-shading, bright saturated vivid colors, drawn not photographed, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY";
+          const _NEGi = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no calm --no serene --no smiling --no english text --no korean text --no text";
+          const _NEGw = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no english text --no korean text --no text";
+          const _maxAct = _sceneJson.scenes.reduce(function(m,s){ return Math.max(m, s.act||1); }, 1);
+          let _bodyOut = "\n═══════════════════════════════\n🖼️ 본문 이미지 (AI 장면 생성 — 막당 2컷)\n═══════════════════════════════\n\n";
+          _sceneJson.scenes.forEach(function(s, i) {
+            const _isLast = (s.act && s.act >= _maxAct);
+            const _mood = _isLast
+              ? "warm gentle peaceful expression, soft golden light, hopeful atmosphere"
+              : "INTENSE dramatic facial expression with strong visible emotion, dramatic moody lighting with strong shadows, NOT calm NOT serene NOT smiling";
+            _bodyOut += "[본문 " + (i+1) + "/" + _sceneJson.scenes.length + "] 막" + (s.act||"?") + (_isLast?" (warm)":" (intense)") + "\n";
+            _bodyOut += _BASE + ", " + (s.desc||"") + ", " + _mood + " " + (_isLast?_NEGw:_NEGi) + "\n\n";
+          });
+          _bodyOut = _bodyOut.replace(/(?<!--no\s)\b(blazer|blouse|cardigan|turtleneck|button-down|polo shirt|suit|trousers|jeans|sneakers|loafers)\b/gi, 'traditional hanbok');
+          const _introScene = (_sceneJson.scenes.find(function(s){return (s.act||1)===1;}) || _sceneJson.scenes[0]);
+          const _introDesc = (_introScene && _introScene.desc) ? _introScene.desc : "dramatic Joseon-era opening scene, main character in hanbok, intense moment";
+          let _introOut = "\n═══════════════════════════════\n🎬 인트로 영상 프롬프트 (1핵심장면 → 3컷)\n═══════════════════════════════\n\n";
+          const _introCuts = [
+            ["컷1 — 전체샷 (상황 제시)", "Wide establishing shot, " + _introDesc + ", slow Ken Burns zoom-in, mouths stay closed no talking no lip movement, INTENSE dramatic atmosphere"],
+            ["컷2 — 클로즈업 (주인공 표정)", "EXTREME emotional close-up, main character face filling 55% of frame, INTENSE expression eyes burning with suppressed emotion, lips pressed firm, dramatic lighting, " + _introDesc + ", slow push-in, mouth stays closed no talking"],
+            ["컷3 — 핵심 오브젝트 인서트 (반전 떡밥)", "Insert shot focusing on the key object/detail of this scene, ominous mood, dramatic light, slow zoom-in toward it, no people no text, " + _introDesc]
+          ];
+          _introCuts.forEach(function(c){
+            _introOut += "[" + c[0] + "]\n";
+            _introOut += _BASE + ", " + c[1] + " " + _NEGi + "\n";
+            _introOut += "🎙️ 나레이션: (낮고 신뢰감 있는 다큐멘터리 여성 나레이션, 무겁고 절제된 어조)\n\n";
+          });
+          _introOut = _introOut.replace(/(?<!--no\s)\b(blazer|blouse|cardigan|turtleneck|button-down|polo shirt|suit|trousers|jeans|sneakers|loafers)\b/gi, 'traditional hanbok');
+          return { text: "\n" + _introOut + _bodyOut, count: _sceneJson.scenes.length };
+        } catch(_se) {
+          return null;
+        }
+      };
+
       // v20.35: 유사도 체크 (사용자 선택 모델로 벤치마킹 vs 생성 대본 비교)
       const checkSimilarity = async (benchmarkScript, generatedScript) => {
         if (!benchmarkScript || !generatedScript || benchmarkScript.length < 300) return null;
@@ -4782,51 +4873,26 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           [/것이었답니다다\./g, '것이었답니다.', '이중어미'],
           [/것이었답니다다$/gm, '것이었답니다', '이중어미'],
           
-          // ===== 글자 탈락 (마을 → 마를) =====
-          [/마를 사람/g, '마을 사람', '탈락'],
-          [/마를 지나/g, '마을 지나', '탈락'],
-          [/마를 떠나/g, '마을 떠나', '탈락'],
-          [/마를 벗어/g, '마을 벗어', '탈락'],
-          [/마를 가로/g, '마을 가로', '탈락'],
-          [/마를 들어/g, '마을 들어', '탈락'],
-          [/마를 나와/g, '마을 나와', '탈락'],
-          [/마를 나가/g, '마을 나가', '탈락'],
-          [/마를 돌아/g, '마을 돌아', '탈락'],
-          [/마를에/g, '마을에', '탈락'],
-          [/마를로/g, '마을로', '탈락'],
-          [/마를을/g, '마을을', '탈락'],
-          [/마를 장터/g, '마을 장터', '탈락'],
-          [/마를 입구/g, '마을 입구', '탈락'],
-          [/마를 어귀/g, '마을 어귀', '탈락'],
-          [/마를 앞에/g, '마을 앞에', '탈락'],
-          [/마를 뒤에/g, '마을 뒤에', '탈락'],
-          // r3.4 신규
-          [/마를 한가운데/g, '마을 한가운데', '탈락'],
-          [/마를 더럽힌/g, '마을을 더럽힌', '탈락'],
-          [/온 마를 뒤었/g, '온 마을을 뒤덮었', '탈락'],
-          [/온 마를 뒤덮/g, '온 마을을 뒤덮', '탈락'],
-          // r6.9 1-4: 고을→고를, 가을→가를 (을→를 탈락)
-          [/고를 수령/g, '고을 수령', '탈락'],
-          [/고를 입구/g, '고을 입구', '탈락'],
-          [/고를 사또/g, '고을 사또', '탈락'],
-          [/고를 어귀/g, '고을 어귀', '탈락'],
-          [/고를 경계/g, '고을 경계', '탈락'],
-          [/고를 안/g, '고을 안', '탈락'],
-          [/고를 전체/g, '고을 전체', '탈락'],
-          [/고를에/g, '고을에', '탈락'],
-          [/고를로/g, '고을로', '탈락'],
-          [/고를을/g, '고을을', '탈락'],
-          [/이 고를/g, '이 고을', '탈락'],
-          [/온 고를/g, '온 고을', '탈락'],
+          // ===== 글자 탈락 (을→를): r6.9 8번 포괄 패턴 (동사 보호 lookahead) =====
+          // 명사 "마을/고을/가을"이 "마를/고를/가를"로 잘못 나온 것을 포괄 교정.
+          // 단 동사("목이 마를 것", "답을 고를 때", "허공을 가를 듯")는 lookahead로 제외.
+          // 어떤 조합(마를 끝/마를 여인/마를 어귀 등)이 와도 잡힘 — 개별 등록 불필요.
+          // ① 마을: 받침조사(에/로/을/은/이/도/의/만/과/와) 직결 형태
+          [/마를(?=[에로을은이도의만과와])/g, '마을', '탈락'],
+          // ① 마을: "마를 + 공백 + 단어" (동사 어미 것/듯/때/지/까/터/걸/뿐/텐/테/만큼 제외)
+          [/마를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|만큼))/g, '마을', '탈락'],
+          // ② 고을: 받침조사 직결
+          [/고를(?=[에로을은이도의만과와])/g, '고을', '탈락'],
+          // ② 고을: "고를 + 공백 + 단어" (동사 어미 + 수(고를 수 있다) 제외)
+          [/고를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|수|만큼))/g, '고을', '탈락'],
+          // ③ 가을: 늦가를/초가를/한가를 등 접두 결합 우선
           [/늦가를/g, '늦가을', '탈락'],
           [/초가를/g, '초가을', '탈락'],
-          [/가를 저녁/g, '가을 저녁', '탈락'],
-          [/가를 들녘/g, '가을 들녘', '탈락'],
-          [/가를 하늘/g, '가을 하늘', '탈락'],
-          [/가를 바람/g, '가을 바람', '탈락'],
-          [/가를이 되/g, '가을이 되', '탈락'],
-          [/가를이 오/g, '가을이 오', '탈락'],
-          [/어느 가를/g, '어느 가을', '탈락'],
+          [/한가를/g, '한가을', '탈락'],
+          // ③ 가을: "가를 + 공백 + 단어" (동사 어미 + 수있(가를 수 있다) 제외)
+          [/가를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|수있|만큼))/g, '가을', '탈락'],
+          // ③ 가을: 받침조사 직결 활용 (가를이 되/오/접어 등 명사 맥락만)
+          [/가를(?=[이은])\s*(되|오|접어|찾아|깊어|왔|지나)/g, '가을', '탈락'],
           
           // ===== 앞에 → 에 (조사 탈락) =====
           [/관아 에 /g, '관아 앞에 ', '탈락'],
@@ -9292,8 +9358,39 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           const _mainGender = _mainC?.gender === '여' ? 'woman' : 'man';
           const _mainCostume = _getYadamCostume(_mainC);
           const _helperCostume = _getYadamCostume(_helperC);
-          const _mainDesc = `East Asian ${_mainGender} in late Joseon era, ${_mainCostume}, shocked or desperate expression, looking straight at camera`;
-          const _helperDesc = _helperC ? `East Asian ${_helperC?.gender === '여' ? 'woman' : 'man'} in late Joseon era, ${_helperCostume}, emotional expression` : '';
+          // ② r6.9: 제목 핵심행동(황당행동)을 썸네일 장면에 반영 — 제목 1줄에서 행동 추출 → 영어 액션구로 변환
+          let _titleAction = '';
+          let _titleActionKo = '';
+          if (_ydTitle) {
+            // 제목 앞부분(_line1 우선, 없으면 제목 전체 앞 절)에서 '~하는/~붓는/~파는' 류 행동어절 추출
+            const _actSrc = (_line1 || _ydTitle).replace(/["“”'']/g, '').trim();
+            _titleActionKo = _actSrc;
+            // 한국어 행동 키워드 → 영어 시각 액션 매핑 (야담 빈출 행동)
+            const _actMap = [
+              [/우물.*(쌀|곡식).*(붓|쏟|넣|버리)/, 'pouring rice grain into a stone well with both hands'],
+              [/(쌀|곡식).*우물/, 'pouring rice grain into a stone well with both hands'],
+              [/기와.*(뜯|벗|팔|떼)/, 'tearing roof tiles off a traditional hanok house and selling them'],
+              [/마당.*(파|구덩)/, 'frantically digging up the courtyard with a hoe'],
+              [/곳간.*(열|퍼|나눠|풀)/, 'flinging open the granary and giving away grain sacks'],
+              [/논|밭.*(나무|뒤집|헤치|파)/, 'doing something bizarre in the rice paddy field'],
+              [/(돈|재산).*(태우|버리|뿌리)/, 'burning or throwing away money and valuables'],
+              [/(옷|비단).*(찢|벗|불)/, 'tearing apart silk clothes'],
+              [/(밥|음식).*(쏟|버리|뿌리)/, 'throwing away food and rice'],
+              [/(소|돼지|가축).*(풀|놓아|팔)/, 'releasing the livestock from the barn']
+            ];
+            for (const [re, en] of _actMap) {
+              if (re.test(_actSrc)) { _titleAction = en; break; }
+            }
+            // 매핑 실패 시: 제목 1줄 자체를 "그 황당한 행동"으로 지시 (영어 일반화)
+            if (!_titleAction) {
+              _titleAction = 'performing the strange shocking action described in the title, an action that makes onlookers think the character has gone mad';
+            }
+          }
+          const _actionClause = _titleAction
+            ? `, actively ${_titleAction} — THIS specific absurd action MUST be the visual focus of the scene`
+            : '';
+          const _mainDesc = `East Asian ${_mainGender} in late Joseon era, ${_mainCostume}${_actionClause}, shocked or desperate expression, looking straight at camera`;
+          const _helperDesc = _helperC ? `East Asian ${_helperC?.gender === '여' ? 'woman' : 'man'} in late Joseon era, ${_helperCostume}, reacting with astonishment` : '';
 
           // 🆕 r4.6: DNA 기반 텍스트 오버레이 (위치/색상/크기 벤치마킹 따라가기)
           const _r46_dna = (typeof window !== 'undefined' && window._r34_thumbDNA) ? window._r34_thumbDNA : null;
@@ -13487,7 +13584,7 @@ ${completedInfo}
 ${actNum === totalChapters && !isYadam ? '[Fix-S3 9막 필수 포함] ①한국 공원/거리 구체 장면 1개 ②사망자/행방불명 소식 언급 ③마무리 멘트 → 이 3가지 없으면 실패!\n[Fix-9막 절대금지] 8막 이전 내용(은신처/탈출과정/중국/제3국) 9막에서 재서술 절대 금지! 9막은 한국 정착 장면만!' : ''}
 ${_routeRule && !isYadam ? _routeRule : ''}
 ${actNum === 2 && !isYadam ? '[r9-24 Fix-NK-2막 독립성 필수] 2막은 오직 다음 3가지만 포함:\n① 자기소개 3~5문장 (예: "저는 평양시 보위부에서...담당했던 최준혁입니다")\n② 채널 CTA 1줄 (예: "구독과 좋아요는 큰 힘이 됩니다")\n③ 다음 이야기 전환 문장 1줄 (예: "모든 것은 2년 전부터 시작되었습니다")\n⚠️ 2막 절대 금지: 탈출/도망/국경/결심/브로커/보위부 체포/돈 언급\n⚠️ 2막 분량: 800~1100자 엄수 (다른 막보다 짧게!)\n⚠️ 2막은 과거 사건 상세 금지 (3막에서 다룸)' : ''}
-${actNum < totalChapters ? '[Fix-S2 이번 막 사건 1개만] 시놉시스에 명시된 핵심 사건 1개만 서술. 다음 막 내용 절대 미리 쓰지 말 것!' + (isYadam && actNum === 1 ? ' [1막 구조 필수] 아래 구조를 반드시 따를 것:\n[좋은예시]\n충격 대사 1~2줄 → 현재 장면 묘사 2~3문장 → 상황 요약 1문장 → 시간역행 문장 1줄\n예시: "어미야!" 아이의 손이 끌려갔습니다. 향이의 세상이 무너졌지요. 한 줌의 빚이 25년의 피눈물을 만든 것이었습니다. 이야기는 그보다 오 년 전으로 거슬러 올라간답니다.\n[규칙] 총 250~350자 내외. 시간역행 전 본문 내용 절대 미리 쓰지 말 것. 1막 훅에서 나온 장면은 이후 막에서 새로운 시점/앵글로 서술할 것(동일 장면 반복 금지)!\n[야담 대사 형식] 대사는 반드시 "대사" 따옴표로만! "인물명. 대사" "인물명: 대사" "인물명 대사" 형식 절대 금지!' : '') + (!isYadam && actNum === 1 ? ' [NK 1막 필수] 인트로 훅은 반드시 3인칭으로 서술. "저는/제가/저희" 절대 사용 금지. 반드시 주인공 이름 또는 "그/그녀"로 시작.\n[좋은예시] "2025년 11월, 오광일은 서버실로 향했습니다. 그의 손이 키보드 위에서 멈췄습니다. 그것은 탈출의 봉화였습니다. 그 이유는 몇 달 전의 과거 속에 있었습니다."\n훅 마지막에 반드시 "지금부터 그 이야기를 들려드리겠습니다" 또는 "그 이유는 몇 달 전의 과거 속에 있었습니다" 같은 전환 문장으로 끝낼 것!' : '') + (!isYadam ? ' [NK 저희 금지] 나레이션에서 타인 지칭 시 "저희"는 절대 금지! 반드시 "그들/그 사람들/그/그녀"로 표현. 대화문 내부에서만 "저희" 허용.' : '') + (isYadam && actNum === totalChapters ? ' [8막 필수] 에필로그는 단일 장면 1개만. 같은 내용 반복/중복 서술 절대 금지! 교훈 대사는 1회만! 완결 후 새로운 사건/인물 추가 절대 금지! 결말은 반드시 1개만!' : '') + (isYadam && useBMode && selectedTitle ? '\n[STEP5 B방식] 이 대본의 제목은 「' + selectedTitle + '」입니다. 제목의 핵심 키워드가 반드시 대본 전체에 자연스럽게 반영되어야 합니다.' : '') : ''} 시놉시스에 없는 인물·사건 절대 추가 금지! 시놉시스에 없는 인물·사건 절대 추가 금지!
+${actNum < totalChapters ? '[Fix-S2 이번 막 사건 1개만] 시놉시스에 명시된 핵심 사건 1개만 서술. 다음 막 내용 절대 미리 쓰지 말 것!' + (isYadam && actNum === 1 ? ' [1막 구조 필수] 아래 구조를 반드시 따를 것:\n[좋은예시]\n충격 대사 1~2줄 → 현재 장면 묘사 2~3문장 → 상황 요약 1문장 → 시간역행 문장 1줄\n예시: "어미야!" 아이의 손이 끌려갔습니다. 향이의 세상이 무너졌지요. 한 줌의 빚이 25년의 피눈물을 만든 것이었습니다. 이야기는 그보다 오 년 전으로 거슬러 올라간답니다.\n[규칙] 총 250~350자 내외. 시간역행 전 본문 내용 절대 미리 쓰지 말 것. 1막 훅에서 나온 장면은 이후 막에서 새로운 시점/앵글로 서술할 것(동일 장면 반복 금지)!\n[야담 대사 형식] 대사는 반드시 "대사" 따옴표로만! "인물명. 대사" "인물명: 대사" "인물명 대사" 형식 절대 금지!\\n[격분 호칭 자연화] 윗사람(시어머니/시아버지/주인)이 아랫사람(며느리/노비)에게 격노하여 외치는 충격 대사에서는 "이 며느리가/이 종이/이 아이가" 같은 설명적 호칭 대신 "이년이/이놈이/저것이" 같이 그 시대 분노 표현을 쓸 것. 단 나레이션 서술문에서는 정상 호칭(며느리/명화) 유지.' : '') + (!isYadam && actNum === 1 ? ' [NK 1막 필수] 인트로 훅은 반드시 3인칭으로 서술. "저는/제가/저희" 절대 사용 금지. 반드시 주인공 이름 또는 "그/그녀"로 시작.\n[좋은예시] "2025년 11월, 오광일은 서버실로 향했습니다. 그의 손이 키보드 위에서 멈췄습니다. 그것은 탈출의 봉화였습니다. 그 이유는 몇 달 전의 과거 속에 있었습니다."\n훅 마지막에 반드시 "지금부터 그 이야기를 들려드리겠습니다" 또는 "그 이유는 몇 달 전의 과거 속에 있었습니다" 같은 전환 문장으로 끝낼 것!' : '') + (!isYadam ? ' [NK 저희 금지] 나레이션에서 타인 지칭 시 "저희"는 절대 금지! 반드시 "그들/그 사람들/그/그녀"로 표현. 대화문 내부에서만 "저희" 허용.' : '') + (isYadam && actNum === totalChapters ? ' [8막 필수] 에필로그는 단일 장면 1개만. 같은 내용 반복/중복 서술 절대 금지! 교훈 대사는 1회만! 완결 후 새로운 사건/인물 추가 절대 금지! 결말은 반드시 1개만!' : '') + (isYadam && useBMode && selectedTitle ? '\n[STEP5 B방식] 이 대본의 제목은 「' + selectedTitle + '」입니다. 제목의 핵심 키워드가 반드시 대본 전체에 자연스럽게 반영되어야 합니다.' : '') : ''} 시놉시스에 없는 인물·사건 절대 추가 금지! 시놉시스에 없는 인물·사건 절대 추가 금지!
 
 ⚠️ 반복표현 금지: "등줄기에 식은땀" 최대1회, "더 이상 이렇게 살 수는 없습니다" 최대1회\n⚠️ v20.66 r9-1: "제 딸은 이런 엄마를 원하지 않을 겁니다" 전체 대본에서 1회만! 이미 앞 막에서 썼으면 이번 막에서 사용 금지!
 ⚠️ v20.65 P-3 소품금지: 스마트폰·노트북·자동차·신용카드 등 현대 소품 절대 금지. 직업 설정과 무관한 소품도 금지.
@@ -17478,8 +17575,23 @@ if(!fullScript.includes('지금부터 그 이야기를') && !fullScript.includes
 setBodyText(isYadam ? window._fixYadamSpeechLevel(window._stripActTags(fullScript)) : window._stripActTags(fullScript));
           setImagePrompts(allPrompts);
 
-          setResultTab("script");
-          setMsg(`대본 생성 완료! ${getCharCount(fullScript).toLocaleString()}자`);
+          // ⑤ r6.9: 야담 본문 16컷 + 인트로 3컷을 대본 생성 직후 자동 표시 (🎨버튼 안 눌러도 나오게)
+          if (isYadam) {
+            try {
+              const _autoSceneSrc = (synopsisText && synopsisText.length > 100) ? synopsisText : window._stripActTags(fullScript);
+              const _autoRes = await buildYadamAIImagePrompts(_autoSceneSrc, window._stripActTags(fullScript), cast);
+              if (_autoRes && _autoRes.text) {
+                setImagePrompts(allPrompts + _autoRes.text);
+              } else if (typeof window.buildYadamSceneImages === "function") {
+                setImagePrompts(allPrompts + "\n\n" + window.buildYadamSceneImages(window._stripActTags(fullScript)));
+              }
+            } catch(_autoErr) {
+              if (typeof window.buildYadamSceneImages === "function") {
+                try { setImagePrompts(allPrompts + "\n\n" + window.buildYadamSceneImages(window._stripActTags(fullScript))); } catch(_e2) {}
+              }
+            }
+          }
+
 
           // ========== v21.0 STEP 6: 일관성 체인 검증 시스템 (D-1 ~ D-4) ==========
           // D-1: 썸네일/대본/시놉/캐스트 간 6항목 일관성 체크
@@ -17584,6 +17696,15 @@ setBodyText(isYadam ? window._fixYadamSpeechLevel(window._stripActTags(fullScrip
             try {
               let _maFixCount = 0;
               const _maPatterns = [
+                // ===== r6.9 8번 포괄 패턴 (동사 보호) — 어떤 조합도 잡음 =====
+                [/마를(?=[에로을은이도의만과와])/g, '마을'],
+                [/마를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|만큼))/g, '마을'],
+                [/고를(?=[에로을은이도의만과와])/g, '고을'],
+                [/고를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|수|만큼))/g, '고을'],
+                [/늦가를/g, '늦가을'],
+                [/초가를/g, '초가을'],
+                [/한가를/g, '한가을'],
+                [/가를(?=\s)(?!\s*(것|듯|때|지|까|터|걸|뿐|텐|테|수있|만큼))/g, '가을'],
                 // ===== 기존: "마를 → 마을" =====
                 [/마를 사람/g, '마을 사람'],
                 [/마를 지나/g, '마을 지나'],
@@ -22723,53 +22844,19 @@ ${reviewed.slice(-3000)}
           let allPrompts = thumbnailPromptsOnly + "\n\n" + profilePromptsOnly;
             // v20.55 fix11+12: 이미지 프롬프트 성별 대명사 + 야담 현대복장 후처리
             allPrompts = allPrompts.replace(/woman in his/gi, 'woman in her').replace(/girl in his/gi, 'girl in her').replace(/man in her/gi, 'man in his').replace(/boy in her/gi, 'boy in his');
-            if (isYadam) { allPrompts = allPrompts.replace(/\b(blazer|blouse|Henley shirt|Henley|cardigan|pullover|turtleneck|V-neck sweater|button-down|polo shirt)\b/gi, 'traditional hanbok jeogori top').replace(/\b(tailored jacket|suit jacket|denim jacket|leather jacket)\b/gi, 'traditional hanbok outer coat (durumagi)').replace(/\b(sneakers|loafers|oxfords|dress shoes)\b/gi, 'traditional Korean shoes (ggotsin)'); }
+            if (isYadam) { allPrompts = allPrompts.replace(/(?<!--no\s)\b(blazer|blouse|Henley shirt|Henley|cardigan|pullover|turtleneck|V-neck sweater|button-down|polo shirt)\b/gi, 'traditional hanbok jeogori top').replace(/(?<!--no\s)\b(tailored jacket|suit jacket|denim jacket|leather jacket)\b/gi, 'traditional hanbok outer coat (durumagi)').replace(/(?<!--no\s)\b(sneakers|loafers|oxfords|dress shoes)\b/gi, 'traditional Korean shoes (ggotsin)'); }
           setImagePrompts(allPrompts);
 
           // ===== r6.9 본문 AI 장면 생성 (야담 전용) — 시놉 8막 → 16장면 =====
-          // koToEn 키워드 나열 대신, AI가 시놉에서 막당 2장면씩 영어 장면묘사 생성
+          // ⑤ r6.9: 재사용 헬퍼(buildYadamAIImagePrompts) 호출로 통일 (대본생성 직후 경로와 동일 코드)
           if (isYadam) {
             try {
               setMsg("본문 장면 AI 생성 중... (16컷)");
               const _sceneSrc = (synopsisText && synopsisText.length > 100) ? synopsisText : bodyText;
-              const _sceneSys =
-                "당신은 한국 사극(조선시대) 웹툰 콘티 작가입니다. 시놉시스를 보고 그림으로 그릴 핵심 장면을 골라 영어 이미지 프롬프트로 만듭니다.\n\n" +
-                "[규칙]\n" +
-                "1. 각 막(幕)에서 그림으로 그릴 핵심 장면을 정확히 2개씩 골라라. 시놉이 8막이면 총 16개.\n" +
-                "2. 각 장면은 '한 컷의 그림'이어야 한다 — 인물 + 행동 + 표정 + 배경을 구체적으로.\n" +
-                "3. 영어로 쓰되, 다음을 반드시 포함: 인물(나이/성별/한복), 무엇을 하는지(행동), 표정(감정), 장소.\n" +
-                "4. 조선시대 한복만. 현대 의상/소품 절대 금지.\n" +
-                "5. 절정·갈등 장면은 INTENSE한 표정(충격/분노/슬픔/결의). 차분·미소 금지. 마지막 막만 평온/따뜻함 허용.\n" +
-                "6. 시놉에 실제 나오는 사건·인물만. 지어내지 마라.\n\n" +
-                "[good_example]\n" +
-                "A Korean woman in her 30s wearing dark hanbok, unfolding an old letter with trembling hands, shocked sorrowful face, dim inner room with candlelight\n" +
-                "[bad_example]\n" +
-                "woman, letter, room (← 단어 나열 금지)\n\n" +
-                "[출력 형식] JSON만. 마크다운/설명 금지:\n" +
-                '{"scenes":[{"act":1,"desc":"영어 장면묘사"},{"act":1,"desc":"..."},{"act":2,"desc":"..."}]}\n' +
-                "scenes는 막당 2개씩 순서대로. 막 번호(act)를 정확히 표기.";
-              const _scenePrompt = "[시놉시스]\n" + _sceneSrc.slice(0, 2500) + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라.";
-              const _sceneRaw = await callClaude(_sceneSys, _scenePrompt, 4096, 'haiku', 0.6);
-              let _sceneJson = null;
-              try { _sceneJson = JSON.parse((_sceneRaw||"").replace(/```json|```/g, '').trim()); } catch(_e) { _sceneJson = null; }
-              if (_sceneJson && Array.isArray(_sceneJson.scenes) && _sceneJson.scenes.length > 0) {
-                const _BASE = "2D anime illustration, Korean webtoon manhwa drawing, hand-drawn cartoon art, thick clean black outlines, flat cel-shading, bright saturated vivid colors, drawn not photographed, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY";
-                const _NEGi = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no calm --no serene --no smiling --no english text --no korean text --no text";
-                const _NEGw = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no english text --no korean text --no text";
-                const _maxAct = _sceneJson.scenes.reduce(function(m,s){ return Math.max(m, s.act||1); }, 1);
-                let _bodyOut = "\n═══════════════════════════════\n🖼️ 본문 이미지 (AI 장면 생성 — 막당 2컷)\n═══════════════════════════════\n\n";
-                _sceneJson.scenes.forEach(function(s, i) {
-                  const _isLast = (s.act && s.act >= _maxAct);
-                  const _mood = _isLast
-                    ? "warm gentle peaceful expression, soft golden light, hopeful atmosphere"
-                    : "INTENSE dramatic facial expression with strong visible emotion, dramatic moody lighting with strong shadows, NOT calm NOT serene NOT smiling";
-                  _bodyOut += "[본문 " + (i+1) + "/" + _sceneJson.scenes.length + "] 막" + (s.act||"?") + (_isLast?" (warm)":" (intense)") + "\n";
-                  _bodyOut += _BASE + ", " + (s.desc||"") + ", " + _mood + " " + (_isLast?_NEGw:_NEGi) + "\n\n";
-                });
-                // 야담 현대복장 후처리 (기존과 동일)
-                _bodyOut = _bodyOut.replace(/\b(blazer|blouse|cardigan|turtleneck|button-down|polo shirt|suit|trousers|jeans|sneakers|loafers)\b/gi, 'traditional hanbok');
-                setImagePrompts(allPrompts + "\n" + _bodyOut);
-                setMsg("프롬프트 + 본문 " + _sceneJson.scenes.length + "컷 생성 완료!");
+              const _aiRes = await buildYadamAIImagePrompts(_sceneSrc, bodyText, cast);
+              if (_aiRes && _aiRes.text) {
+                setImagePrompts(allPrompts + _aiRes.text);
+                setMsg("프롬프트 + 인트로 3컷 + 본문 " + _aiRes.count + "컷 생성 완료!");
               } else {
                 // AI 실패 시 폴백: 기존 koToEn 방식
                 if (typeof window.buildYadamSceneImages === "function") {
