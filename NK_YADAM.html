@@ -2297,7 +2297,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.9 로드완료 (2026-06-24 빌드) — 8개수정: ①인트로영상복구 ②썸네일에제목핵심행동반영 ③한복NEG깨짐 ④⑧글자탈락포괄패턴 ⑤본문AI대본생성직후자동표시 ⑥본문나이일치(캐스트나이주입) ⑦격분호칭(이년이) / ★B방식 제목공식 개선: 벤치골격 100%유지+앞황당행동·뒤결과표현 둘다변형+1번도복사금지","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r6.9 로드완료 (2026-06-24 빌드) — 8개+야담4종+야담이미지3종: 글자교정·B방식·인트로공식·썸네일당당표정 / [이미지추가]현대복장차단강화(안경/코트/귀걸이/블라우스 누락보강)+썸네일표정강도INTENSE정답공식+mainDesc표정하드코딩제거(앵글1당당/앵글2,3격분 분리)","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -4547,8 +4547,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           ];
           _introCuts.forEach(function(c){
             _introOut += "[" + c[0] + "]\n";
-            _introOut += _BASE + ", " + c[1] + " " + _NEGi + "\n";
-            _introOut += "🎙️ 나레이션: (낮고 신뢰감 있는 다큐멘터리 여성 나레이션, 무겁고 절제된 어조)\n\n";
+            _introOut += _BASE + ", " + c[1] + " " + _NEGi + "\n\n";
           });
           _introOut = _introOut.replace(/(?<!--no\s)\b(blazer|blouse|cardigan|turtleneck|button-down|polo shirt|suit|trousers|jeans|sneakers|loafers)\b/gi, 'traditional hanbok');
           return { text: "\n" + _introOut + _bodyOut, count: _sceneJson.scenes.length };
@@ -4865,6 +4864,10 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           // r3.4 신규 오타
           [/장섰으니/g, '앞장섰으니', '오타'],
           [/장섰고/g, '앞장섰고', '오타'],
+          // r6.9 신규 오타 (야담 테스트에서 발견)
+          [/집전으로/g, '집안으로', '오타'],
+          [/집전 문/g, '집 문', '오타'],
+          [/되물림/g, '대물림', '오타'],
           
           // ===== 이중 어미 (범용 패턴 최우선) =====
           [/답니다다/g, '답니다', '이중어미'],
@@ -6518,6 +6521,22 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
                 r = r.replace(/\bsuit jacket\b/gi, 'dopo coat');
                 r = r.replace(/\bnecktie\b|\btie\b/gi, '');
                 r = r.replace(/\bbriefcase\b/gi, 'cloth bundle (보따리)');
+                // [r6.9 야담-현대복장 누락보강] 단독 변형 차단
+                r = r.replace(/\b(eye)?glasses\b/gi, '');
+                r = r.replace(/\bspectacles\b/gi, '');
+                r = r.replace(/\b(wool|trench|long|winter|camel|brown|grey|gray|dark)\s+coat\b/gi, 'dopo coat');
+                r = r.replace(/\b(?<!dopo )coats?\b/gi, 'dopo coat');
+                r = r.replace(/\bblouses?\b/gi, 'jeogori');
+                r = r.replace(/\bskirts?\b/gi, 'traditional chima');
+                r = r.replace(/\bearrings?\b/gi, '');
+                r = r.replace(/\bnecklaces?\b/gi, '');
+                r = r.replace(/\bjacket\b/gi, 'dopo coat');
+                r = r.replace(/\bshirt\b/gi, 'jeogori');
+                r = r.replace(/\bpants\b/gi, 'traditional baji');
+                r = r.replace(/\b(?<!Korean )shoes\b/gi, 'traditional Korean shoes');
+                // 중복 정리
+                r = r.replace(/\b(traditional dopo|dopo) (dopo )?coat\b/gi, 'traditional dopo coat');
+                r = r.replace(/\s+,/g, ',').replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' ');
               } else {
                 // NK: 수채화/만화 키워드를 실사 키워드로 강제 치환
                 r = r.replace(/\bwatercolor-style\b/gi, 'photorealistic');
@@ -9394,7 +9413,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           const _actionClause = _titleAction
             ? `, actively ${_titleAction} — THIS specific absurd action MUST be the visual focus of the scene`
             : '';
-          const _mainDesc = `East Asian ${_mainGender} in late Joseon era, ${_mainCostume}${_actionClause}, shocked or desperate expression, looking straight at camera`;
+          const _mainDesc = `East Asian ${_mainGender} in late Joseon era, ${_mainCostume}${_actionClause}, looking straight at camera`;
           const _helperDesc = _helperC ? `East Asian ${_helperC?.gender === '여' ? 'woman' : 'man'} in late Joseon era, ${_helperCostume}, reacting with astonishment` : '';
 
           // 🆕 r4.6: DNA 기반 텍스트 오버레이 (위치/색상/크기 벤치마킹 따라가기)
@@ -9415,12 +9434,12 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           const _r46_speechBubbleData = 'none';
           const _r46_cartoonStyle = _r46_dna && _r46_dna.cartoonStyle ? _r46_dna.cartoonStyle : 'clean-anime';
           
-          // 🆕 r4.6: 표정 강도 → 영문 키워드 변환
+          // 🆕 r4.6: 표정 강도 → 영문 키워드 변환 [r6.9 정답공식: 표정 INTENSE 강화]
           const _r46_expressKw = _r46_expressIntensity >= 8 
-            ? 'EXTREME shocked expression with wide open mouth, screaming face, sweat drops, intense emotional outburst'
+            ? 'EXTREME intense facial expression, wide open mouth screaming, fierce burning eyes, sweat drops, powerful raw emotional outburst, maximum emotional intensity'
             : _r46_expressIntensity >= 5
-            ? 'shocked surprised expression, mouth slightly open, wide eyes, tense emotion'
-            : 'calm composed expression with subtle emotion';
+            ? 'strong intense expression, mouth open, wide fierce eyes, visible powerful emotion, dramatic tension'
+            : 'composed but emotionally charged expression, intense eyes, subtle strong feeling';
           
           // 🆕 r4.6: 얼굴 크기 → 영문 키워드
           const _r46_faceSizeKw = _r46_faceSize.includes('extreme') ? 'face filling 80% of frame, extreme close-up'
@@ -9516,8 +9535,12 @@ NO TEXT, NO LETTERS, NO Korean characters anywhere, natural background fills ent
           const _r46_koreanForce = 'East Asian Korean ethnicity ONLY, Joseon dynasty era setting, traditional hanbok costume';
           const _r46_negPrompt = '--no photorealism --no 3d render --no western faces --no modern clothes --no jeans --no t-shirt --no blazer --no sneakers --no wristwatch --no suit --no cardigan --no loafers --no tailored trousers --no pencil skirt --no English text --no tilted text --no rotated text --no diagonal text --no slanted text --no skewed text --no different sizes --no size variation';
           
-          // 앵글 1 - 핵심 장면 (🅰️ 텍스트 포함 / 🅱️ 이미지만)
-          const _r46_a1_base = `${_r46_dnaStyle}, ${_r46_styleKw}, ${_r46_koreanForce}. ${_mainDesc}, ${_r46_expressKw}, ${_r46_faceSizeKw}, most dramatic and emotional action moment of the story. ${_helperDesc ? _helperDesc + ' nearby.' : ''} ${_r46_dnaSpeechBubble} ${_ydSpeechBubble}`;
+          // 🆕 r6.9: 야담 썸네일 앵글1 전용 — 황당행동을 '당당·태연하게' 하는 표정 (격분 아님)
+          // 벤치마킹: 며느리가 황당한 짓을 당당하게/태연하게 → "왜 저걸 아무렇지 않게?" 후킹
+          const _r46_boldKw = 'bold confident composed expression, fierce determined eyes, slight knowing smirk, commanding dominant presence, NOT screaming NOT crying NOT panicking, calm and self-assured while doing the absurd action, looking straight at camera with quiet determination';
+          
+          // 앵글 1 - 핵심 장면 (🅰️ 텍스트 포함 / 🅱️ 이미지만) — ★당당한 표정 사용
+          const _r46_a1_base = `${_r46_dnaStyle}, ${_r46_styleKw}, ${_r46_koreanForce}. ${_mainDesc}, ${_r46_boldKw}, ${_r46_faceSizeKw}, most dramatic and confident action moment of the story. ${_helperDesc ? _helperDesc + ' reacting with shock nearby.' : ''} ${_r46_dnaSpeechBubble} ${_ydSpeechBubble}`;
           result += `[앵글 1 - 핵심 장면]\n`;
           result += `🅰️ 버전 A (텍스트 포함):\n${_r46_a1_base}${_textOverlay} ${_r46_negPrompt} --ar 16:9 --s 250\n\n`;
           result += `🅱️ 버전 B (이미지만, 후편집용):\n${_r46_a1_base}${_textOverlayB} ${_r46_negPrompt} --ar 16:9 --s 250\n\n`;
@@ -13847,21 +13870,29 @@ ${hookPattern}${hookForceText}
 ⚠️ 야담 인트로는 반드시 "긴장감/궁금증 폭발"로 시작해야 함!
 ⚠️ 시놉시스에서 지정한 1막 훅 장면을 그대로 따를 것! (처형만 반복 금지!)
 
- 야담 인트로 필수 구조 (5단계 반드시 준수):
-1. 훅 대사: 시놉시스 1막 가장 극적인 장면의 강렬한 대사!
-   예시: "나으리, 죽여주십시오!" / "그 궤짝을 열면 안 됩니다!" / "이 혼례는 무효요!"
-2. 극한상황 묘사: 훅 직후 2~3문장으로 긴장감 고조
-   예시: "관아 마당이 쥐 죽은 듯 조용해졌습니다. 포박된 사내의 얼굴은 새하얗게 질렸지요. 저 멀리 거상의 입가에는 차가운 미소가 번졌답니다."
-3. 궁금증 질문: 반드시 1개!
-   예시: "과연 진실은 무엇이었을까요?" / "그 운명의 실타래는 어디서부터 시작된 것이었을까요?"
-4. 채널멘트 (궁금증 질문 직후): "${introMent}"
-   ⛔ 반드시 위 형식만! "이야기꾼을 찾아주셔서 감사합니다" "자, 시작합니다" 등 비표준 절대 금지!
-5. 시간도약 + 본문: "이야기는 몇 해 전으로 거슬러 올라갑니다. ${mainChar.name}이라는 자가 있었답니다..."
+ 야담 인트로 필수 구조 (6단계 반드시 준수):
+0. ★★★[제목 황당행동 직투척] B방식 제목이 있으면, 인트로 첫 장면은 반드시 제목의 [황당행동]을 직접 보여줄 것!
+   (제목이 "기와 다 뜯어판 며느리"면 → 첫 장면은 며느리가 기와를 뜯는 장면. 다른 잔잔한 장면으로 시작 금지)
+   → 썸네일(제목) 보고 들어온 시청자가 "어? 그 장면이다" 하고 바로 몰입하게 만든다.
+1. 훅 대사 또는 충격 행동: 제목의 황당행동과 직결된 강렬한 대사/장면!
+   예시: "기와를 뜯어라. 한 장도 남기지 말고 전부." / "그 궤짝을 열면 안 됩니다!"
+2. 극한상황 묘사: 훅 직후 2~3문장으로 긴장감 고조 (짧은 문장으로 끊어 리듬)
+   예시: "시집온 지 사흘. 멀쩡한 기와를 뜯기 시작했지요. 시아버지가 그 자리에 주저앉았답니다."
+3. 주변 반응으로 황당함 증폭: "미쳤다고 했다 / 손가락질했다 / 집안 망칠 년이라 했다" (1~2문장)
+4. ★★★[끝에 강한 한 방 — 반전 결과 충돌] 황당행동과 정반대 결과를 충돌시켜라!
+   예시: "그런데 그로부터 삼 년 뒤, 그 망해가던 집안은 고을에서 손꼽히는 부자가 되어 있었답니다."
+   (이 반전 한 방이 인트로의 핵심! 황당행동 → 정반대 결과 = 시청자 충격 → 끝까지 봄)
+5. 궁금증 질문: 반드시 1개! "도대체 왜 멀쩡한 기와를 제 손으로 뜯어 팔았던 것일까요?"
+6. 채널멘트 (궁금증 질문 직후): "${introMent}"
+   ⛔ 반드시 위 형식만! 비표준 절대 금지!
+7. 시간도약 + 본문: "이야기는 몇 해 전으로 거슬러 올라간답니다..."
 
-[완성 예시 — 이 구조 그대로 따를 것]
-"저놈이 바로 역적이옵니다!"
-관아 마당이 찬물을 끼얹은 듯 조용해졌습니다. 포박된 사내의 얼굴이 새하얗게 질렸지요. 저 멀리 거상의 입가에는 승리자의 미소가 번졌답니다.
-과연 이 억울한 사내의 누명은 벗겨질 수 있었을까요?
+[완성 예시 — 이 구조 그대로 따를 것 (제목황당행동→반전한방)]
+"기와를 뜯어라. 한 장도 남기지 말고 전부."
+시집온 지 사흘. 새색시가 멀쩡한 기와를 제 손으로 뜯기 시작했지요. 시아버지가 그 자리에 털썩 주저앉았답니다.
+미쳤다고들 했습니다. 집안 말아먹을 년이 들어왔다고 손가락질했지요.
+그런데 그로부터 삼 년 뒤, 그 망해가던 집안은 고을에서 손꼽히는 부자가 되어 있었답니다.
+도대체 왜, 멀쩡한 기와를 제 손으로 뜯어 팔았던 것일까요?
 ${introMent}
 이야기는 몇 해 전으로 거슬러 올라간답니다...
 
