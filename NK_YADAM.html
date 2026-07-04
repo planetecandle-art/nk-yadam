@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 8개수정: 탈락(가을보호)+썸네일다인구도+인트로호칭자연화+성별보정(버림동사)+미성년자회피+되물림검수후재정화+조연나이고정] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 8개수정: 탈락(가을보호)+썸네일다인구도+인트로호칭자연화+성별보정(버림동사)+미성년자회피+되물림검수후재정화+조연나이고정+시놉나이보정] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -12012,7 +12012,65 @@ ${isYadam ?
               clothing: ''
             }));
             
-            // AI에게 외모/복장만 요청 (이름 추출 NO!)
+            // [r7.5 시놉나이보정] 시놉시스의 인물 묘사에서 나이 단서를 읽어 캐스트 나이 자동 보정
+            // (예: "청상"(젊은 과부)인데 조력자 기본값 40대로 배정된 것 → 20대 후반으로 하향)
+            try {
+              const _r75_synText = (typeof synopsisText === 'string' && synopsisText) ? synopsisText
+                : (typeof synopsis === 'string' ? synopsis : '');
+              if (_r75_synText && _r75_synText.length > 50) {
+                // 나이 단서 키워드 → 권장 나이대 (구체적일수록 우선)
+                const _r75_ageHints = [
+                  { kw: ['소녀','소년','어린','아이','계집아이','사내아이','동자','꼬마'], age: '10대 중반' },
+                  { kw: ['처녀','규수','낭자','도령','새색시','새댁','아씨','청년','총각','젊은 과부','청상'], age: '20대 후반' },
+                  { kw: ['며느리','신부','색시'], age: '20대 후반' },
+                  { kw: ['과부','미망인','홀어미','젊은 어미'], age: '30대 초반' },
+                  { kw: ['선비','서생','유생','상인','장사꾼'], age: '30대 중반' },
+                  { kw: ['중년','장년','아낙','아저씨','아주머니'], age: '40대 중반' },
+                  { kw: ['노파','할멈','할미','늙은','백발','노인','늙은이','영감','할아범','노승','촌로'], age: '60대 중반' }
+                ];
+                newCast = newCast.map(function(c){
+                  if (!c || !c.name) return c;
+                  // 인물 이름 '바로 앞'의 수식어를 우선 수집 (앞 15자) — 다른 인물 수식어 오염 방지
+                  var _ctxNear = '';  // 이름 직전 15자 (강한 단서)
+                  var _ctxFar = '';   // 이름 주변 넓게 (약한 단서)
+                  var _pos = _r75_synText.indexOf(c.name);
+                  var _guard = 0;
+                  while (_pos >= 0 && _guard < 10) {
+                    _ctxNear += ' ' + _r75_synText.slice(Math.max(0, _pos - 15), _pos);
+                    _ctxFar += ' ' + _r75_synText.slice(Math.max(0, _pos - 40), _pos + 40);
+                    _pos = _r75_synText.indexOf(c.name, _pos + 1);
+                    _guard++;
+                  }
+                  _ctxNear += ' ' + (c.role || '');
+                  if (!_ctxNear.trim() && !_ctxFar.trim()) return c;
+                  // 1차: 이름 바로 앞 수식어(강한 단서)로 매칭
+                  var _matched = false;
+                  for (var _hi = 0; _hi < _r75_ageHints.length; _hi++) {
+                    if (_r75_ageHints[_hi].kw.some(function(k){ return _ctxNear.indexOf(k) >= 0; })) {
+                      if (c.age !== _r75_ageHints[_hi].age) {
+                        console.log('[r7.5 시놉나이보정] ' + c.name + ': ' + c.age + ' → ' + _r75_ageHints[_hi].age + ' (직접수식)');
+                        c.age = _r75_ageHints[_hi].age;
+                      }
+                      _matched = true; break;
+                    }
+                  }
+                  // 2차: 직접 수식 없을 때만 넓은 문맥 사용 (단, 노인/어린이 같은 확실한 것만)
+                  if (!_matched) {
+                    var _strongOnly = [_r75_ageHints[0], _r75_ageHints[_r75_ageHints.length-1]]; // 소년소녀 / 노인
+                    for (var _hj = 0; _hj < _strongOnly.length; _hj++) {
+                      if (_strongOnly[_hj].kw.some(function(k){ return _ctxFar.indexOf(k) >= 0; })) {
+                        if (c.age !== _strongOnly[_hj].age) {
+                          console.log('[r7.5 시놉나이보정] ' + c.name + ': ' + c.age + ' → ' + _strongOnly[_hj].age + ' (문맥)');
+                          c.age = _strongOnly[_hj].age;
+                        }
+                        break;
+                      }
+                    }
+                  }
+                  return c;
+                });
+              }
+            } catch(_r75age){ console.warn('[r7.5 시놉나이보정] 오류:', _r75age.message); }
             try {
               const appearSystem = `캐릭터 외모 설계 전문가. 아래 인물 목록의 appearance와 clothing만 영문으로 생성. JSON 배열만 출력.`;
               const appearPrompt = `[인물 목록]\n${newCast.map(c => `- ${c.name} (${c.role}, ${c.gender}, ${c.age})`).join('\n')}\n\n위 인물 각각의 appearance(영문)와 clothing(영문)을 JSON 배열로 출력.\n[{"name":"${newCast[0]?.name}","appearance":"...","clothing":"..."}]`;
