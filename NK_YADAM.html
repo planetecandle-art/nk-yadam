@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+직업키워드보강+어휘쉬운말] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -4523,14 +4523,17 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
               if (/초반/.test(s)) pos = "early ";
               else if (/중반/.test(s)) pos = "mid ";
               else if (/후반|말/.test(s)) pos = "late ";
-              // [r7.4 미성년자회피] 10대/그 이하는 이미지에서 무조건 20대 초반으로 (Flow 안전규칙)
-              if (dec < 20) return "in their early 20s";
+              // [r7.5 나이대로] 10대는 실제 청소년으로 (성적요소 배제는 innocent 문구로 처리)
+              if (dec < 20) return "a young teenager around age " + (dec + 5) + ", innocent child appearance, fully clothed";
               return "in their " + pos + dec + "s";
             }
             var n = parseInt(s.replace(/[^0-9]/g,''), 10);
             if (!n || isNaN(n)) return null;
-            // [r7.4 미성년자회피] 20세 미만은 전부 early 20s로 강제 (child/teenager 표현 금지)
-            if (n < 20) return "in their early 20s";
+            // [r7.5 나이대로] 아기~청소년은 실제 나이대로 그림 (성적요소 배제는 innocent/fully clothed 문구로)
+            if (n < 2) return "a baby infant";
+            if (n < 6) return "a young child around age " + n + ", innocent, fully clothed";
+            if (n < 10) return "a child around age " + n + ", innocent, fully clothed";
+            if (n < 20) return "a teenager around age " + n + ", innocent youth appearance, fully clothed, no romantic or sexual context";
             var ndec = Math.floor(n/10)*10;
             var npos = (n%10) <= 3 ? "early " : ((n%10) <= 6 ? "mid " : "late ");
             if (n % 10 === 0) npos = "";
@@ -12019,15 +12022,39 @@ ${isYadam ?
               const _r75_synText = (typeof synopsisText === 'string' && synopsisText) ? synopsisText
                 : (typeof synopsis === 'string' ? synopsis : '');
               if (_r75_synText && _r75_synText.length > 50) {
-                // 나이 단서 키워드 → 권장 나이대 (구체적일수록 우선)
+                // [r7.5 나이 마스터] 직업+신분+관계+아이 통합. 구체적인 것이 위(먼저 매칭).
+                // 아기~어린이(0~8세)는 그대로, 10대(소년소녀)만 이미지에서 20대 클램프(⑤에서 처리).
                 const _r75_ageHints = [
-                  { kw: ['소녀','소년','어린','아이','계집아이','사내아이','동자','꼬마'], age: '10대 중반' },
-                  { kw: ['처녀','규수','낭자','도령','새색시','새댁','아씨','청년','총각','젊은 과부','청상'], age: '20대 후반' },
-                  { kw: ['며느리','신부','색시'], age: '20대 후반' },
+                  // === 아기·유아 (이미지 클램프 예외 — 아기는 그대로) ===
+                  { kw: ['갓난','젖먹이','핏덩이','강보'], age: '1세 미만' },
+                  { kw: ['아기','어린것','업둥이','유아'], age: '3세' },
+                  // === 아동 (6~8세) ===
+                  { kw: ['어린 딸','어린 아들','어린 아이','꼬마','동자','어린애'], age: '8세' },
+                  // === 소년·소녀 (10대, 이미지는 20대로 클램프됨) ===
+                  { kw: ['소녀','계집아이','어린 처녀'], age: '10대 중반' },
+                  { kw: ['소년','사내아이','더벅머리'], age: '10대 중반' },
+                  // === 여성 젊음 (20대) ===
+                  { kw: ['처녀','규수','낭자','새색시','새댁','아씨','색시','젊은 과부','청상과부','청상'], age: '20대 후반' },
+                  { kw: ['며느리','신부','민며느리'], age: '20대 후반' },
+                  { kw: ['몸종','여종','하녀','비복','관비','종년','계집종','침모','수모','무녀','비구니','여승','기녀','기생','무수리','나인'], age: '20대 후반' },
+                  // === 남성 젊음 (20대) ===
+                  { kw: ['총각','도령','서방님','신랑','젊은 선비'], age: '20대 중반' },
+                  { kw: ['머슴','일꾼','종놈','머슴꾼','지게꾼','초동'], age: '20대 후반' },
+                  // === 여성 중년 (30~40대) ===
                   { kw: ['과부','미망인','홀어미','젊은 어미'], age: '30대 초반' },
-                  { kw: ['선비','서생','유생','상인','장사꾼'], age: '30대 중반' },
-                  { kw: ['중년','장년','아낙','아저씨','아주머니'], age: '40대 중반' },
-                  { kw: ['노파','할멈','할미','늙은','백발','노인','늙은이','영감','할아범','노승','촌로'], age: '60대 중반' }
+                  { kw: ['아낙','아주머니','안댁','부인','마님','안방마님','마나님'], age: '40대 중반' },
+                  // === 남성 서민 직업 (30대) ===
+                  { kw: ['나무꾼','옹기장이','옹기장','숯쟁이','뱃사공','사공','어부','농부','대장장이','소금장수','엿장수','물장수','짚신장수','방물장수','보부상','목수','석수','도공','기와장이','땜장이','약초꾼','사냥꾼','포수','나룻배'], age: '30대 중반' },
+                  { kw: ['선비','서생','유생','상인','장사꾼','객주','거상'], age: '30대 중반' },
+                  { kw: ['남편','지아비','서방'], age: '30대 후반' },
+                  // === 권력·중년 (40~50대) ===
+                  { kw: ['사또','원님','수령','부사','목사','대감','판서','정승','참판','양반','지주','부호','부자','마름'], age: '40대 후반' },
+                  { kw: ['시아버지','시부','장인'], age: '50대 중반' },
+                  { kw: ['시어머니','계모','의붓어미','시모'], age: '50대 초반' },
+                  { kw: ['중년','장년','아저씨'], age: '40대 중반' },
+                  // === 노년 (60대+) ===
+                  { kw: ['노파','할멈','할미','노할미','노모'], age: '60대 중반' },
+                  { kw: ['영감','할아범','노인','늙은이','노승','촌로','늙은','백발'], age: '60대 중반' }
                 ];
                 newCast = newCast.map(function(c){
                   if (!c || !c.name) return c;
@@ -12057,7 +12084,10 @@ ${isYadam ?
                   }
                   // 2차: 직접 수식 없을 때만 넓은 문맥 사용 (단, 노인/어린이 같은 확실한 것만)
                   if (!_matched) {
-                    var _strongOnly = [_r75_ageHints[0], _r75_ageHints[_r75_ageHints.length-1]]; // 소년소녀 / 노인
+                    // 넓은 문맥에서는 확실한 것만 (노인/소년소녀). 갓난아기 등은 오판 위험으로 제외
+                    var _strongOnly = _r75_ageHints.filter(function(h){
+                      return h.age === '60대 중반' || (h.age === '10대 중반' && h.kw.indexOf('소녀') >= 0);
+                    });
                     for (var _hj = 0; _hj < _strongOnly.length; _hj++) {
                       if (_strongOnly[_hj].kw.some(function(k){ return _ctxFar.indexOf(k) >= 0; })) {
                         if (c.age !== _strongOnly[_hj].age) {
