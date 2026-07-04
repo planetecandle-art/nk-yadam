@@ -12019,8 +12019,9 @@ ${isYadam ?
             // [r7.5 시놉나이보정] 시놉시스의 인물 묘사에서 나이 단서를 읽어 캐스트 나이 자동 보정
             // (예: "청상"(젊은 과부)인데 조력자 기본값 40대로 배정된 것 → 20대 후반으로 하향)
             try {
-              const _r75_synText = (typeof synopsisText === 'string' && synopsisText) ? synopsisText
-                : (typeof synopsis === 'string' ? synopsis : '');
+              const _r75_synText = (typeof synFixed === 'string' && synFixed) ? synFixed
+                : (typeof synopsisText === 'string' && synopsisText ? synopsisText
+                : (typeof synText === 'string' ? synText : ''));
               if (_r75_synText && _r75_synText.length > 50) {
                 // [r7.5 나이 마스터] 직업+신분+관계+아이 통합. 구체적인 것이 위(먼저 매칭).
                 // 아기~어린이(0~8세)는 그대로, 10대(소년소녀)만 이미지에서 20대 클램프(⑤에서 처리).
@@ -12106,8 +12107,9 @@ ${isYadam ?
             // [r7.5 시놉성별검증] 시놉에서 주인공 성별 재확인 → 제목판단과 다르면 시놉을 따름
             // (대본은 시놉 기반으로 써지므로 시놉이 진실. 제목판단이 틀렸을 때의 안전망)
             try {
-              const _r75_syn = (typeof synopsisText === 'string' && synopsisText) ? synopsisText
-                : (typeof synopsis === 'string' ? synopsis : '');
+              const _r75_syn = (typeof synFixed === 'string' && synFixed) ? synFixed
+                : (typeof synopsisText === 'string' && synopsisText ? synopsisText
+                : (typeof synText === 'string' ? synText : ''));
               if (_r75_syn && _r75_syn.length > 50) {
                 const _r75_femW = ['여인','여자','아내','부인','과부','미망인','며느리','딸','소녀','처녀','규수','낭자','아씨','마님','계모','노파','할멈','새댁','청상','무녀','비복','종년','어미','어머니','그녀','비구니','몸종','침모','기녀','기생','궁녀','유모','밥어미'];
                 const _r75_malW = ['사내','남자','남편','아들','총각','선비','영감','대감','나무꾼','머슴','옹기장이','숯쟁이','뱃사공','약초꾼','농부','어부','상인','포수','사냥꾼','도령','장군','아비','아버지','마름','대장장이','목수','석수','도공','소금장수','짚신장수','지게꾼','보부상'];
