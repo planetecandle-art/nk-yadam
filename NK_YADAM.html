@@ -10050,18 +10050,35 @@ ${inputScript.slice(0, 12000)}
             const _isM = !_isF && _mKw.some(function(kw){return _titleForGender.includes(kw)&&!_isObj(kw);});
             if(_isF){ mainGender='female'; console.log('[v21.0 YA-성별] 제목분석 → 주인공 여성'); }
             else if(_isM){ mainGender='male'; console.log('[v21.0 YA-성별] 제목분석 → 주인공 남성'); }
-            // [r7.4 성별보정] 버림/처분 동사 감지 — "[대상] 버렸더니/내쫓은/버린" 이면 대상은 주인공이 아니라 당하는 쪽.
-            // 주인공은 그 행동의 주체(반대 성별). 예: "조강지처(여) 버렸더니~" → 버린 주체=남편(남)이 주인공.
-            const _r74_discardVerb = /(버렸|버린|버리고|내쫓|쫓아낸|쫓아내|소박맞|소박 놓|내친|내보낸|팔아넘긴|팔아버린)/;
-            if (_r74_discardVerb.test(_titleForGender)) {
-              // 버림동사 앞부분(첫 절)에 등장한 인물의 성별 → 그 인물은 '당하는 대상'
-              const _vIdx = _titleForGender.search(_r74_discardVerb);
-              const _beforeVerb = _titleForGender.slice(0, _vIdx);
-              const _targetIsF = _fKw.some(function(kw){return _beforeVerb.includes(kw);});
-              const _targetIsM = _mKw.some(function(kw){return _beforeVerb.includes(kw);});
-              if (_targetIsF && !_targetIsM) { mainGender = 'male'; console.log('[r7.4 성별보정] 버림동사+여성대상 → 주인공 남성(버린 주체)'); }
-              else if (_targetIsM && !_targetIsF) { mainGender = 'female'; console.log('[r7.4 성별보정] 버림동사+남성대상 → 주인공 여성(버린 주체)'); }
-            }
+            // [r7.5 성별-주체판단] 관계동사(구한/삼은/버린 등) 뒤의 '주체'가 주인공. 그 주체 성별을 직접 판단.
+            // 동성조합(며느리-노파, 머슴-영감)도 대응: 대상의 반대가 아니라 주체 자체 성별을 봄.
+            // 예1: "과부 구한 옹기장이" → 주체=옹기장이(남) → 주인공 남
+            // 예2: "며느리 숨겨준 노파" → 주체=노파(여) → 주인공 여 (동성)
+            // 예3: "조강지처 버렸더니 아내 곁엔 죽마고우" → 주체 명시 애매 → 대상(조강지처=여)의 반대=남
+            try {
+              var _r75_relVerb = /(구한|구해준|삼은|삼았|거둔|거두어|숨겨준|숨긴|데려온|데려간|품은|품에|맞은|들인|버렸|버린|버리고|내쫓|쫓아낸|소박맞|내친|내보낸|팔아넘긴)/;
+              var _r75_vm = _titleForGender.match(_r75_relVerb);
+              if (_r75_vm) {
+                var _r75_vIdx = _titleForGender.indexOf(_r75_vm[0]);
+                var _r75_after = _titleForGender.slice(_r75_vIdx + _r75_vm[0].length); // 동사 뒤
+                var _r75_before = _titleForGender.slice(0, _r75_vIdx); // 동사 앞 = 대상
+                var _r75_isDiscard = /(버렸|버린|버리고|내쫓|쫓아낸|소박맞|내친|내보낸|팔아넘긴)/.test(_r75_vm[0]);
+                if (!_r75_isDiscard) {
+                  // 거둠동사("구한/삼은/숨겨준"): 동사 뒤 = 주체(주인공). 주체 성별 직접 판단 (동성조합 대응)
+                  var _r75_subM = _mKw.some(function(kw){return _r75_after.includes(kw);});
+                  var _r75_subF = _fKw.some(function(kw){return _r75_after.includes(kw);});
+                  if (_r75_subM && !_r75_subF) { mainGender='male'; console.log('[r7.5 성별-주체판단] 거둠동사 뒤 주체=남성 → 주인공 남'); }
+                  else if (_r75_subF && !_r75_subM) { mainGender='female'; console.log('[r7.5 성별-주체판단] 거둠동사 뒤 주체=여성 → 주인공 여'); }
+                  // 주체 애매 → 기존 _isF/_isM 유지 (시놉 재확인에 맡김)
+                } else {
+                  // 버림동사("버렸/내쫓"): 동사 뒤엔 주체 없음(또 다른 대상). 앞 대상의 반대가 주인공.
+                  var _r75_tgtF = _fKw.some(function(kw){return _r75_before.includes(kw);});
+                  var _r75_tgtM = _mKw.some(function(kw){return _r75_before.includes(kw);});
+                  if (_r75_tgtF && !_r75_tgtM) { mainGender='male'; console.log('[r7.5 성별-주체판단] 버림+여성대상 → 주인공 남(반대)'); }
+                  else if (_r75_tgtM && !_r75_tgtF) { mainGender='female'; console.log('[r7.5 성별-주체판단] 버림+남성대상 → 주인공 여(반대)'); }
+                }
+              }
+            } catch(_r75g){ console.warn('[r7.5 성별-주체판단] 오류:', _r75g.message); }
           }
           // [v21.0 YA-나이] 야담: 제목 역할로 주인공/조력자 나이 매칭 (r5.1.4 정밀 매핑)
           let _mainAge = '30대 중반', _helperAge = '40대';
@@ -10964,42 +10981,18 @@ ${(function(){
             }
           }
           // ========== v21.0 C-1 Fix 끝 ==========
-          // Fix3 r9-19: B방식 제목에서 주인공 성별 분석 → 시놉 프롬프트 주입
-          // 개선: 목적어(~을/를/에게/으로) 앞 키워드는 대상으로 판단 (주인공 아님)
-          // 문장 끝 명사구 기준으로 주인공 판단
+          // Fix3 r9-19 → [r7.5 성별동기화]: 위 mainGender(주체판단 완료값)를 그대로 시놉 힌트로 사용
+          // 독립 판단 제거 — 캐스트 성별과 시놉 힌트가 100% 일치하도록 (이중판단 불일치 차단)
           if (isYadam && useBMode && selectedTitle && synopsisPrompt) {
-            var _femaleKw = ['어머니','어미','엄마','소녀','여종','씨받이','며느리','아내','과부','딸','여인','아씨','마님'];
-            var _maleKw = ['아버지','아비','아빠','총각','사내','홀아비','아들','영감','선비','양반','남편'];
-            // 목적어 조사: 이 앞에 오는 키워드는 주인공이 아님
-            var _objParticles = ['을','를','에게','으로','로','의'];
-            // 목적어 패턴 제외: "키워드+조사" 형태면 대상으로 판단
-            var _isObjKw = function(kw) {
-              var idx = selectedTitle.indexOf(kw);
-              if (idx < 0) return false;
-              var after = selectedTitle.slice(idx + kw.length, idx + kw.length + 2);
-              return _objParticles.some(function(p) { return after.startsWith(p); });
-            };
-            // 문장 끝 기준 판단: 제목 뒤쪽에 키워드가 있으면 주인공
-            var _titleEnd = selectedTitle.slice(Math.floor(selectedTitle.length / 2));
-            var _isFemale = _femaleKw.some(function(kw) {
-              return selectedTitle.includes(kw) && !_isObjKw(kw) && _titleEnd.includes(kw);
-            }) || _femaleKw.some(function(kw) {
-              return selectedTitle.includes(kw) && !_isObjKw(kw) && !_maleKw.some(function(mk) { return selectedTitle.includes(mk) && !_isObjKw(mk); });
-            });
-            var _isMale = !_isFemale && _maleKw.some(function(kw) {
-              return selectedTitle.includes(kw) && !_isObjKw(kw);
-            });
             var _genderHint = '';
-            if (_isFemale) {
-              _genderHint = '\n⚠️ [주인공 성별 필수] 제목 분석 결과: 주인공은 반드시 여성이어야 합니다. 남성을 주인공으로 설정하면 실패입니다!';
-            } else if (_isMale) {
-              _genderHint = '\n⚠️ [주인공 성별 필수] 제목 분석 결과: 주인공은 반드시 남성이어야 합니다. 여성을 주인공으로 설정하면 실패입니다!';
+            if (typeof mainGender !== 'undefined' && mainGender === 'female') {
+              _genderHint = '\n⚠️ [주인공 성별 필수] 주인공은 반드시 여성이어야 합니다. 남성을 주인공으로 설정하면 실패입니다!';
+            } else if (typeof mainGender !== 'undefined' && mainGender === 'male') {
+              _genderHint = '\n⚠️ [주인공 성별 필수] 주인공은 반드시 남성이어야 합니다. 여성을 주인공으로 설정하면 실패입니다!';
             }
             if (_genderHint) {
               synopsisPrompt = synopsisPrompt + _genderHint;
-              console.log('Fix3 r9-19: 성별 힌트 주입 →', _genderHint.trim());
-            } else {
-              console.log('Fix3 r9-19: 성별 애매 → 힌트 없음 (AI 자체 판단)');
+              console.log('[r7.5 성별동기화] 시놉 힌트 = 캐스트 성별(' + mainGender + ')');
             }
           }
           // r9-24: Claude Haiku + XML 프롬프트 최적화
@@ -12071,6 +12064,39 @@ ${isYadam ?
                 });
               }
             } catch(_r75age){ console.warn('[r7.5 시놉나이보정] 오류:', _r75age.message); }
+            
+            // [r7.5 시놉성별검증] 시놉에서 주인공 성별 재확인 → 제목판단과 다르면 시놉을 따름
+            // (대본은 시놉 기반으로 써지므로 시놉이 진실. 제목판단이 틀렸을 때의 안전망)
+            try {
+              const _r75_syn = (typeof synopsisText === 'string' && synopsisText) ? synopsisText
+                : (typeof synopsis === 'string' ? synopsis : '');
+              if (_r75_syn && _r75_syn.length > 50) {
+                const _r75_femW = ['여인','여자','아내','부인','과부','미망인','며느리','딸','소녀','처녀','규수','낭자','아씨','마님','계모','노파','할멈','새댁','청상','무녀','비복','종년','어미','어머니','그녀'];
+                const _r75_malW = ['사내','남자','남편','아들','총각','선비','영감','대감','나무꾼','머슴','옹기장이','숯쟁이','뱃사공','약초꾼','농부','어부','상인','포수','사냥꾼','도령','장군','아비','아버지'];
+                const _r75_main = newCast.find(function(c){ return c && c.isMain; });
+                if (_r75_main && _r75_main.name) {
+                  // 주인공 이름 바로 앞 12자(수식어) 수집
+                  var _r75_near = '';
+                  var _p = _r75_syn.indexOf(_r75_main.name);
+                  var _g = 0;
+                  while (_p >= 0 && _g < 8) {
+                    _r75_near += ' ' + _r75_syn.slice(Math.max(0, _p - 12), _p);
+                    _p = _r75_syn.indexOf(_r75_main.name, _p + 1);
+                    _g++;
+                  }
+                  var _r75_synF = _r75_femW.some(function(w){ return _r75_near.indexOf(w) >= 0; });
+                  var _r75_synM = _r75_malW.some(function(w){ return _r75_near.indexOf(w) >= 0; });
+                  // 시놉이 명확히 한쪽 성별이고, 캐스트와 다르면 → 시놉 따라 보정
+                  if (_r75_synF && !_r75_synM && _r75_main.gender !== '여') {
+                    console.log('[r7.5 시놉성별검증] 주인공 ' + _r75_main.name + ': ' + _r75_main.gender + ' → 여 (시놉 우선)');
+                    _r75_main.gender = '여';
+                  } else if (_r75_synM && !_r75_synF && _r75_main.gender !== '남') {
+                    console.log('[r7.5 시놉성별검증] 주인공 ' + _r75_main.name + ': ' + _r75_main.gender + ' → 남 (시놉 우선)');
+                    _r75_main.gender = '남';
+                  }
+                }
+              }
+            } catch(_r75gv){ console.warn('[r7.5 시놉성별검증] 오류:', _r75gv.message); }
             try {
               const appearSystem = `캐릭터 외모 설계 전문가. 아래 인물 목록의 appearance와 clothing만 영문으로 생성. JSON 배열만 출력.`;
               const appearPrompt = `[인물 목록]\n${newCast.map(c => `- ${c.name} (${c.role}, ${c.gender}, ${c.age})`).join('\n')}\n\n위 인물 각각의 appearance(영문)와 clothing(영문)을 JSON 배열로 출력.\n[{"name":"${newCast[0]?.name}","appearance":"...","clothing":"..."}]`;
