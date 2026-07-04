@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.3 로드완료 (2026-07-02 빌드) — [★T-2 실제실행부 수정: Sonnet고정+고정부통짜복사+자가검증+아내변형금지 (기존 4204는 대본용이라 T-2 미반영이던 것 발견)] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 8개수정: 탈락(가을보호)+썸네일다인구도+인트로호칭자연화+성별보정(버림동사)+미성년자회피+되물림검수후재정화+조연나이고정] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2322,7 +2322,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r7.3';
+      var _VER = 'v21.0 r7.5';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -4523,13 +4523,14 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
               if (/초반/.test(s)) pos = "early ";
               else if (/중반/.test(s)) pos = "mid ";
               else if (/후반|말/.test(s)) pos = "late ";
-              if (dec < 20) return "a teenager (around age 18)";
+              // [r7.4 미성년자회피] 10대/그 이하는 이미지에서 무조건 20대 초반으로 (Flow 안전규칙)
+              if (dec < 20) return "in their early 20s";
               return "in their " + pos + dec + "s";
             }
             var n = parseInt(s.replace(/[^0-9]/g,''), 10);
             if (!n || isNaN(n)) return null;
-            if (n < 13) return "a child (around age " + n + ")";
-            if (n < 20) return "a teenager (around age " + n + ")";
+            // [r7.4 미성년자회피] 20세 미만은 전부 early 20s로 강제 (child/teenager 표현 금지)
+            if (n < 20) return "in their early 20s";
             var ndec = Math.floor(n/10)*10;
             var npos = (n%10) <= 3 ? "early " : ((n%10) <= 6 ? "mid " : "late ");
             if (n % 10 === 0) npos = "";
@@ -4785,6 +4786,14 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         
         // 을/를 교정: [한글]을 → 받침 없으면 를로
         // 을/를 뒤에 공백/구두점/줄바꿈이 와야 조사로 판단 (을씨 같은 단어 오인 방지)
+        // [r7.4 탈락방지] '을'로 끝나는 명사 보호 — 조사 '을'로 오인해 '를'로 바꾸는 것 차단
+        // (가을→가를, 고을→고를, 마을→마를 방지). 교정 전 임시치환 → 교정 후 복원
+        const _eulNouns = ['가을','고을','마을','겨울','거울','서울','이불','구슬','바늘','하늘','거늘','까닭을','근을'];
+        const _eulGuard = {};
+        _eulNouns.forEach(function(w, i){
+          const _tk = '\uE000EUL' + i + '\uE001';
+          if (text.indexOf(w) >= 0) { _eulGuard[_tk] = w; text = text.split(w).join(_tk); }
+        });
         text = text.replace(/([가-힣])을([\s.!?,;:\n"')\]])/g, (match, prev, after) => {
           if (!hasBatchim(prev)) return prev + '를' + after; // 받침 없으면 를
           return match; // 받침 있으면 을 정상
@@ -4793,6 +4802,8 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           if (hasBatchim(prev)) return prev + '을' + after; // 받침 있으면 을
           return match; // 받침 없으면 를 정상
         });
+        // [r7.4] 보호했던 '을' 명사 복원
+        Object.keys(_eulGuard).forEach(function(_tk){ text = text.split(_tk).join(_eulGuard[_tk]); });
         
         // v20.35 AQ+: 으로/로 교정 — 받침 없거나 ㄹ받침이면 "로" (역방향은 명사 충돌 위험으로 미적용)
         // "가혹행위으로" → "가혹행위로" (위=받침 없음)
@@ -9459,6 +9470,18 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
           const _r46_speechBubbleData = 'none';
           const _r46_cartoonStyle = _r46_dna && _r46_dna.cartoonStyle ? _r46_dna.cartoonStyle : 'clean-anime';
           
+          // [r7.4 썸네일구도] 벤치마킹 composition + 제목 관계키워드로 다인 구도 결정
+          // "곁엔/함께/데려온/숨겨준/품은/사이" 등 관계형 제목 → 주인공+조연 나란히 배치 (문구-장면 일치)
+          const _r74_compo = (_r46_dna && _r46_dna.composition) ? String(_r46_dna.composition).toLowerCase() : '';
+          const _r74_titleForCompo = (_line1 || '') + ' ' + (_line2 || '') + ' ' + (_ydTitle || '');
+          const _r74_isRelational = /곁|함께|데려|숨겨|품은|품에|사이|옆|나란히|둘이|두 사람|아내|남편|정인|정혼|죽마고우/.test(_r74_titleForCompo);
+          const _r74_benchMulti = /two|side by side|group|3\+|couple|pair|multiple/.test(_r74_compo);
+          const _r74_useMultiFigure = _r74_isRelational || _r74_benchMulti;
+          // 다인 구도 지시문 (조연을 배경 리액션이 아닌 핵심 인물로 배치)
+          const _r74_multiClause = _r74_useMultiFigure && _helperC
+            ? ` IMPORTANT COMPOSITION: show TWO Korean figures clearly together in frame — the main character AND ${_helperC?.gender === '여' ? 'a woman' : 'a man'} (${_helperCostume}) standing side by side as the visual focus, both faces clearly visible, matching the relationship in the title,`
+            : '';
+          
           // 🆕 r4.6: 표정 강도 → 영문 키워드 변환 [r6.9 정답공식: 표정 INTENSE 강화]
           const _r46_expressKw = _r46_expressIntensity >= 8 
             ? 'EXTREME intense facial expression, wide open mouth screaming, fierce burning eyes, sweat drops, powerful raw emotional outburst, maximum emotional intensity'
@@ -9565,7 +9588,7 @@ NO TEXT, NO LETTERS, NO Korean characters anywhere, natural background fills ent
           const _r46_boldKw = 'bold confident composed expression, fierce determined eyes, slight knowing smirk, commanding dominant presence, NOT screaming NOT crying NOT panicking, calm and self-assured while doing the absurd action, looking straight at camera with quiet determination';
           
           // 앵글 1 - 핵심 장면 (🅰️ 텍스트 포함 / 🅱️ 이미지만) — ★당당한 표정 사용
-          const _r46_a1_base = `${_r46_dnaStyle}, ${_r46_styleKw}, ${_r46_koreanForce}. ${_mainDesc}, ${_r46_boldKw}, ${_r46_faceSizeKw}, most dramatic and confident action moment of the story. ${_helperDesc ? _helperDesc + ' reacting with shock nearby.' : ''} ${_r46_dnaSpeechBubble} ${_ydSpeechBubble}`;
+          const _r46_a1_base = `${_r46_dnaStyle}, ${_r46_styleKw}, ${_r46_koreanForce}. ${_mainDesc},${_r74_multiClause} ${_r46_boldKw}, ${_r46_faceSizeKw}, most dramatic and confident action moment of the story. ${!_r74_useMultiFigure && _helperDesc ? _helperDesc + ' reacting with shock nearby.' : ''} ${_r46_dnaSpeechBubble} ${_ydSpeechBubble}`;
           result += `[앵글 1 - 핵심 장면]\n`;
           result += `🅰️ 버전 A (텍스트 포함):\n${_r46_a1_base}${_textOverlay} ${_r46_negPrompt} --ar 16:9 --s 250\n\n`;
           result += `🅱️ 버전 B (이미지만, 후편집용):\n${_r46_a1_base}${_textOverlayB} ${_r46_negPrompt} --ar 16:9 --s 250\n\n`;
@@ -10027,6 +10050,18 @@ ${inputScript.slice(0, 12000)}
             const _isM = !_isF && _mKw.some(function(kw){return _titleForGender.includes(kw)&&!_isObj(kw);});
             if(_isF){ mainGender='female'; console.log('[v21.0 YA-성별] 제목분석 → 주인공 여성'); }
             else if(_isM){ mainGender='male'; console.log('[v21.0 YA-성별] 제목분석 → 주인공 남성'); }
+            // [r7.4 성별보정] 버림/처분 동사 감지 — "[대상] 버렸더니/내쫓은/버린" 이면 대상은 주인공이 아니라 당하는 쪽.
+            // 주인공은 그 행동의 주체(반대 성별). 예: "조강지처(여) 버렸더니~" → 버린 주체=남편(남)이 주인공.
+            const _r74_discardVerb = /(버렸|버린|버리고|내쫓|쫓아낸|쫓아내|소박맞|소박 놓|내친|내보낸|팔아넘긴|팔아버린)/;
+            if (_r74_discardVerb.test(_titleForGender)) {
+              // 버림동사 앞부분(첫 절)에 등장한 인물의 성별 → 그 인물은 '당하는 대상'
+              const _vIdx = _titleForGender.search(_r74_discardVerb);
+              const _beforeVerb = _titleForGender.slice(0, _vIdx);
+              const _targetIsF = _fKw.some(function(kw){return _beforeVerb.includes(kw);});
+              const _targetIsM = _mKw.some(function(kw){return _beforeVerb.includes(kw);});
+              if (_targetIsF && !_targetIsM) { mainGender = 'male'; console.log('[r7.4 성별보정] 버림동사+여성대상 → 주인공 남성(버린 주체)'); }
+              else if (_targetIsM && !_targetIsF) { mainGender = 'female'; console.log('[r7.4 성별보정] 버림동사+남성대상 → 주인공 여성(버린 주체)'); }
+            }
           }
           // [v21.0 YA-나이] 야담: 제목 역할로 주인공/조력자 나이 매칭 (r5.1.4 정밀 매핑)
           let _mainAge = '30대 중반', _helperAge = '40대';
@@ -13478,7 +13513,7 @@ const _NK_EXTRA=['가족이별','자수/투항','은신/잠복','신분위장'];
             const isYadamTwistAct = isYadam && actInfo.hookType === 'twist';
             
             const writeSystem = isYadam
-              ? `조선야담 전기수. 50-60대 타겟.\n\n[야담 인트로 공식 — 1막 전용]\n인트로는 반드시 대본 전체에서 가장 극적이고 충격적인 장면으로 시작.\n★★[인트로 문장 길이 절대규칙] 인트로 모든 문장은 한 문장 25~30자를 넘지 마라. 짧을수록 좋다. 듣는 50~60대는 첫 30초 이탈률이 전부. 긴 문장은 마침표로 끊어 짧게.\n구조: ①충격대사→②극한상황(2~3문장)→③궁금증질문(1~2개)→④채널멘트(마님야화입니다/청암야담입니다)+시간도약\\n\\n[Fix10 인트로 예시 — 반드시 이 구조 준수, 유형별 3가지]\\n\\n예시1(충격대사형): \"네놈의 죄를 네놈이 알렸다!\" 봉이의 눈앞이 캄캄해졌답니다. 손발이 떨렸지만 아무것도 할 수 없었지요. 과연 진실은 밝혀질 수 있었을까요? 마님야화입니다. 시간을 거슬러 삼 년 전으로 돌아가 보겠습니다.\\n\\n예시2(상황제시형): 사약이 담긴 검은 사발이 봉이 앞에 놓였답니다. 억울한 누명을 쓴 채, 그녀는 눈을 감았지요. 과연 그 진실은 어디에 묻혀 있었을까요? 청암야담입니다. 그 끔찍한 날이 오기 전, 삼 년 전으로 거슬러 가보겠습니다.\\n\\n예시3(반전암시형): 마을에서 가장 믿음직한 사람이 하룻밤 사이에 역적이 되었답니다. 아무도 그 이유를 몰랐지요. 과연 그 억울함의 진실은 무엇이었을까요? 마님야화입니다. 모든 것의 시작은 보름 전 장터에서였답니다.\n\n[나레이터 문체 — 모든 문장은 반드시 아래 두 형식 중 하나]\n① 나레이션: ~했답니다 / ~이었지요 / ~더군요 / ~이었습니다\n   예시) 을동은 그날 새벽 일찍 일어났답니다. 소이의 눈에 눈물이 고였지요.\n② 대사: [인물명] \"...\"\n   예시) 을동이 말했습니다. \"이웃끼리 돕는 게 당연하지 않겠습니까.\"\n이 두 형식 외 다른 형식(영상묘사/이미지설명/장면묘사)은 존재하지 않습니다.\n\n[조선시대 어휘 사전 — 반드시 이 단어를 사용할 것]\n술 → 막걸리/소주/청주/동동주, 과자 → 유과/강정/엿/떡\n음료 → 식혜/수정과/냉수, 간식 → 인절미/한과/송편\n장소 → 주막(고유명 없음)/관아/장터/사랑방\n\n[감정 묘사 반복]\n동일 비유 표현 2회 이상 시 다른 표현으로 교체. 피눈물/얼음장/하늘이무너 각 1회 한도.\n\n[조선시대 용어]\n가혹행위→모진형벌, 경찰→포졸, 재판→문초, 시민→백성.
+              ? `조선야담 전기수. 50-60대 타겟.\n\n[야담 인트로 공식 — 1막 전용]\n인트로는 반드시 대본 전체에서 가장 극적이고 충격적인 장면으로 시작.\n★★[호칭 자연화 절대규칙] 인물이 누군가를 애타게 부르거나 절규할 때 "아내!"/"남편!"/"부인!" 같은 관계어를 그대로 외치지 마라(어색함). 배우자는 이름(순화야!) 또는 "여보!", 자식은 이름(성우야!), 부모는 "어머니!"/"아버지!", 상전은 "나으리!"/"대감마님!"을 쓸 것. 이름이 아직 안 밝혀진 배우자면 "여보!"로 대체.\n★★[인트로 문장 길이 절대규칙] 인트로 모든 문장은 한 문장 25~30자를 넘지 마라. 짧을수록 좋다. 듣는 50~60대는 첫 30초 이탈률이 전부. 긴 문장은 마침표로 끊어 짧게.\n구조: ①충격대사→②극한상황(2~3문장)→③궁금증질문(1~2개)→④채널멘트(마님야화입니다/청암야담입니다)+시간도약\\n\\n[Fix10 인트로 예시 — 반드시 이 구조 준수, 유형별 3가지]\\n\\n예시1(충격대사형): \"네놈의 죄를 네놈이 알렸다!\" 봉이의 눈앞이 캄캄해졌답니다. 손발이 떨렸지만 아무것도 할 수 없었지요. 과연 진실은 밝혀질 수 있었을까요? 마님야화입니다. 시간을 거슬러 삼 년 전으로 돌아가 보겠습니다.\\n\\n예시2(상황제시형): 사약이 담긴 검은 사발이 봉이 앞에 놓였답니다. 억울한 누명을 쓴 채, 그녀는 눈을 감았지요. 과연 그 진실은 어디에 묻혀 있었을까요? 청암야담입니다. 그 끔찍한 날이 오기 전, 삼 년 전으로 거슬러 가보겠습니다.\\n\\n예시3(반전암시형): 마을에서 가장 믿음직한 사람이 하룻밤 사이에 역적이 되었답니다. 아무도 그 이유를 몰랐지요. 과연 그 억울함의 진실은 무엇이었을까요? 마님야화입니다. 모든 것의 시작은 보름 전 장터에서였답니다.\n\n[나레이터 문체 — 모든 문장은 반드시 아래 두 형식 중 하나]\n① 나레이션: ~했답니다 / ~이었지요 / ~더군요 / ~이었습니다\n   예시) 을동은 그날 새벽 일찍 일어났답니다. 소이의 눈에 눈물이 고였지요.\n② 대사: [인물명] \"...\"\n   예시) 을동이 말했습니다. \"이웃끼리 돕는 게 당연하지 않겠습니까.\"\n이 두 형식 외 다른 형식(영상묘사/이미지설명/장면묘사)은 존재하지 않습니다.\n\n[조선시대 어휘 사전 — 반드시 이 단어를 사용할 것]\n술 → 막걸리/소주/청주/동동주, 과자 → 유과/강정/엿/떡\n음료 → 식혜/수정과/냉수, 간식 → 인절미/한과/송편\n장소 → 주막(고유명 없음)/관아/장터/사랑방\n\n[감정 묘사 반복]\n동일 비유 표현 2회 이상 시 다른 표현으로 교체. 피눈물/얼음장/하늘이무너 각 1회 한도.\n\n[조선시대 용어]\n가혹행위→모진형벌, 경찰→포졸, 재판→문초, 시민→백성.
 
 [핵심] 지금 ${actNum}막만 작성. 이전 막 재서술 금지. 같은 막 내에서도 같은 문장/장면을 다른 표현으로 되풀이 금지.
 이전 막과 동일/유사 대사 반복 금지.
@@ -13607,6 +13642,21 @@ ${deadNames.length > 0 ? `사망자 등장 금지: ${deadNames.join(', ')}` : ''
                     window._v21_mainName = mainCharName;
                   }
                 }
+                // [r7.4 조연나이고정] 조연/핵심인물 나이도 캐스트값 강제 — 대본이 임의 나이("서른 살 위/백발") 쓰는 것 차단
+                try {
+                  const _r74_subCast = (cast && Array.isArray(cast)) ? cast.filter(function(c){ return c && !c.isMain && c.name && c.age; }) : [];
+                  if (_r74_subCast.length > 0) {
+                    const _r74_ageDecade = function(raw){
+                      const s = String(raw||''); const nm = s.match(/(\d+)\s*(?:세|살)/);
+                      if (nm) { const n=parseInt(nm[1]); return Math.floor(n/10)*10 + '대'; }
+                      const dm = s.match(/([1-9]0대)/); return dm ? dm[1] : s;
+                    };
+                    let _r74_lines = _r74_subCast.map(function(c){
+                      return `- ${c.name}: ${_r74_ageDecade(c.age)} (${c.gender === '여' ? '여성' : '남성'})`;
+                    }).join('\n');
+                    _v21_ageBlock += `\n[r7.4 조연 나이 규칙 - 절대 준수]\n아래 인물의 나이는 반드시 이 설정을 따를 것. 임의로 다른 나이를 만들지 마라.\n${_r74_lines}\n⚠️ "서른 살 위", "스무 살 아래" 같은 상대 나이 표현으로 위 설정과 어긋나게 만들지 말 것.\n⚠️ 위 나이와 모순되는 외모 묘사 금지 (예: 40대인데 "백발 노인", 60대인데 "젊은이"). 백발/흰머리는 60대 이상에만.\n`;
+                  }
+                } catch(_r74age){ console.warn('[r7.4 조연나이] 오류:', _r74age.message); }
               }
             } catch(_v21b3e) { console.warn('[v21.0 B-3] 나이 주입 오류:', _v21b3e.message); }
             // ========== v21.0 B-3 끝 ==========
@@ -16230,6 +16280,8 @@ ${chunkScript}`;
                     
                     if (_r41_combined.length >= _r41_minLen && _r41_combined.length <= _r41_maxLen) {
                       fullScript = _r41_combined;
+                      // [r7.4 되물림] 검수 후 재오염 방지 — 되물림→대물림 즉시 치환
+                      try { if (typeof cleanText === 'function') fullScript = cleanText(fullScript, (typeof isYadam!=='undefined'?isYadam:true), 'r7.4 검수후재정화-청크', (typeof mainCharName!=='undefined'?mainCharName:'')); } catch(_e74){ fullScript = fullScript.replace(/되물림/g,'대물림'); }
                       console.log('[r4.2 Sonnet 검수] ✅ ' + _r42_chunkCount + '청크 분할 완료 - ' + _r40_originalLen + '자 → ' + _r41_combined.length + '자 (변화: ' + Math.round((_r41_combined.length - _r40_originalLen) / _r40_originalLen * 100) + '%)');
                       setMsg('✨ Sonnet 검수 완료 (' + _r41_combined.length.toLocaleString() + '자, ' + _r42_chunkCount + '청크)');
                     } else {
@@ -16250,6 +16302,8 @@ ${chunkScript}`;
                     
                     if (_r41_reviewed.length >= _r40_minLen && _r41_reviewed.length <= _r40_maxLen) {
                       fullScript = _r41_reviewed;
+                      // [r7.4 되물림] 검수 후 재오염 방지 — 되물림→대물림 즉시 치환
+                      try { if (typeof cleanText === 'function') fullScript = cleanText(fullScript, (typeof isYadam!=='undefined'?isYadam:true), 'r7.4 검수후재정화-단일', (typeof mainCharName!=='undefined'?mainCharName:'')); } catch(_e74b){ fullScript = fullScript.replace(/되물림/g,'대물림'); }
                       console.log('[r4.1 Sonnet 검수] ✅ 완료 - ' + _r40_originalLen + '자 → ' + _r41_reviewed.length + '자 (변화: ' + Math.round((_r41_reviewed.length - _r40_originalLen) / _r40_originalLen * 100) + '%)');
                       setMsg('✨ Sonnet 검수 완료 (' + _r41_reviewed.length.toLocaleString() + '자)');
                     } else {
@@ -24269,7 +24323,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r7.3 (2026-07-02 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r7.5 (2026-07-02 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
