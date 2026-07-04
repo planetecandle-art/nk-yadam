@@ -1351,6 +1351,14 @@ window.buildNKIntroSystemPrompt = function buildNKIntroSystemPrompt(typeKey, dna
     prompt += '- 1단계(흔한 이미지) → 2단계(반전: 직업/신분 폭로) 자동 배치\n';
   }
   
+  // r7.0 NK 인트로 이름+궁금증 블록 (벤치마킹 필수 구조)
+  prompt += '\n【★ 이름+궁금증 블록 (필수 삽입)】\n';
+  prompt += '- 인트로 중반~후반에 주인공 이름을 던지고 곧바로 궁금증을 거는 구조를 반드시 넣을 것\n';
+  prompt += '- 1인칭 증언체이면: "내 이름은 OOO." 다음 "그런데 나는 왜, ~했을까?" 형태\n';
+  prompt += '- 3인칭 나레이션이면: "그의 이름은 OOO." 다음 "대체 왜, 그는 ~했을까?" 형태\n';
+  prompt += '- ★ 인칭 혼용 절대 금지: 1인칭이면 끝까지 나/내, 3인칭이면 끝까지 그/그의\n';
+  prompt += '- 앞부분이 "나는 ~했다"로 시작했다면 이름 블록도 반드시 "내 이름은~"으로 (그의 이름은 X)\n';
+
   // 후킹 단어 권장
   prompt += '\n【후킹 단어 풀 (자연스럽게 2개+ 활용)】\n';
   prompt += '- 강력 오프닝: ' + guide.hookWords.powerOpening.join(' / ') + '\n';
@@ -2740,7 +2748,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       { category: "감정", line: "이 목숨 바쳐 은혜를 갚겠습니다.", context: "충성 맹세" },
       { category: "감정", line: "어찌 사람이 사람에게 이럴 수 있단 말입니까.", context: "분노 표출" },
       { category: "감정", line: "다음 생에는 내가 너를 키워주마.", context: "대물림 장면" },
-      { category: "감정", line: "사랑은 그렇게 되물림되는 것이었답니다.", context: "에필로그" }
+      { category: "감정", line: "사랑은 그렇게 대물림되는 것이었답니다.", context: "에필로그" }
     ];
 
     // ========== v20.23: 제목/썸네일 생성 풀 ==========
@@ -7590,6 +7598,7 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
         
         // v20.34: 반복 표현 제거 (특정 문구)
         const repeatPhrases = [
+          '사랑은 그렇게 대물림되는 것이었답니다',
           '사랑은 그렇게 되물림되는 것이었답니다',
           '하늘은 다 보고 계셨답니다',
           '하늘은 모든 것을 보고 계셨습니다',
@@ -9728,7 +9737,7 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         var _r6_real = `Realistic documentary photography, authentic film grain, natural smoke and fire textures, cinematic muted color grade, high contrast, 8k, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 200`;
 
         // 하단 2줄 텍스트 오버레이 (흰색 1줄 + 하늘색 2줄, 두꺼운 검은 외곽선) — 벤치마킹 색공식
-        var _r6_textA = _nkTitle ? `\nAcross the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (cyan #3AD0E0, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
+        var _r6_textA = _nkTitle ? `\nAcross the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (yellow #FFEB3B, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
         var _r6_textB = `\nNO TEXT, NO LETTERS, NO Korean characters anywhere, the lower area left empty and darkened for later text overlay, complete background scenery throughout. --no text --no letters --no words --no layout labels --no annotation words --no english text labels`;
 
         // 앵글 3종 (장면 강조점만 다르게) × A(글씨)/B(글씨없음)
@@ -10624,6 +10633,12 @@ ${storyHintText}${tokenInstructionText}
 - 각 막의 시놉시스는 반드시 구체적인 인물명+장면+사건을 포함해야 함!
 - 예시: "1막: 관 속에서 눈을 뜬 연화. 흙이 쏟아지는 소리..." ← 이렇게!
 - 
+
+⚠️ [r7.0 이름 반복 완화 - 필수]
+- 등장인물 이름(예: 갑순/국화)을 매 문장 주어로 반복하지 말 것
+- 첫 등장 시에만 이름을 쓰고, 이후에는 "그녀/새색시/며느리/시어머니/딸/아내" 등 호칭·대명사를 자연스럽게 섞어 쓸 것
+- 한 문단 안에서 같은 이름이 3회 이상 반복되면 안 됨 (2회 이하)
+- 단, 대명사가 누구를 가리키는지 모호해지지 않도록 주의 (두 인물이 같이 나오는 장면에서는 이름 유지)
 
  중요: 각 막의 시놉시스 길이가 비중을 반영해야 함! 
 - 1막(5%): 시놉시스 50자 - 위기 훅 (가장 극적인 장면! 평화로운 시작 절대금지! 충격대사→극한상황→궁금증질문→채널멘트+시간도약)
@@ -17470,8 +17485,8 @@ JSON 형식:
                   }
                 } catch (_nkte) { _nkL1 = ''; _nkL2 = ''; }
                 const _nkTextOverlay = _nkL1
-                  ? ` Across the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (color #FFFFFF white, gigantic bold): "${_nkL1}", Line 2 (color #3AD0E0 cyan, bigger bold): "${_nkL2}". TEXT RULES: horizontal straight, no tilt, centered, fits within frame, ultra-bold Korean sans-serif, edge to edge.`
-                  : ` Across the lower portion of the image runs a dark bar holding large Korean text on two lines, white Line 1 + cyan #3AD0E0 Line 2 (bigger), ultra-bold Korean sans-serif, thick black outline.`;
+                  ? ` Across the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (color #FFFFFF white, gigantic bold): "${_nkL1}", Line 2 (color #FFEB3B yellow, bigger bold): "${_nkL2}". TEXT RULES: horizontal straight, no tilt, centered, fits within frame, ultra-bold Korean sans-serif, edge to edge.`
+                  : ` Across the lower portion of the image runs a dark bar holding large Korean text on two lines, white Line 1 + yellow #FFEB3B Line 2 (bigger), ultra-bold Korean sans-serif, thick black outline.`;
                 const promptA = `${promptBase}${_nkTextOverlay} Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230`;
                 const promptB = `${promptBase} The lower portion of the image is darkened and kept empty for a text overlay added later. NO TEXT, NO LETTERS, NO Korean characters anywhere in image. Photorealistic, 8k, vivid saturated dramatic lighting, very high contrast, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 230 --no text --no korean text --no letters --no words --no layout labels --no annotation words --no english text labels`;
                 thumbnailPrompts += `[앵글 ${idx + 1} - ${_realPersonFace ? '인물모드' : '직업모드'}: ${s.label || '장면'}]\n\uD83C\uDD70\uFE0F 버전 A (글씨 포함):\n${promptA}\n\n\uD83C\uDD71\uFE0F 버전 B (글씨 없음, Canva용):\n${promptB}\n\n`;
