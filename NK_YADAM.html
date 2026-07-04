@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r6.9 로드완료 (2026-06-24 빌드) — 8개+야담4종+야담이미지3종: 글자교정·B방식·인트로공식·썸네일당당표정 / [이미지추가]현대복장차단강화(안경/코트/귀걸이/블라우스 누락보강)+썸네일표정강도INTENSE정답공식+mainDesc표정하드코딩제거(앵글1당당/앵글2,3격분 분리)","color:#fff;background:#2563eb;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.0 로드완료 (2026-07-02 빌드) — [1단계 5개수정] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2322,7 +2322,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r6.9';
+      var _VER = 'v21.0 r7.0';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -3772,14 +3772,14 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       const MODES = {
         nk: {
           title: "NK DEFECTOR",
-          version: "v21.0 r6.9",
+          version: "v21.0 r7.0",
           ending: "여러분의 관심이 큰 힘이 됩니다. 감사합니다.",
           channelName: currentChannelName,
           subscribers: NK_CHANNELS[nkChannel].subscribers
         },
         yadam: {
           title: "조선야담",
-          version: "v21.0 r6.9",
+          version: "v21.0 r7.0",
           ending: "허허... 참으로 기이한 인연이었답니다.",
           channelName: currentChannelName,
           subscribers: YADAM_CHANNELS[yadamChannel].subscribers
@@ -24239,7 +24239,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r6.9 (2026-06-24 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r7.0 (2026-07-02 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
