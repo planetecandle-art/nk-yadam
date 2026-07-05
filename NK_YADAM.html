@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -4545,8 +4545,15 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             var g = (c.gender||'').indexOf('남') >= 0 ? "man" : ((c.gender||'').indexOf('여') >= 0 ? "woman" : "person");
             return "- " + c.name + " (" + (c.role||'') + "): a Korean " + g + " " + en;
           }).filter(Boolean).join("\n");
-          const _ageBlock = _ageTable ? ("\n\n[등장인물 나이표 — 이 나이를 그대로 사용]\n" + _ageTable + "\n") : "";
-          const _scenePrompt = "[시놉시스]\n" + String(sceneSrc||'').slice(0, 2500) + _ageBlock + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라. 인물 나이는 반드시 [등장인물 나이표]를 따른다.";
+          const _ageBlock = _ageTable ? ("\n\n[등장인물 기준 나이표 — 현재(주 시간대) 기준]\n" + _ageTable + "\n") : "";
+          const _r75_timeAgeRule = "\n\n[★시간대별 나이 조정 — 반드시 적용]\n"
+            + "위 나이표는 '현재 시점(주 시간대)'의 나이다. 시놉에 시간 이동 표현이 있으면 그 장면의 인물 나이를 계산해서 조정하라:\n"
+            + "- '~년 전', '어린 시절', '회상', '거슬러 올라' → 그 장면 인물은 더 어리다. '열 살/어린 시절'이면 child around age 10, innocent, fully clothed 로.\n"
+            + "- '~년 후', '세월이 흘러', '스무 해 뒤' → 그 장면 인물은 그만큼 더 나이 들었다 (예: 20년 후면 나이표 + 20세).\n"
+            + "- 아이/자녀가 등장하면 (딸/아들/손주) 그 나이에 맞게 (갓난아기 baby infant / 어린이 child around age 6-8, innocent, fully clothed / 청소년 teenager, innocent).\n"
+            + "- 각 장면(막)이 어느 시간대인지 시놉 내용으로 판단해서 나이를 정하라. 모든 장면에 현재 나이를 똑같이 쓰지 마라.\n"
+            + "- 미성년(아이/청소년)은 반드시 innocent, fully clothed, no romantic or sexual context 를 포함하라.\n";
+          const _scenePrompt = "[시놉시스]\n" + String(sceneSrc||'').slice(0, 2500) + _ageBlock + _r75_timeAgeRule + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라. 인물 나이는 [나이표]를 기준으로 하되, 위 [시간대별 나이 조정] 규칙을 반드시 적용하여 회상/미래 장면은 나이를 다르게 하라.";
           const _sceneRaw = await callClaude(_sceneSys, _scenePrompt, 4096, 'haiku', 0.6);
           let _sceneJson = null;
           try { _sceneJson = JSON.parse((_sceneRaw||"").replace(/```json|```/g, '').trim()); } catch(_e) { _sceneJson = null; }
@@ -9444,9 +9451,45 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             for (const [re, en] of _actMap) {
               if (re.test(_actSrc)) { _titleAction = en; break; }
             }
-            // 매핑 실패 시: 제목 1줄 자체를 "그 황당한 행동"으로 지시 (영어 일반화)
+            // [r7.5 야담 썸네일 상황] 관계형/행동형/반전형 제목 → 구체적 장면으로 (추상 폴백 방지)
             if (!_titleAction) {
-              _titleAction = 'performing the strange shocking action described in the title, an action that makes onlookers think the character has gone mad';
+              // 1순위: 관계형 (구한/삼은/거둔/숨긴/버린/내쫓은) — 주체가 대상에게 하는 행동
+              var _relM = _actSrc.match(/(구한|구해준|삼은|거둔|숨겨준|숨긴|데려온|품은|버린|버렸|내쫓은|내친|판)/);
+              if (_relM) {
+                var _v = _relM[0];
+                if (/구한|구해준|거둔|숨겨준|숨긴|데려온|품은/.test(_v)) {
+                  _titleAction = 'reaching out to rescue and protect a desperate person in danger, a dramatic life-saving moment — this rescue MUST be the visual focus';
+                } else if (/삼은/.test(_v)) {
+                  _titleAction = 'standing protectively beside the person they took in, a fateful bond — this relationship MUST be the visual focus';
+                } else if (/버린|버렸|내쫓은|내친|판/.test(_v)) {
+                  _titleAction = 'turning away and casting out a pleading person who reaches toward them in despair — this betrayal MUST be the visual focus';
+                }
+              }
+            }
+            if (!_titleAction) {
+              // 2순위: 행동형 (불 지른/훔친/짠/깨뜨린/도망친 등)
+              var _actM2 = _actSrc.match(/(불.?지른|불.?붙인|태운|훔친|깨뜨린|부순|도망친|끌려간|짠|엎은|뒤엎은|팔아버린)/);
+              if (_actM2) {
+                _titleAction = 'dramatically performing the shocking act from the title with intense emotion — this specific action MUST be the visual focus of the scene';
+              }
+            }
+            if (!_titleAction) {
+              // 3순위: 반전형 (알고보니/줄 알았던/정체/사실은)
+              if (/(알고보니|알고 보니|줄 알았던|정체|사실은|숨겨진|밝혀진)/.test(_actSrc)) {
+                _titleAction = 'at the shocking moment their hidden true identity is revealed, stunned onlookers around — this revelation MUST be the visual focus';
+              }
+            }
+            // 4순위: 제목에서 못 뽑으면 → 업로드한 벤치마킹 썸네일의 구도(composition)를 따라감
+            if (!_titleAction) {
+              var _benchCompo = (typeof window !== 'undefined' && window._r34_thumbDNA && window._r34_thumbDNA.composition)
+                ? String(window._r34_thumbDNA.composition).trim() : '';
+              if (_benchCompo) {
+                _titleAction = 'posed in a dramatic scene following this reference thumbnail composition: ' + _benchCompo + ' — match this composition and staging';
+              }
+            }
+            // 5순위(최후): 강렬한 감정 클로즈업 (추상적 '미친 행동' 폴백 제거)
+            if (!_titleAction) {
+              _titleAction = 'showing an extremely intense dramatic emotion on their face at the story\'s most shocking turning point';
             }
           }
           const _actionClause = _titleAction
@@ -12920,6 +12963,25 @@ JSON만: {"titles":["제목1","제목2","제목3","제목4","제목5"]}`;
                 _parsed.titles = _r507_co3_titles;
                 console.log('[r5.0.7 CO-3] ✅ 제목 차별화 검증 완료');
 
+                // [r7.5 어휘강제치환] 어려운 신분/직업어를 쉬운 말로 무조건 변환 (T-2가 프롬프트 무시하고 어려운 말 써도 강제)
+                try {
+                  var _r75_wordFix = [
+                    [/청상과부/g, '젊은 과부'], [/청상/g, '젊은 과부'],
+                    [/관비/g, '여종'], [/관노/g, '남종'], [/비복/g, '여종'], [/비자(?![가-힣])/g, '여종'],
+                    [/종년/g, '여종'], [/종놈/g, '머슴'], [/노비/g, '하인'],
+                    [/몸종/g, '하녀'], [/계집종/g, '하녀'], [/수모(?![가-힣])/g, '하녀'],
+                    [/비구니/g, '여승'], [/침선비/g, '침모'], [/반빗아치/g, '부엌 하녀'],
+                    [/초부(?![가-힣])/g, '나무꾼'], [/겸인/g, '집사'], [/마름/g, '머슴'],
+                    [/소작인/g, '소작농'], [/노복/g, '하인'], [/시비(?![가-힣])/g, '하녀']
+                  ];
+                  _parsed.titles = _parsed.titles.map(function(t){
+                    var _t = t || '';
+                    _r75_wordFix.forEach(function(pair){ _t = _t.replace(pair[0], pair[1]); });
+                    if (_t !== t) console.log('[r7.5 어휘치환] "' + t + '" → "' + _t + '"');
+                    return _t;
+                  });
+                } catch(_r75wf){ console.warn('[r7.5 어휘치환] 오류:', _r75wf.message); }
+
                 // [r6.8 야담-4] 제목 조사 자연화 (명사+조사) — 이름보정과 별개
                 // 증상: "집안 과 벼락부자" → "집안과 벼락부자" (띄어쓴 조사 붙이고 받침 교정)
                 try {
@@ -13770,6 +13832,16 @@ ${deadNames.length > 0 ? `사망자 등장 금지: ${deadNames.join(', ')}` : ''
                   if (typeof window !== 'undefined') {
                     window._v21_mainAge = _exactAge;
                     window._v21_mainName = mainCharName;
+                  }
+                  // [r7.5 시간선일관성] 회상 년수와 나이 계산이 맞도록 강제 (예: 현재 28세인데 "30년 전 열 살"은 모순)
+                  if (actNum === 1) {
+                    var _flashMax = Math.max(1, _exactAge - 8); // 주인공이 최소 8세는 되어야 회상 성립
+                    _v21_ageBlock += `\n[r7.5 시간선 규칙 - 절대 준수]\n`
+                      + `주인공 현재 나이가 ${_exactAge}세이므로, 과거 회상은 반드시 그보다 어린 시점이어야 한다.\n`
+                      + `⚠️ "${_exactAge}년 이상 전" 같이 현재 나이보다 큰 회상 년수 금지 (계산이 안 맞음).\n`
+                      + `⚠️ 회상에서 어린 시절을 그리려면 "${Math.min(_exactAge-1, 20)}년 전"처럼 현재 나이 안쪽 년수를 쓸 것. 그때 나이는 (${_exactAge} - 회상년수)로 계산되어야 자연스럽다.\n`
+                      + `✅ 예: 현재 ${_exactAge}세, 어린 시절(열 살 무렵)을 그리려면 약 "${_flashMax}년 전"으로. 그러면 열 살 안팎이 된다.\n`
+                      + `✅ 회상 년수와 그때 인물 나이가 산술적으로 맞아야 한다. 아무 숫자나 쓰지 말 것.\n`;
                   }
                 }
                 // [r7.4 조연나이고정] 조연/핵심인물 나이도 캐스트값 강제 — 대본이 임의 나이("서른 살 위/백발") 쓰는 것 차단
