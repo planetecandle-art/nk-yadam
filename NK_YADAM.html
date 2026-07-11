@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호(근본수정)] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -3694,6 +3694,67 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       const [useNKThumbFirst, setUseNKThumbFirst] = useState(false);
       const [yadamTitleOptions, setYadamTitleOptions] = useState([]);
       const [selectedTitle, setSelectedTitle] = useState('');
+      // [r7.5 F-1] 목표 제목 입력 (선택) — 유튜브 키워드 분석기에서 뽑은 문구를 그대로 투입
+      //   넣으면: 그 제목대로 시놉/대본 생성 + 썸네일 문구 자동 2줄 분할
+      //   안 넣으면: 기존 자동 생성 흐름 그대로 (기존 기능 100% 유지)
+      const [targetTitle, setTargetTitle] = useState('');
+      const [thumbLine1, setThumbLine1] = useState('');
+      const [thumbLine2, setThumbLine2] = useState('');
+
+      // [r7.5 F-1] 제목 → 썸네일 문구 2줄 자동 분할
+      //   규칙 ① 따옴표 대사가 있으면 → 대사가 1줄, 나머지가 2줄
+      //        ② 구분자(| — –)가 있으면 → 그 기준으로 분할
+      //        ③ 없으면 → 의미 단위(조사/어절)로 분할, 줄당 10~18자 목표
+      //   1줄=흰색, 2줄=노랑(1.15배). 2줄이 후킹(결과/이유)을 담당.
+      const splitTitleToTwoLines = React.useCallback((title) => {
+        var t = String(title || '').trim();
+        if (!t) return ['', ''];
+        var L1 = '', L2 = '';
+        // ① 따옴표 대사
+        var q = t.match(/^["“'']([^"”'']{4,40})["”''](.*)$/);
+        if (q) {
+          L1 = '"' + q[1].trim() + '"';
+          L2 = (q[2] || '').replace(/^[\s,\-—–|]+/, '').trim();
+          if (L2) return [L1, L2];
+        }
+        // ② 구분자
+        var parts = t.split(/\s*[|—–]\s*/).filter(Boolean);
+        if (parts.length >= 2) {
+          L1 = parts[0].trim();
+          L2 = parts.slice(1).join(' ').trim();
+          return [L1, L2];
+        }
+        // ③ 쉼표 기준
+        var cparts = t.split(/\s*,\s*/).filter(Boolean);
+        if (cparts.length >= 2 && cparts[0].length >= 6) {
+          L1 = cparts[0].trim();
+          L2 = cparts.slice(1).join(', ').trim();
+          return [L1, L2];
+        }
+        // ④ 어절 단위로 반 나누기 (양쪽 길이 균형)
+        var words = t.split(/\s+/);
+        if (words.length < 2) return [t, ''];
+        var best = 1, bestDiff = 1e9;
+        for (var i = 1; i < words.length; i++) {
+          var a = words.slice(0, i).join(' ');
+          var b = words.slice(i).join(' ');
+          // 각 줄 8~20자 선호, 양쪽 길이 차이 최소화
+          var diff = Math.abs(a.length - b.length) + (a.length > 20 ? (a.length - 20) * 2 : 0) + (b.length > 20 ? (b.length - 20) * 2 : 0);
+          if (diff < bestDiff) { bestDiff = diff; best = i; }
+        }
+        L1 = words.slice(0, best).join(' ');
+        L2 = words.slice(best).join(' ');
+        return [L1, L2];
+      }, []);
+
+      // 목표 제목이 바뀌면 썸네일 2줄 자동 채움 (사용자가 직접 수정 가능)
+      React.useEffect(() => {
+        if (targetTitle && targetTitle.trim()) {
+          var two = splitTitleToTwoLines(targetTitle);
+          setThumbLine1(two[0]);
+          setThumbLine2(two[1]);
+        }
+      }, [targetTitle, splitTitleToTwoLines]);
       const [titleLoading, setTitleLoading] = useState(false);
       const [msg, setMsg] = useState("준비 완료. API Key를 입력하고 대본을 생성하세요.");
       const [progress, setProgress] = useState(0);
@@ -4605,11 +4666,51 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           _bodyOut = _bodyOut.replace(/(?<!--no\s)\b(blazer|blouse|cardigan|turtleneck|button-down|polo shirt|suit|trousers|jeans|sneakers|loafers)\b/gi, 'traditional hanbok');
           const _introScene = (_sceneJson.scenes.find(function(s){return (s.act||1)===1;}) || _sceneJson.scenes[0]);
           const _introDesc = (_introScene && _introScene.desc) ? _introScene.desc : "dramatic Joseon-era opening scene, main character in hanbok, intense moment";
+          // [r7.5 C-4] 컷3(오브젝트 인서트)은 사람이 아니라 '핵심 소품'을 클로즈업해야 함.
+          //   기존: _introDesc(사람 묘사 가득)를 그대로 붙여 "no people"과 모순 → 컷1과 같은 장면이 나옴
+          //   수정: window._coreBait.prop(추출된 소품)을 우선 사용. 없으면 1막 장면에서 사물 명사 추출.
+          var _c4_prop = '';
+          try {
+            if (typeof window !== 'undefined' && window._coreBait && window._coreBait.prop) {
+              _c4_prop = String(window._coreBait.prop).trim();
+            }
+          } catch(_c4e) { _c4_prop = ''; }
+          // 소품 → 영어 묘사 (야담/NK 공통 소품 사전)
+          var _c4_propEn = '';
+          if (_c4_prop) {
+            var _c4_map = {
+              '궤짝':'an old wooden chest with worn iron fittings',
+              '집문서':'an old yellowed house deed document',
+              '문서':'an old yellowed document with brush writing',
+              '편지':'an old folded letter with faded ink',
+              '비녀':'a silver hairpin (binyeo)',
+              '반지':'a worn gold ring',
+              '금반지':'a worn gold ring',
+              '은반지':'a worn silver ring',
+              '노리개':'a traditional Korean norigae ornament',
+              '족자':'an old hanging scroll',
+              '약사발':'a dark medicine bowl with steam rising',
+              '독약':'a small sealed ceramic poison bottle',
+              '병':'a small sealed ceramic bottle',
+              '칼':'an old blade lying on a wooden surface',
+              '장부':'an old ledger book with columns of brush writing',
+              '위조된 서류':'a forged identity document with an official stamp',
+              '서류':'an official document with a red stamp',
+              '사진':'an old faded photograph',
+              '배지':'a small metal badge lying on a table',
+              '수첩':'a worn pocket notebook'
+            };
+            var _c4_key = Object.keys(_c4_map).find(function(k){ return _c4_prop.indexOf(k) >= 0; });
+            _c4_propEn = _c4_key ? _c4_map[_c4_key] : ('a key object: ' + _c4_prop);
+          }
+          var _c4_cut3 = _c4_propEn
+            ? ("Insert shot: EXTREME close-up of " + _c4_propEn + ", lying still, dramatic side light with deep shadows, dust motes in the air, slow zoom-in toward it, ominous foreboding mood, NO people, NO faces, NO hands in frame, object only")
+            : ("Insert shot: EXTREME close-up of the single most important object in the opening scene, dramatic side light with deep shadows, slow zoom-in, ominous foreboding mood, NO people, NO faces, object only");
           let _introOut = "\n═══════════════════════════════\n🎬 인트로 영상 프롬프트 (1핵심장면 → 3컷)\n═══════════════════════════════\n\n";
           const _introCuts = [
             ["컷1 — 전체샷 (상황 제시)", "Wide establishing shot, " + _introDesc + ", slow Ken Burns zoom-in, mouths stay closed no talking no lip movement, INTENSE dramatic atmosphere"],
             ["컷2 — 클로즈업 (주인공 표정)", "EXTREME emotional close-up, main character face filling 55% of frame, INTENSE expression eyes burning with suppressed emotion, lips pressed firm, dramatic lighting, " + _introDesc + ", slow push-in, mouth stays closed no talking"],
-            ["컷3 — 핵심 오브젝트 인서트 (반전 떡밥)", "Insert shot focusing on the key object/detail of this scene, ominous mood, dramatic light, slow zoom-in toward it, no people no text, " + _introDesc]
+            ["컷3 — 핵심 오브젝트 인서트 (반전 떡밥)", _c4_cut3]
           ];
           _introCuts.forEach(function(c){
             _introOut += "[" + c[0] + "]\n";
@@ -4829,11 +4930,18 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         // 을/를 뒤에 공백/구두점/줄바꿈이 와야 조사로 판단 (을씨 같은 단어 오인 방지)
         // [r7.4 탈락방지] '을'로 끝나는 명사 보호 — 조사 '을'로 오인해 '를'로 바꾸는 것 차단
         // (가을→가를, 고을→고를, 마을→마를 방지). 교정 전 임시치환 → 교정 후 복원
+        // [r7.5 단어경계] '무언가을/어딘가을/누군가을'이 '가을'로 오인 보호되던 버그 수정
+        //   → 명사 앞에 한글이 붙어있으면(무언'가을') 보호하지 않음. 독립 단어일 때만 보호.
         const _eulNouns = ['가을','고을','마을','겨울','거울','서울','이불','구슬','바늘','하늘','거늘','까닭을','근을'];
         const _eulGuard = {};
         _eulNouns.forEach(function(w, i){
           const _tk = '\uE000EUL' + i + '\uE001';
-          if (text.indexOf(w) >= 0) { _eulGuard[_tk] = w; text = text.split(w).join(_tk); }
+          // 앞에 한글이 붙지 않은 경우만 보호 (단어 경계)
+          const _re = new RegExp('(^|[^가-힣])(' + w + ')', 'g');
+          if (_re.test(text)) {
+            _eulGuard[_tk] = w;
+            text = text.replace(new RegExp('(^|[^가-힣])(' + w + ')', 'g'), '$1' + _tk);
+          }
         });
         text = text.replace(/([가-힣])을([\s.!?,;:\n"')\]])/g, (match, prev, after) => {
           if (!hasBatchim(prev)) return prev + '를' + after; // 받침 없으면 를
@@ -9386,7 +9494,12 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             : (typeof window._lastGeneratedTitle !== 'undefined' ? window._lastGeneratedTitle : '');
           
           let _line1 = '', _line2 = '';
-          if (_ydTitle) {
+          // [r7.5 F-1] 사용자가 입력한 썸네일 문구가 있으면 최우선 사용 (없으면 기존 자동 분할)
+          if (typeof thumbLine1 === 'string' && thumbLine1.trim() && typeof thumbLine2 === 'string' && thumbLine2.trim()) {
+            _line1 = thumbLine1.trim();
+            _line2 = thumbLine2.trim();
+            console.log('[r7.5 F-1] 야담 썸네일 문구 = 사용자 입력값 사용');
+          } else if (_ydTitle) {
             const _splitPatterns = ['…', '...', ',', '하여', '하고', '하자', '하니', '하는', '한 후'];
             let _splitIdx = -1;
             for (const p of _splitPatterns) {
@@ -9747,7 +9860,12 @@ NO TEXT, NO LETTERS, NO Korean characters anywhere, natural background fills ent
         // ===== NK 썸네일 =====
         const _nkTitle = typeof window._lastGeneratedTitle !== 'undefined' ? window._lastGeneratedTitle : '';
         let _nkMainTitle = '', _nkSubTitle = '';
-        if (_nkTitle) {
+        // [r7.5 F-1] 사용자가 입력한 썸네일 문구가 있으면 최우선 사용 (없으면 기존 자동 분할)
+        if (typeof thumbLine1 === 'string' && thumbLine1.trim() && typeof thumbLine2 === 'string' && thumbLine2.trim()) {
+          _nkMainTitle = thumbLine1.trim();
+          _nkSubTitle = thumbLine2.trim();
+          console.log('[r7.5 F-1] NK 썸네일 문구 = 사용자 입력값 사용');
+        } else if (_nkTitle) {
           const _pipeIdx = _nkTitle.indexOf('|');
           const _ellipIdx = _nkTitle.indexOf('…');
           const _commaIdx = _nkTitle.indexOf(',');
@@ -9810,19 +9928,80 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         const _nkGroupSize = (() => {
           const g = _ec2?.groupSize || 1;
           const etype = _ec2?.escapeType?.type || '';
-          // [v21.0 2단계 자녀] 가족 탈북이면 부모+어린 자녀 명시 (왼쪽 탈출 장면에 자녀 반영)
-          if (etype === 'family') return 'a North Korean family with parents and young children';
+          // [r7.5 N-4] 가족 탈북이면 실제 캐스트(배우자/자녀)를 반영 — 기존엔 'young children'만 써서 배우자가 누락됨
+          if (etype === 'family') {
+            try {
+              var _n4_cast = (typeof cast !== 'undefined' && Array.isArray(cast)) ? cast : [];
+              var _n4_spouse = _n4_cast.find(function(c){ return c && c.role && /배우자|아내|남편/.test(c.role); });
+              var _n4_kids = _n4_cast.filter(function(c){ return c && c.role && /자녀|아들|딸/.test(c.role); });
+              // 한글 나이("40대 중반","45세","16세") → 영어
+              var _n4_ageEn = function(a){
+                var s = String(a || '');
+                var num = (s.match(/(\d+)\s*세/) || [])[1];
+                if (num) return 'around ' + num + ' years old';
+                var dec = (s.match(/(\d+)대/) || [])[1];
+                if (dec) {
+                  if (/초반/.test(s)) return 'in his early ' + dec + 's';
+                  if (/후반/.test(s)) return 'in his late ' + dec + 's';
+                  return 'in his mid-' + dec + 's';
+                }
+                return 'middle-aged';
+              };
+              if (_n4_spouse || _n4_kids.length) {
+                var _n4_parts = [];
+                var _mainG = (_nkGender2 === 'woman' || _nkGender2 === 'female') ? 'woman' : 'man';
+                _n4_parts.push('an East Asian ' + _mainG + ' in his mid-40s (the protagonist)');
+                if (_n4_spouse) {
+                  var _spG = (_n4_spouse.gender === '여') ? 'woman' : 'man';
+                  var _spA = _n4_ageEn(_n4_spouse.age).replace(/\bhis\b/, (_spG === 'woman' ? 'her' : 'his'));
+                  _n4_parts.push('an East Asian ' + _spG + ' ' + _spA + ' (the spouse)');
+                }
+                _n4_kids.slice(0, 2).forEach(function(k){
+                  var _kG = (k.gender === '여') ? 'girl' : 'boy';
+                  var _kA = String(k.age || '').replace(/[^0-9]/g, '') || '10';
+                  _n4_parts.push('an East Asian ' + _kG + ' around ' + _kA + ' years old (the child)');
+                });
+                return 'a North Korean family together — ' + _n4_parts.join(', ') + ' — all three visible in frame';
+              }
+            } catch(_n4e) { /* 폴백 */ }
+            return 'a North Korean family with both parents and their children together, all visible in frame';
+          }
           if (g >= 3) return `${g} North Korean people`;
           if (g === 2) return 'two North Korean people';
           return `East Asian ${_nkGender2} in late 20s-30s`;
         })();
+        // [r7.5 N-2] 탈출 루트별 배경 — 기존엔 4개(두만강/압록강/두바이/해상)만 처리하고
+        //   나머지 루트(전투기/헬기/목선/JSA/DMZ/해외공관/무역출장 등)는 전부 "국경 도강"으로 잘못 폴백됨.
+        //   → 전체 루트를 커버하여 대본과 이미지가 일치하게 함.
         const _nkEscapeAction = (() => {
           const route = _ec2?.route?.name || '';
+          const cat = _ec2?.route?.category || '';
+          // ── 강 도강 ──
           if (route.includes('두만강')) return `${_nkGroupSize} crossing frozen Tumen River at night, wading through icy water, carrying child on back, looking back anxiously, urgent desperate escape, breath visible in cold air`;
           if (route.includes('압록강')) return `${_nkGroupSize} crossing dark Amnok River at night, wading through cold water, holding hands tightly, urgent tense escape, breath visible`;
+          // ── 항공기 ──
+          if (route.includes('전투기')) return `a lone North Korean fighter jet streaking low across a dark sky at dawn, afterburner glowing, breaking away from formation, dramatic aerial escape`;
+          if (route.includes('헬기')) return `a military helicopter flying low over dark terrain at night, navigation lights off, tense desperate flight across a border`;
+          if (route.includes('훈련기')) return `a small military trainer aircraft flying low at dusk, deviating from its course, tense escape flight`;
+          // ── 해상 ──
+          if (route.includes('목선') || route.includes('어선') || route.includes('해상')) return `${_nkGroupSize} huddled together on a small wooden boat crossing a dark rough sea at night, tense fearful expressions, waves crashing around them, dim moonlight`;
+          if (route.includes('잠수')) return `a figure in dark diving gear emerging from black water onto a rocky shore at night, tense covert escape, dim moonlight`;
+          // ── DMZ / 군사분계선 ──
+          if (route.includes('JSA') || route.includes('판문점')) return `a lone figure sprinting desperately across the Joint Security Area at Panmunjom in broad daylight, guards giving chase behind, blue buildings and concrete demarcation line visible, extreme urgency`;
+          if (route.includes('DMZ') || route.includes('철책')) return `${_nkGroupSize} crawling under barbed wire fencing in a dark demilitarized zone at night, floodlights sweeping the field, extreme tension, guard towers in the distance`;
+          if (route.includes('땅굴')) return `${_nkGroupSize} crawling through a narrow dark underground tunnel, a single flashlight beam ahead, dirt walls, claustrophobic tense escape`;
+          // ── 해외 (제3국) ──
+          if (route.includes('공관') || route.includes('망명')) return `${_nkGroupSize} hurrying toward a foreign embassy gate on a foreign city street, police vehicle lights flashing behind them, urgent tense escape, night or dusk`;
+          if (route.includes('공연') || route.includes('국제대회')) return `${_nkGroupSize} slipping away from a brightly lit venue through a back corridor in a foreign city, glancing over shoulder anxiously, tense covert escape`;
+          if (route.includes('해외파견') || route.includes('노동자')) return `${_nkGroupSize} escaping at night from a foreign worksite dormitory compound, chain-link fence and floodlights behind them, tense desperate flight`;
+          if (route.includes('무역') || route.includes('출장') || route.includes('잠적')) return `${_nkGroupSize} slipping away from a foreign trade exhibition hall and hurrying through a Southeast Asian city street, glancing back anxiously, tense covert escape, humid urban night`;
           if (route.includes('두바이')) return `${_nkGroupSize} hurrying through dark desert city alleyways at night, tense anxious escape, Middle Eastern architecture background`;
-          if (route.includes('해상')) return `${_nkGroupSize} huddled together on a small boat crossing dark sea at night, tense fearful expression, waves around them`;
-          return `${_nkGroupSize} crossing dark border area at night, hurrying anxiously, tense urgent escape, breath visible in cold air`;
+          // ── 카테고리 폴백 ──
+          if (cat.includes('해외') || cat.includes('제3국')) return `${_nkGroupSize} hurrying through a foreign city street at night toward safety, glancing back anxiously, tense covert escape`;
+          if (cat.includes('해상')) return `${_nkGroupSize} on a small boat crossing a dark sea at night, tense fearful expressions, waves around them`;
+          if (cat.includes('DMZ')) return `${_nkGroupSize} moving through a dark militarized border zone at night, extreme tension, floodlights sweeping`;
+          // ── 최종 폴백 (강 도강) ──
+          return `${_nkGroupSize} crossing a dark river border area at night, hurrying anxiously, tense urgent escape, breath visible in cold air`;
         })();
         const _nkPortraitDesc = `upper body portrait of ${_nkCharDesc2}, facing camera directly, bright natural front lighting, calm dignified composed expression, quiet resolve, upper body fully visible and dominant against flag`;
 
@@ -9843,21 +10022,10 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         // 인물 묘사: 실존정치인이면 완전 검은 실루엣 / 아니면 가상 주인공 얼굴
         // [r6.2] 실존인물 조연(side) + 가상 주인공 직업 → 2인 배치(좌:실존 실루엣 / 우:주인공 얼굴)
         var _r6_isSideMode = (typeof selectedRealPerson !== 'undefined' && selectedRealPerson && useRealPerson && typeof realPersonMode !== 'undefined' && realPersonMode === 'side');
-        var _r6_protagFace = `close-up of an East Asian ${_nkGender2} in his 30s-40s, fictional ordinary North Korean face (not resembling any real person), ${_jobCostume2}, weary intense determined expression, dramatic side lighting, head and shoulders visible, natural realistic skin texture`;
-        var _r6_silhouette = `a large authoritarian leader man figure in a dark suit, rendered as a COMPLETELY SOLID PURE BLACK SILHOUETTE, total shadow, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, only a thin orange rim light along the shoulders`;
-        var _r6_figureDesc;
-        if (_r6_isSideMode) {
-          // 2인 배치: 좌측 실존인물 실루엣 + 우측 주인공 얼굴 (벤치마킹 2인 구조)
-          _r6_figureDesc = `TWO figures side by side. LEFT side: ${_r6_silhouette} (the real political figure, face hidden). RIGHT side as MAIN focus: ${_r6_protagFace} (the protagonist, ${_jobName2||'주인공'})`;
-        } else if (_r6_isRealPersonSubject) {
-          // 김정은 등이 주제(주인공 직업 없음/키워드만) → 실루엣 단독
-          _r6_figureDesc = `${_r6_silhouette}, facing forward, ominous, center-right`;
-        } else {
-          // 가상 주인공 → 얼굴 단독
-          _r6_figureDesc = _r6_protagFace + ', center-right main focus';
-        }
-
-        // 배경: [r6.3] 직업별 무대 우선 → 없으면 탈출루트 후순위 (+화염/연기 다큐톤)
+        // [r7.5 N-3] 성별 대명사 — 여성 주인공인데 "in his"로 나오던 오류 수정
+        var _r6_posPron = (_nkGender2 === 'woman' || _nkGender2 === 'female') ? 'her' : 'his';
+        // [r7.5 N-1] 직업무대 배경 계산 (복장 판별과 배경 선택에 '동일한 결과'를 쓰기 위해 여기서 한 번만 계산)
+        //   ※ 이전 버전은 복장 판별용 조건을 따로 써서 _r6_jobBg와 목록이 어긋났음(외교/당간부/무역 등 누락) → 배경-복장 모순
         var _r6_jobBg = (function(){
           var j = _jobName2 || '';
           if (j.indexOf('체육')>=0 || j.indexOf('선수')>=0 || j.indexOf('축구')>=0) return 'a North Korean national soccer team in red uniforms lined up on a stadium pitch, empty stadium stands behind, floodlights, sports stadium setting';
@@ -9881,8 +10049,37 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
           if (j.indexOf('요리')>=0) return 'a large institutional kitchen, North Korean elite banquet setting';
           return '';
         })();
+        // 복장: 직업무대 배경이면 직업복 / 탈출 장면 배경이면 평상복(배지·제복 없음)
+        //   기존: 배경은 도주인데 복장은 간부복+김일성배지 → 도망자가 배지 달고 도망치는 모순
+        var _r6_costumeForFace = _r6_jobBg
+          ? _jobCostume2
+          : 'plain civilian clothes, a worn dark jacket, NO badge, NO uniform, disheveled and travel-worn';
+        var _r6_protagFace = `close-up of an East Asian ${_nkGender2} in ${_r6_posPron} 30s-40s, fictional ordinary North Korean face (not resembling any real person), ${_r6_costumeForFace}, weary intense determined expression, dramatic side lighting, head and shoulders visible, natural realistic skin texture`;
+        var _r6_silhouette = `a large authoritarian leader man figure in a dark suit, rendered as a COMPLETELY SOLID PURE BLACK SILHOUETTE, total shadow, absolutely NO face, NO eyes, NO nose, NO mouth, NO facial features whatsoever, flat black featureless shape, only a thin orange rim light along the shoulders`;
+        var _r6_figureDesc;
+        if (_r6_isSideMode) {
+          // 2인 배치: 좌측 실존인물 실루엣 + 우측 주인공 얼굴 (벤치마킹 2인 구조)
+          _r6_figureDesc = `TWO figures side by side. LEFT side: ${_r6_silhouette} (the real political figure, face hidden). RIGHT side as MAIN focus: ${_r6_protagFace} (the protagonist, ${_jobName2||'주인공'})`;
+        } else if (_r6_isRealPersonSubject) {
+          // 김정은 등이 주제(주인공 직업 없음/키워드만) → 실루엣 단독
+          _r6_figureDesc = `${_r6_silhouette}, facing forward, ominous, center-right`;
+        } else {
+          // 가상 주인공 → 얼굴 단독
+          _r6_figureDesc = _r6_protagFace + ', center-right main focus';
+        }
+
+        // 배경: [r6.3] 직업별 무대 우선 → 없으면 탈출루트 후순위
+        // ※ _r6_jobBg는 위(_r6_protagFace 생성부)에서 이미 계산됨 — 복장 판별과 동일한 결과를 쓰기 위함
         var _r6_bgScene = _r6_jobBg || _nkEscapeAction; // 직업무대 우선, 없으면 탈출루트
-        var _r6_bg = `${_r6_bgScene}, with thick dark billowing smoke and orange fire glow in the background atmosphere, muted desaturated documentary tones, gritty realistic press-photo atmosphere, overcast dim cinematic lighting`;
+        // ※ 복장(_r6_costumeForFace)은 위 _r6_protagFace 생성부에서 이미 결정됨 (직업무대→직업복 / 탈출→평상복)
+        // [r7.5 N-1b] 화염/연기는 실제로 불이 나는 상황이 아니면 부적절 (해외 도주/대사관 진입에 화염?)
+        //   → 강 도강/DMZ/땅굴 같은 극한 루트에만 유지, 그 외엔 제거
+        var _r6_routeName = (_ec2?.route?.name || '');
+        var _r6_useFire = /두만강|압록강|DMZ|철책|땅굴|JSA|판문점/.test(_r6_routeName);
+        var _r6_atmos = _r6_useFire
+          ? ', with thick dark billowing smoke and orange fire glow in the background atmosphere, muted desaturated documentary tones, gritty realistic press-photo atmosphere, overcast dim cinematic lighting'
+          : ', muted desaturated documentary tones, gritty realistic press-photo atmosphere, dim cinematic lighting, deep shadows';
+        var _r6_bg = `${_r6_bgScene}${_r6_atmos}`;
 
         // 상단 캡션 (괄호) — 주체에 맞게
         var _r6_caption = _r6_isSideMode
@@ -9896,7 +10093,7 @@ Both lines center aligned, extremely large font size. Do NOT show words "메인 
         var _r6_real = `Realistic documentary photography, authentic film grain, natural smoke and fire textures, cinematic muted color grade, high contrast, 8k, NOT illustration, NOT cartoon, NOT 3d render, NOT cgi --ar 16:9 --v 6.1 --style raw --stylize 200`;
 
         // 하단 2줄 텍스트 오버레이 (흰색 1줄 + 하늘색 2줄, 두꺼운 검은 외곽선) — 벤치마킹 색공식
-        var _r6_textA = _nkTitle ? `\nAcross the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (yellow #FFEB3B, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
+        var _r6_textA = (_nkMainTitle || _nkSubTitle) ? `\nAcross the lower portion of the image runs a dark bar holding massive thick Korean text on two lines with heavy black outline 10px: Line 1 (white #FFFFFF, gigantic bold): "${_nkMainTitle}", Line 2 (yellow #FFEB3B, bigger bold): "${_nkSubTitle}". Ultra-bold Korean sans-serif, centered, fills width edge to edge, horizontal no tilt.` : '';
         var _r6_textB = `\nNO TEXT, NO LETTERS, NO Korean characters anywhere, the lower area left empty and darkened for later text overlay, complete background scenery throughout. --no text --no letters --no words --no layout labels --no annotation words --no english text labels`;
 
         // 앵글 3종 (장면 강조점만 다르게) × A(글씨)/B(글씨없음)
@@ -10217,6 +10414,37 @@ ${inputScript.slice(0, 12000)}
                 }
               }
             } catch(_r75g){ console.warn('[r7.5 성별-주체판단] 오류:', _r75g.message); }
+            // [r7.5 Y-1 끝신분어 = 최종 확정] 한국어 어순상 제목 맨 끝 명사가 주인공.
+            //   반드시 주체판단 '뒤'에 위치해야 함 (앞에 두면 주체판단이 덮어씀)
+            //   예: "시어머니가 고른 수상한 머슴" → 끝=머슴(남) → 주인공 남
+            //       "병든 닭 백 마리 사온 며느리" → 끝=며느리(여) → 주인공 여
+            //       "여종과 혼인 고집한 도련님"   → 끝=도련님(남) → 주인공 남
+            //   관계동사 없는 제목(사온/판/맡긴)도 이 규칙으로 정확히 잡힘.
+            try {
+              // [핵심부 추출] 쉼표/줄표 앞부분이 제목의 핵심 (뒤는 부연설명)
+              //   "시어머니가 고른 수상한 머슴, 집안의 숨겨진 원수였다" → 핵심="시어머니가 고른 수상한 머슴"
+              var _core = _titleForGender.split(/[,\u2014\u2013|]/)[0].trim();
+              if (_core.length < 6) _core = _titleForGender;   // 너무 짧으면 전체 사용
+              // 핵심부에서 "마지막으로 등장하는" 신분어 = 주인공 (한국어 어순)
+              var _lastF = -1, _lastM = -1, _lastFkw = '', _lastMkw = '';
+              _fKw.forEach(function(kw){
+                var i = _core.lastIndexOf(kw);
+                if (i > _lastF) { _lastF = i; _lastFkw = kw; }
+              });
+              _mKw.forEach(function(kw){
+                var i = _core.lastIndexOf(kw);
+                if (i > _lastM) { _lastM = i; _lastMkw = kw; }
+              });
+              if (_lastF >= 0 || _lastM >= 0) {
+                if (_lastF > _lastM) {
+                  mainGender = 'female';
+                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastFkw + '" → 주인공 여성 (최종확정)');
+                } else if (_lastM > _lastF) {
+                  mainGender = 'male';
+                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastMkw + '" → 주인공 남성 (최종확정)');
+                }
+              }
+            } catch(_y1e){ console.warn('[r7.5 Y-1 끝신분어] 오류:', _y1e.message); }
           }
           // [v21.0 YA-나이] 야담: 제목 역할로 주인공/조력자 나이 매칭 (r5.1.4 정밀 매핑)
           let _mainAge = '30대 중반', _helperAge = '40대';
@@ -10542,6 +10770,27 @@ ${assignedNames.map(n => '- ' + n.role + ': ' + n.name + ' (' + n.gender + ', ' 
           const generateTitle = (job, benchTitle, gender, thumbType, routeType) => {
             // Fix-L r9-13: 3단계 조건 분기 명확히 분리 (충돌 완전 해결)
             // 케이스1: 야담 + B방식 + selectedTitle 있음 → B방식 제목 그대로 반환
+            // [r7.5 F-1] 목표 제목이 입력되면 시놉을 그 제목대로 강제 (야담/NK 공통)
+            //   비어 있으면 아무 것도 하지 않음 → 기존 자동 생성 흐름 그대로 유지
+            try {
+              if (typeof targetTitle === 'string' && targetTitle.trim()) {
+                var _f1_t = targetTitle.trim();
+                synopsisPrompt += '\n\n★★★[r7.5 F-1 목표 제목 절대 강제 — 최우선]★★★\n'
+                  + '이 대본의 확정 제목은 다음과 같다:\n'
+                  + '「' + _f1_t + '」\n'
+                  + '\n'
+                  + '[반드시 지킬 것]\n'
+                  + '1. 제목에 나온 인물·소재·행동·장소가 시놉에 실제 사건으로 전부 등장해야 한다.\n'
+                  + '2. 제목이 암시하는 "핵심 행동"을 주인공이 능동적으로 수행하는 장면이 반드시 있어야 한다.\n'
+                  + '   (명사만 등장시키고 행동을 다른 것으로 바꾸면 실패)\n'
+                  + '3. 제목에 따옴표 대사가 있으면, 그 대사가 대본 안에서 실제로 발화되어야 한다.\n'
+                  + '   특히 1막(인트로)의 첫 장면에 그 대사/장면을 배치하면 가장 좋다.\n'
+                  + '4. 제목이 "~한 이유"로 끝나면, 그 이유가 이야기 전체를 관통하는 핵심 동기여야 하고\n'
+                  + '   마지막 막에서 명확히 밝혀져야 한다.\n'
+                  + '5. 시놉의 내용이 제목과 어긋나면 안 된다. 제목이 곧 이 이야기의 뼈대다.\n';
+                console.log('[r7.5 F-1] 목표 제목 시놉 주입 → ' + _f1_t.slice(0, 40) + (_f1_t.length > 40 ? '...' : ''));
+              }
+            } catch(_f1e) { console.warn('[r7.5 F-1] 목표 제목 주입 오류:', _f1e.message); }
             if (isYadam && useBMode && selectedTitle) {
               console.log('Fix-L: B방식 selectedTitle 고정 →', selectedTitle);
               return { title: selectedTitle, tags: YADAM_TAGS.join(' '), sub: '' };
@@ -10986,14 +11235,46 @@ ${(function(){
           // Fix-B방식로그 r9-7: selectedTitle 주입 확인
           if (isYadam && useBMode && selectedTitle) {
             console.log('STEP5 B방식: 시놉에 제목 주입됨 →', selectedTitle);
+            // [r7.5 C-3 시간선] 회상 년수를 주인공 나이로 역산 → 회상 시점에 미성년이 되는 논리 파탄 방지
+            //   예: 주인공 28세인데 "30년 전" 회상 → 회상 때 -2세?! → 성인 행동(혼인/구조) 불가능
+            //   규칙: 회상 시점 주인공 나이 ≥ 16세 (혼인/노동 가능 연령)
+            var _c3_flashYears = 20;   // 기본값
+            var _c3_flashLabel = '이십 년 전';
+            try {
+              var _c3_ageStr = (typeof _mainAge === 'string' && _mainAge) ? _mainAge : '30대 중반';
+              // "20대 후반" → 28, "40대 중반" → 45, "10대 후반" → 18
+              var _c3_dec = parseInt((_c3_ageStr.match(/(\d+)대/) || [])[1] || '30', 10);
+              var _c3_off = /초반/.test(_c3_ageStr) ? 2 : (/중반/.test(_c3_ageStr) ? 5 : (/후반/.test(_c3_ageStr) ? 8 : 5));
+              var _c3_mainAgeNum = _c3_dec + _c3_off;
+              // 회상 시점 나이가 16세 이상이 되도록 년수 결정 (_c3_max = 최대 거슬러갈 수 있는 년수)
+              var _c3_max = _c3_mainAgeNum - 16;
+              if (_c3_max >= 30) { _c3_flashYears = 30; _c3_flashLabel = '삼십 년 전'; }
+              else if (_c3_max >= 20) { _c3_flashYears = 20; _c3_flashLabel = '이십 년 전'; }
+              else if (_c3_max >= 15) { _c3_flashYears = 15; _c3_flashLabel = '십오 년 전'; }
+              else if (_c3_max >= 10) { _c3_flashYears = 10; _c3_flashLabel = '십 년 전'; }
+              else if (_c3_max >= 5)  { _c3_flashYears = 5;  _c3_flashLabel = '오 년 전'; }
+              else                    { _c3_flashYears = 3;  _c3_flashLabel = '삼 년 전'; }
+              console.log('[r7.5 C-3 시간선] 주인공 ' + _c3_mainAgeNum + '세 → 회상 ' + _c3_flashLabel + ' (그때 ' + (_c3_mainAgeNum - _c3_flashYears) + '세)');
+            } catch(_c3e) { console.warn('[r7.5 C-3 시간선] 계산 실패, 기본값 사용:', _c3e.message); }
             // r5.0.5 Z: B방식 시놉시스 흐름 강제 룰 (영상화 가능 회고 구조 + 정서 일치)
             try {
               synopsisPrompt += '\n\n[★r5.0.5 Z: B방식 시놉시스 흐름 절대 강제]\n'
                 + '선택된 제목「' + selectedTitle + '」을 1막부터 8막까지 핵심 사건으로 풀어낼 것.\n'
                 + '\n'
+                + '★★★[r7.5 Y-2 제목 행동 강제 — 최우선 규칙]★★★\n'
+                + '제목에 담긴 "주인공의 핵심 행동"이 반드시 시놉의 실제 사건으로 구현되어야 한다.\n'
+                + '제목의 명사(소재)만 등장시키고 행동을 다른 것으로 바꾸면 실패다.\n'
+                + '[나쁜 예] 제목 "병든 닭 백 마리 사온 며느리" → 시놉에서 닭이 그냥 떼죽음 당함 (며느리가 "사온" 행동이 없음) ✗\n'
+                + '[좋은 예] 제목 "병든 닭 백 마리 사온 며느리" → 시놉에서 며느리가 실제로 집문서를 팔아 병든 닭 백 마리를 사온다. 왜 그랬는지 이유가 이야기의 핵심이 된다 ✓\n'
+                + '즉 제목의 동사(사온/구한/버린/맡긴/판/고른/숨긴 등)를 주인공이 능동적으로 수행하는 장면이 반드시 있어야 한다.\n'
+                + '그리고 "왜 그런 행동을 했는가"가 이야기 전체를 관통하는 핵심 동기여야 한다.\n'
+                + '\n'
                 + '[필수 흐름]\n'
                 + '- 1막: 충격적 발견/사건 (제목의 핵심 사건이 처음 드러남) - 회고 선언 가능\n'
-                + '- 2막: 30년 전(또는 과거) 시작점 - 인물 등장과 발단\n'
+                + '- 2막: ' + _c3_flashLabel + ' 시작점 - 인물 등장과 발단\n'
+                + '  ★★[시간선 절대규칙] 회상은 반드시 "' + _c3_flashLabel + '"으로 할 것. 그보다 더 거슬러 올라가지 마라!\n'
+                + '     이유: 주인공이 회상 시점에도 성인(16세 이상)이어야 혼인·노동·구조 같은 행동이 가능하다.\n'
+                + '     회상 장면에서 주인공이 아이(10세 이하)인데 어른의 행동(혼인/구조/장사)을 하면 논리 파탄이다.\n'
                 + '- 3막: 주요 인물간 갈등 또는 비밀 형성 (실제 장면!)\n'
                 + '- 4막: 위기 1차 (누명/오해/배신 등 실제 장면!)\n'
                 + '- 5막: 위기 정점 (옥중/형벌/극한 고난 - 실제 장면 5개 이상!)\n'
@@ -12231,35 +12512,48 @@ ${isYadam ?
               }
             } catch(_r75age){ console.warn('[r7.5 시놉나이보정] 오류:', _r75age.message); }
             
-            // [r7.5 시놉성별검증] 시놉에서 주인공 성별 재확인 → 제목판단과 다르면 시놉을 따름
-            // (대본은 시놉 기반으로 써지므로 시놉이 진실. 제목판단이 틀렸을 때의 안전망)
+            // [r7.5 시놉성별검증] 시놉에서 주인공 성별 재확인 → 명확할 때만 보정 (뒤집기 신중)
+            // [C-2 정밀화] 이름 "앞" 12자를 보면 다른 인물 서술(아내와 딸 미경이…박진수)을 주인공 성별로 오인함.
+            //   → 이름 "직후"의 대명사/서술어(그/그녀, ~는 남자/여자)만 보고 판단.
+            //   → 여성 주인공도 정상 지원하되, 근거가 명확할 때만 보정 (애매하면 기존 판단 유지)
             try {
               const _r75_syn = (typeof synFixed === 'string' && synFixed) ? synFixed
                 : (typeof synopsisText === 'string' && synopsisText ? synopsisText
                 : (typeof synText === 'string' ? synText : ''));
               if (_r75_syn && _r75_syn.length > 50) {
-                const _r75_femW = ['여인','여자','아내','부인','과부','미망인','며느리','딸','소녀','처녀','규수','낭자','아씨','마님','계모','노파','할멈','새댁','청상','무녀','비복','종년','어미','어머니','그녀','비구니','몸종','침모','기녀','기생','궁녀','유모','밥어미'];
-                const _r75_malW = ['사내','남자','남편','아들','총각','선비','영감','대감','나무꾼','머슴','옹기장이','숯쟁이','뱃사공','약초꾼','농부','어부','상인','포수','사냥꾼','도령','장군','아비','아버지','마름','대장장이','목수','석수','도공','소금장수','짚신장수','지게꾼','보부상'];
                 const _r75_main = newCast.find(function(c){ return c && c.isMain; });
                 if (_r75_main && _r75_main.name) {
-                  // 주인공 이름 바로 앞 12자(수식어) 수집
-                  var _r75_near = '';
-                  var _p = _r75_syn.indexOf(_r75_main.name);
-                  var _g = 0;
-                  while (_p >= 0 && _g < 8) {
-                    _r75_near += ' ' + _r75_syn.slice(Math.max(0, _p - 12), _p);
-                    _p = _r75_syn.indexOf(_r75_main.name, _p + 1);
-                    _g++;
+                  var _nm = _r75_main.name;
+                  // ① 이름 직후 대명사 카운트 ("박진수는 그는" / "진이는 그녀는")
+                  var _sheCnt = 0, _heCnt = 0;
+                  var _p2 = _r75_syn.indexOf(_nm);
+                  var _g2 = 0;
+                  while (_p2 >= 0 && _g2 < 12) {
+                    // 이름 직후 40자 안에서 대명사 확인
+                    var _after = _r75_syn.slice(_p2 + _nm.length, _p2 + _nm.length + 40);
+                    if (/그녀/.test(_after)) _sheCnt++;
+                    else if (/(^|[^그])그(는|가|를|의|에게|와|도)/.test(_after)) _heCnt++;
+                    _p2 = _r75_syn.indexOf(_nm, _p2 + 1);
+                    _g2++;
                   }
-                  var _r75_synF = _r75_femW.some(function(w){ return _r75_near.indexOf(w) >= 0; });
-                  var _r75_synM = _r75_malW.some(function(w){ return _r75_near.indexOf(w) >= 0; });
-                  // 시놉이 명확히 한쪽 성별이고, 캐스트와 다르면 → 시놉 따라 보정
-                  if (_r75_synF && !_r75_synM && _r75_main.gender !== '여') {
-                    console.log('[r7.5 시놉성별검증] 주인공 ' + _r75_main.name + ': ' + _r75_main.gender + ' → 여 (시놉 우선)');
+                  // ② 이름 + 직접 신분어 결합 ("며느리 진이", "진이라는 며느리")
+                  var _femDirect = new RegExp('(며느리|아내|부인|여인|과부|딸|소녀|처녀|규수|낭자|아씨|마님|새댁|어머니|어미)\\s*' + _nm + '|' + _nm + '(이|가|은|는)?\\s*(라는|이라는)?\\s*(며느리|아내|부인|여인|과부|딸|소녀|처녀|규수|낭자|아씨|마님|새댁|어머니|어미)');
+                  var _malDirect = new RegExp('(도련님|사내|남자|남편|아들|총각|선비|영감|대감|머슴|나무꾼|농부|아버지|아비)\\s*' + _nm + '|' + _nm + '(이|가|은|는)?\\s*(라는|이라는)?\\s*(도련님|사내|남자|남편|아들|총각|선비|영감|대감|머슴|나무꾼|농부|아버지|아비)');
+                  var _dirF = _femDirect.test(_r75_syn);
+                  var _dirM = _malDirect.test(_r75_syn);
+
+                  // 판정: 대명사 + 직접신분어 종합. 한쪽이 명확히 우세할 때만 보정.
+                  var _synIsF = (_sheCnt >= 2 && _heCnt === 0) || (_dirF && !_dirM);
+                  var _synIsM = (_heCnt >= 2 && _sheCnt === 0) || (_dirM && !_dirF);
+
+                  if (_synIsF && !_synIsM && _r75_main.gender !== '여') {
+                    console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' → 여 (시놉 근거: 그녀' + _sheCnt + '회/신분어' + (_dirF?'O':'X') + ')');
                     _r75_main.gender = '여';
-                  } else if (_r75_synM && !_r75_synF && _r75_main.gender !== '남') {
-                    console.log('[r7.5 시놉성별검증] 주인공 ' + _r75_main.name + ': ' + _r75_main.gender + ' → 남 (시놉 우선)');
+                  } else if (_synIsM && !_synIsF && _r75_main.gender !== '남') {
+                    console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' → 남 (시놉 근거: 그' + _heCnt + '회/신분어' + (_dirM?'O':'X') + ')');
                     _r75_main.gender = '남';
+                  } else if (_r75_main.gender) {
+                    console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' 유지 (시놉 근거 불충분 → 직업/제목 판단 존중)');
                   }
                 }
               }
@@ -16841,13 +17135,15 @@ ${chunkScript}`;
               ];
               // [r7.5 을명사보호] '을'로 끝나는 명사(가을/마을/고을/노을)를 조사로 오인해 깨뜨리는 것 차단
               // 원리: 명사를 특수토큰으로 치환 → 조사교정 수행 → 토큰 복원
+              // [r7.5 단어경계] '무언가을/어딘가을'이 '가을'로 오인 보호되지 않도록 앞에 한글 없을 때만 보호
               const _r75_eulNouns = ['가을','마을','고을','노을','서울','겨울','거울'];
               const _r75_eulGuard = {};
               _r75_eulNouns.forEach(function(w, i){
                 const _tk = '\uE200EN' + i + '\uE201';
-                if (fullScript.indexOf(w) >= 0) {
+                const _reTest = new RegExp('(^|[^가-힣])(' + w + ')');
+                if (_reTest.test(fullScript)) {
                   _r75_eulGuard[_tk] = w;
-                  fullScript = fullScript.split(w).join(_tk);
+                  fullScript = fullScript.replace(new RegExp('(^|[^가-힣])(' + w + ')', 'g'), '$1' + _tk);
                 }
               });
               fullScript = fullScript.replace(/([가-힣])(을|를)(?=[\s.,!?…"'」])/g, function(m, ch, josa) {
@@ -17948,6 +18244,40 @@ JSON 형식:
                 console.log('D-6: 이미지에 소품 주입 → ' + _d6Extra);
               }
             }
+            // [r7.5 Y-3] 제목의 핵심 소재를 썸네일에 함께 주입 —
+            //   기존엔 시놉에서 뽑은 prop 하나만 들어가서, 제목의 소재(예: "병든 닭 백 마리")가 그림에 없었음.
+            //   → 제목 문구와 썸네일 그림이 불일치 → 클릭한 시청자가 "닭은 어디?" 하게 됨.
+            try {
+              var _y3_title = (typeof selectedTitle !== 'undefined' && selectedTitle) ? selectedTitle : '';
+              if (_y3_title && thumbnailPrompts) {
+                // 제목 소재 → 영어 (야담에서 자주 쓰는 소재)
+                var _y3_map = [
+                  [/병든\s*닭|닭\s*백\s*마리|닭/, 'about a hundred visibly sick dying chickens with patchy feathers in wooden cages'],
+                  [/병든\s*소|소\s*백\s*마리/, 'sick emaciated cattle'],
+                  [/집문서|가옥문서/, 'an old yellowed house deed document'],
+                  [/전답문서|논문서|땅문서/, 'an old land deed document'],
+                  [/패물|비녀|가락지/, 'traditional Korean jewelry and a silver hairpin'],
+                  [/궤짝|상자/, 'an old wooden chest'],
+                  [/편지|서찰/, 'an old folded letter with faded ink'],
+                  [/약|탕약/, 'a dark medicine bowl with steam rising'],
+                  [/쌀|곡식|양식/, 'sacks of rice grain'],
+                  [/베틀|길쌈/, 'a traditional Korean loom'],
+                  [/옹기|항아리/, 'large earthenware jars'],
+                  [/숯|장작/, 'stacks of charcoal and firewood'],
+                  [/짚신|미투리/, 'straw sandals'],
+                  [/거울|경대/, 'an old bronze mirror']
+                ];
+                var _y3_hit = _y3_map.find(function(p){ return p[0].test(_y3_title); });
+                if (_y3_hit) {
+                  var _y3_en = _y3_hit[1];
+                  // 이미 들어가 있지 않을 때만 주입 (중복 방지)
+                  if (thumbnailPrompts.indexOf(_y3_en.slice(0, 25)) < 0) {
+                    thumbnailPrompts = thumbnailPrompts.replace(/--ar 16:9/g, ', with ' + _y3_en + ' clearly visible in the scene (this is the title subject — it MUST appear) --ar 16:9');
+                    console.log('[r7.5 Y-3] 제목 소재를 썸네일에 주입 → ' + _y3_en.slice(0, 40) + '...');
+                  }
+                }
+              }
+            } catch(_y3e) { console.warn('[r7.5 Y-3] 소재 주입 오류:', _y3e.message); }
           }
           // [1차 핫픽스 N-1] NK 썸네일 시네마틱 6룰 적용 (NK 전용, 실제 App 1곳)
           // brightly lit → EXTREME CLOSE-UP / red lighting → muted olive-gray / 2-4 people → EXACTLY N
@@ -23934,6 +24264,39 @@ ${reviewed.slice(-3000)}
                     <option key={h.value} value={h.value}>{h.label}: {h.example.slice(0,20)}...</option>
                   ))}
                 </select>
+              </div>
+
+              {/* [r7.5 F-1] 목표 제목 입력 (야담/NK 공통, 선택) — 유튜브 분석기 문구 투입용 */}
+              <div style={{marginBottom:'10px',padding:'10px',background:'#1a2e1a',border:'1px solid #4a8a4a',borderRadius:'8px'}}>
+                <label style={{color:'#8fdf8f',fontSize:'13px',display:'block',marginBottom:'6px',fontWeight:'bold'}}>
+                  🎯 목표 제목/문구 (선택) — 비우면 자동 생성
+                </label>
+                <input
+                  type="text"
+                  value={targetTitle}
+                  onChange={e=>setTargetTitle(e.target.value)}
+                  placeholder='예: "방아쇠까지 3초였습니다" 남파 공작원이 국정원에 자수한 진짜 이유'
+                  style={{width:'100%',padding:'8px',background:'#0f1a0f',border:'1px solid #3a6a3a',borderRadius:'5px',color:'#dfd',fontSize:'12px',marginBottom:'8px'}}
+                />
+                {targetTitle && targetTitle.trim() && (
+                  <div style={{fontSize:'11px',color:'#9c9'}}>
+                    <div style={{marginBottom:'4px'}}>썸네일 문구 (자동 분할 — 수정 가능)</div>
+                    <input
+                      type="text"
+                      value={thumbLine1}
+                      onChange={e=>setThumbLine1(e.target.value)}
+                      placeholder="1줄 (흰색)"
+                      style={{width:'100%',padding:'6px',background:'#0f1a0f',border:'1px solid #3a6a3a',borderRadius:'4px',color:'#fff',fontSize:'12px',marginBottom:'4px'}}
+                    />
+                    <input
+                      type="text"
+                      value={thumbLine2}
+                      onChange={e=>setThumbLine2(e.target.value)}
+                      placeholder="2줄 (노랑, 1.15배)"
+                      style={{width:'100%',padding:'6px',background:'#0f1a0f',border:'1px solid #3a6a3a',borderRadius:'4px',color:'#FFEB3B',fontSize:'12px'}}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* STEP5 B방식: 야담 제목 먼저 생성 */}
