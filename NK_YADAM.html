@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -3912,7 +3912,15 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
       const updateCastName = (index, newName) => {
         const newCast = [...cast];
+        const _oldName = newCast[index].name;
         newCast[index].name = newName;
+        // [r7.5 이미지이름] 옛이름→새이름 매핑 저장 (이미지 생성 시 시놉의 옛이름 치환용)
+        if (_oldName && newName && _oldName !== newName) {
+          if (typeof window !== 'undefined') {
+            window._r75_nameMap = window._r75_nameMap || {};
+            window._r75_nameMap[_oldName] = newName;
+          }
+        }
         setCast(newCast);
       };
       
@@ -4496,6 +4504,19 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       const buildYadamAIImagePrompts = async (sceneSrc, bodyTextArg, castArr) => {
         try {
           const _cast = castArr || [];
+          // [r7.5 이미지이름] 시놉/대본의 옛 인물명을 캐스트 최종 이름으로 치환 (하이→분이 등)
+          try {
+            if (typeof window !== 'undefined' && window._r75_nameMap) {
+              Object.keys(window._r75_nameMap).forEach(function(_old){
+                var _new = window._r75_nameMap[_old];
+                if (_old && _new && _old !== _new) {
+                  var _re = new RegExp(_old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                  if (typeof sceneSrc === 'string') sceneSrc = sceneSrc.replace(_re, _new);
+                  if (typeof bodyTextArg === 'string') bodyTextArg = bodyTextArg.replace(_re, _new);
+                }
+              });
+            }
+          } catch(_r75nm){ /* 무시 */ }
           const _sceneSys =
             "당신은 한국 사극(조선시대) 웹툰 콘티 작가입니다. 시놉시스를 보고 그림으로 그릴 핵심 장면을 골라 영어 이미지 프롬프트로 만듭니다.\n\n" +
             "[규칙]\n" +
@@ -4553,7 +4574,17 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             + "- 아이/자녀가 등장하면 (딸/아들/손주) 그 나이에 맞게 (갓난아기 baby infant / 어린이 child around age 6-8, innocent, fully clothed / 청소년 teenager, innocent).\n"
             + "- 각 장면(막)이 어느 시간대인지 시놉 내용으로 판단해서 나이를 정하라. 모든 장면에 현재 나이를 똑같이 쓰지 마라.\n"
             + "- 미성년(아이/청소년)은 반드시 innocent, fully clothed, no romantic or sexual context 를 포함하라.\n";
-          const _scenePrompt = "[시놉시스]\n" + String(sceneSrc||'').slice(0, 2500) + _ageBlock + _r75_timeAgeRule + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라. 인물 나이는 [나이표]를 기준으로 하되, 위 [시간대별 나이 조정] 규칙을 반드시 적용하여 회상/미래 장면은 나이를 다르게 하라.";
+          // [r7.5 초반디테일] 대본 본문 앞부분(초반 막)을 함께 제공 → 초반 장면은 시놉 요약 아닌 대본 디테일로 그림
+          var _bodyEarly = "";
+          try {
+            if (typeof bodyTextArg === 'string' && bodyTextArg.length > 100) {
+              // 대본 앞 45% (대략 1~4막) 를 초반 디테일 참고용으로 제공
+              _bodyEarly = "\n\n[대본 본문 — 초반부 (앞쪽 장면은 이 본문의 구체적 묘사를 우선 반영하라)]\n"
+                + bodyTextArg.slice(0, Math.min(2000, Math.floor(bodyTextArg.length * 0.45)))
+                + "\n\n※ 위 대본 본문에 나오는 구체적 행동·소품·장소·표정을 앞쪽 이미지(초반 막)에 반영하라. 뒤쪽 장면은 시놉시스를 참고하라.";
+            }
+          } catch(_be){ _bodyEarly = ""; }
+          const _scenePrompt = "[시놉시스]\n" + String(sceneSrc||'').slice(0, 2500) + _bodyEarly + _ageBlock + _r75_timeAgeRule + "\n\n위 시놉의 각 막에서 핵심 장면 2개씩 골라 총 16개의 영어 이미지 프롬프트를 JSON으로 출력하라. 인물 나이는 [나이표]를 기준으로 하되, 위 [시간대별 나이 조정] 규칙을 반드시 적용하여 회상/미래 장면은 나이를 다르게 하라. 초반 막(1~4막)은 위 [대본 본문 — 초반부]의 구체적 묘사를 우선하여 그려라.";
           const _sceneRaw = await callClaude(_sceneSys, _scenePrompt, 4096, 'haiku', 0.6);
           let _sceneJson = null;
           try { _sceneJson = JSON.parse((_sceneRaw||"").replace(/```json|```/g, '').trim()); } catch(_e) { _sceneJson = null; }
@@ -5315,6 +5346,32 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           console.warn('[cleanText] 오류:', _cleanErr.message);
           return text; // 실패 시 원본 반환 (안전)
         }
+        // [r7.5 탈락복원] 1170 이름치환 등이 깨뜨린 '을명사'를 복원 (고을→고를 등). 조사 '를'은 안 건드림.
+        try {
+          var _r75_eulRestore = [
+            // [깨진형태(앞 문맥 포함)] → [복원]  — 앞 글자로 명사 확정, '무언가를/이마를'(조사) 오복원 방지
+            [/(산골|아랫|윗|온|어느|그해|지나가던|우리)(\s?)마를/g, '$1$2마을'],
+            [/마를(\s?)(사람|사람들|아낙|어귀|입구|어른|안|앞|길|로|에|은|을|의|에서|로는)/g, '마을$1$2'],
+            [/(산골|어느|그|이|저|온|우리|한)(\s?)고를/g, '$1$2고을'],
+            [/고를(\s?)(수령|사람|최고|안|길|로|에|은|을|의|에서|원님|사또|전체)/g, '고을$1$2'],
+            [/(그해|이해|저해|올해|지난해|그 ?해|이 ?해)(\s?)가를/g, '$1$2가을'],
+            [/가를(\s?)(걷이|바람|하늘|햇살|저녁|날|밤|아침|이|은|의|에|들판|무렵)/g, '가을$1$2'],
+            [/(긴|어느|추운|그|찬)(\s?)겨를(?=[\s.,])/g, '$1$2겨울'],
+            [/(맑은|손|작은|둥근)(\s?)거를(?=[\s.,을에])/g, '$1$2거울']
+          ];
+          _r75_eulRestore.forEach(function(pair){ result = result.replace(pair[0], pair[1]); });
+        } catch(_r75eul){ /* 무시 */ }
+        // [r7.5 문장끊김복원] API 생성 시 어미 없이 잘린 문장을 다음 문장과 자연스럽게 이어붙임
+        // 예: "거들떠보지 않았\n\n생선 비린내가" → "거들떠보지 않았답니다.\n\n생선 비린내가"
+        try {
+          // 케이스A: 어간이 잘리고 다음 줄이 어미로 시작 (예: "날이었\n\n답니다") → 그냥 이어붙임 (중복 방지)
+          result = result.replace(/([가-힣]*[았었였])\s*\n\s*\n\s*(답니다|습니다|답니다\.|었답니다|였답니다)/g, '$1$2');
+          // 케이스B: 어간이 잘리고 다음 줄이 새 문장 (예: "않았\n\n생선") → 어미 보충
+          result = result.replace(/([가-힣]*[았었였])\s*\n\s*\n\s*([가-힣])/g, function(m, stem, next){
+            // next가 어미의 일부면 위 케이스A에서 처리됐어야 함. 여기선 새 문장이므로 어미 보충
+            return stem + '답니다.\n\n' + next;
+          });
+        } catch(_r75cut){ /* 무시 */ }
         return result;
       };
       // ========== v21.0 r3.4 정화 시스템 끝 ==========
@@ -9453,14 +9510,14 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             }
             // [r7.5 야담 썸네일 상황] 관계형/행동형/반전형 제목 → 구체적 장면으로 (추상 폴백 방지)
             if (!_titleAction) {
-              // 1순위: 관계형 (구한/삼은/거둔/숨긴/버린/내쫓은) — 주체가 대상에게 하는 행동
-              var _relM = _actSrc.match(/(구한|구해준|삼은|거둔|숨겨준|숨긴|데려온|품은|버린|버렸|내쫓은|내친|판)/);
+              // 1순위: 관계형 (구한/삼은/거둔/숨긴/버린/내쫓은/고른/혼인 등) — 주체가 대상에게 하는 행동
+              var _relM = _actSrc.match(/(구한|구해준|삼은|거둔|숨겨준|숨긴|데려온|품은|버린|버렸|내쫓은|내친|판|고른|택한|들인|맞은|맞이한|혼인|시집|장가|짝지은)/);
               if (_relM) {
                 var _v = _relM[0];
                 if (/구한|구해준|거둔|숨겨준|숨긴|데려온|품은/.test(_v)) {
                   _titleAction = 'reaching out to rescue and protect a desperate person in danger, a dramatic life-saving moment — this rescue MUST be the visual focus';
-                } else if (/삼은/.test(_v)) {
-                  _titleAction = 'standing protectively beside the person they took in, a fateful bond — this relationship MUST be the visual focus';
+                } else if (/삼은|고른|택한|들인|맞은|맞이한|혼인|시집|장가|짝지은/.test(_v)) {
+                  _titleAction = 'standing together with the person from the title in a fateful meaningful relationship, the two figures clearly together — this relationship MUST be the visual focus';
                 } else if (/버린|버렸|내쫓은|내친|판/.test(_v)) {
                   _titleAction = 'turning away and casting out a pleading person who reaches toward them in despair — this betrayal MUST be the visual focus';
                 }
@@ -9493,10 +9550,27 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
             }
           }
           const _actionClause = _titleAction
-            ? `, actively ${_titleAction} — THIS specific absurd action MUST be the visual focus of the scene`
+            ? `, actively ${_titleAction}`
             : '';
-          const _mainDesc = `East Asian ${_mainGender} in late Joseon era, ${_mainCostume}${_actionClause}, looking straight at camera`;
-          const _helperDesc = _helperC ? `East Asian ${_helperC?.gender === '여' ? 'woman' : 'man'} in late Joseon era, ${_helperCostume}, reacting with astonishment` : '';
+          // [r7.5 썸네일인물] 캐스트 신분(role)을 영어로 명시 → 제목 인물이 정확히 나오게 (머슴=servant 등)
+          const _roleToEn = (char) => {
+            const r = (char?.role || '').toLowerCase();
+            if (/하녀|여종|몸종|계집종/.test(r)) return 'a female maid servant';
+            if (/머슴|하인|노비|남종/.test(r) || /(?<![여계])종(?![가-힣])/.test(r)) return 'a male servant';
+            if (/양반|도련님|선비|사대부/.test(r)) return 'a noble young master';
+            if (/시어머니|시모/.test(r)) return 'an elderly mother-in-law';
+            if (/며느리|새댁/.test(r)) return 'a young daughter-in-law';
+            if (/과부/.test(r)) return 'a young widow';
+            if (/승려|스님|비구니|여승/.test(r)) return 'a Buddhist monk or nun';
+            if (/관리|사또|수령|어사/.test(r)) return 'a government official';
+            if (/기생/.test(r)) return 'a gisaeng';
+            if (/농부|나무꾼|어부|장수|숯|옹기/.test(r)) return 'a humble commoner';
+            return '';
+          };
+          const _mainRoleEn = _roleToEn(_mainC);
+          const _helperRoleEn = _roleToEn(_helperC);
+          const _mainDesc = `East Asian ${_mainGender}${_mainRoleEn ? ' (' + _mainRoleEn + ')' : ''} in late Joseon era, ${_mainCostume}${_actionClause}, looking straight at camera`;
+          const _helperDesc = _helperC ? `East Asian ${_helperC?.gender === '여' ? 'woman' : 'man'}${_helperRoleEn ? ' (' + _helperRoleEn + ')' : ''} in late Joseon era, ${_helperCostume}, reacting with astonishment` : '';
 
           // 🆕 r4.6: DNA 기반 텍스트 오버레이 (위치/색상/크기 벤치마킹 따라가기)
           const _r46_dna = (typeof window !== 'undefined' && window._r34_thumbDNA) ? window._r34_thumbDNA : null;
@@ -9631,7 +9705,7 @@ NO TEXT, NO LETTERS, NO Korean characters anywhere, natural background fills ent
           
           // 🆕 r6.9: 야담 썸네일 앵글1 전용 — 황당행동을 '당당·태연하게' 하는 표정 (격분 아님)
           // 벤치마킹: 며느리가 황당한 짓을 당당하게/태연하게 → "왜 저걸 아무렇지 않게?" 후킹
-          const _r46_boldKw = 'bold confident composed expression, fierce determined eyes, slight knowing smirk, commanding dominant presence, NOT screaming NOT crying NOT panicking, calm and self-assured while doing the absurd action, looking straight at camera with quiet determination';
+          const _r46_boldKw = 'bold confident composed expression, fierce determined eyes, slight knowing smirk, commanding dominant presence, NOT screaming NOT crying NOT panicking, calm and self-assured in the dramatic scene, looking straight at camera with quiet determination';
           
           // 앵글 1 - 핵심 장면 (🅰️ 텍스트 포함 / 🅱️ 이미지만) — ★당당한 표정 사용
           const _r46_a1_base = `${_r46_dnaStyle}, ${_r46_styleKw}, ${_r46_koreanForce}. ${_mainDesc},${_r74_multiClause} ${_r46_boldKw}, ${_r46_faceSizeKw}, most dramatic and confident action moment of the story. ${!_r74_useMultiFigure && _helperDesc ? _helperDesc + ' reacting with shock nearby.' : ''} ${_r46_dnaSpeechBubble} ${_ydSpeechBubble}`;
@@ -10008,9 +10082,9 @@ ${inputScript.slice(0, 12000)}
                    '윤석','재돌','성수','백돌','천수','동석','광수','일석','종수','팔봉'],
             female: ['분이','연화','춘향','소월','금이','옥순','영이','난이','홍이','선이',
                      '달이','복순','점순','갑순','귀순','말순','순이','정이','창이','봉이',
-                     '월이','설화','매화','채화','국화','백합','춘이','하이','동이','진이',
-                     '명화','소이','단이','미이','해이','용이','은이','화이','선화','길이',
-                     '운이','수이','덕이','복이','란이','향이','경이','옥이','빛이','윤이'],
+                     '월이','설화','매화','채화','국화','백합','춘이','간난','동이','진이',
+                     '명화','소이','단이','섭섭','언년','용이','은이','곱단','선화','길이',
+                     '운이','수이','덕이','복이','란이','향이','경이','옥이','아지','윤이'],
             childMale: ['돌이','쇠돌','만복','복동','삼돌','갑동','칠동','석동','팔이','춘동',
                         '길동','인동','경동','상동','용동'],
             childFemale: ['꽃님','난이','복순이','은이','달래','소이','설이','단이','향이','옥이',
