@@ -9986,12 +9986,22 @@ ${inputScript.slice(0, 12000)}
 -  endingPattern은 반드시 "완결형"으로 (클리프행어/미완결/다음편예고 금지)`;
 
           const extractRaw = (apiKey2 && apiKey2.startsWith('sk-ant-'))
-            ? await callClaude(extractSystem, extractPrompt, 4096, 'haiku')
+            ? await callClaude(extractSystem, extractPrompt, 8192, 'haiku')
             : await callGemini(extractSystem, extractPrompt, true);
           let structure = safeParse(extractRaw);
 
           if (!structure || !structure.hookPattern) {
-            setMsg("구조 추출 실패. 다시 시도하세요.");
+            // [r7.5] 1회 재시도 (일시적 파싱 실패 대비)
+            try {
+              const _retryRaw = (apiKey2 && apiKey2.startsWith('sk-ant-'))
+                ? await callClaude(extractSystem, extractPrompt + '\n\n반드시 완결된 JSON만 출력하라. 설명·주석·백틱 금지.', 8192, 'haiku')
+                : await callGemini(extractSystem, extractPrompt, true);
+              structure = safeParse(_retryRaw);
+            } catch(_retryErr) { /* 무시 */ }
+          }
+
+          if (!structure || !structure.hookPattern) {
+            setMsg("구조 추출 실패. 벤치마킹 이미지를 빼고 텍스트 제목만으로 다시 시도해보세요.");
             setLoading(false);
             return;
           }
