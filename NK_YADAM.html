@@ -2305,7 +2305,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호(근본수정)] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -16839,6 +16839,17 @@ ${chunkScript}`;
               const _josaPairs = [
                 { jong: '을', noJong: '를' }
               ];
+              // [r7.5 을명사보호] '을'로 끝나는 명사(가을/마을/고을/노을)를 조사로 오인해 깨뜨리는 것 차단
+              // 원리: 명사를 특수토큰으로 치환 → 조사교정 수행 → 토큰 복원
+              const _r75_eulNouns = ['가을','마을','고을','노을','서울','겨울','거울'];
+              const _r75_eulGuard = {};
+              _r75_eulNouns.forEach(function(w, i){
+                const _tk = '\uE200EN' + i + '\uE201';
+                if (fullScript.indexOf(w) >= 0) {
+                  _r75_eulGuard[_tk] = w;
+                  fullScript = fullScript.split(w).join(_tk);
+                }
+              });
               fullScript = fullScript.replace(/([가-힣])(을|를)(?=[\s.,!?…"'」])/g, function(m, ch, josa) {
                 const jong = _hasJong(ch);
                 if (jong === null) return m;
@@ -16847,6 +16858,10 @@ ${chunkScript}`;
                   if (josa === p.noJong && jong === true) return ch + p.jong;  // 받침O인데 받침X조사 → 교정
                 }
                 return m;
+              });
+              // 보호했던 명사 복원
+              Object.keys(_r75_eulGuard).forEach(function(_tk){
+                fullScript = fullScript.split(_tk).join(_r75_eulGuard[_tk]);
               });
               if (fullScript !== _c3_before) {
                 console.log('[r6.4 C-3 조사교정] ✅ 조사 오타 교정 완료');
