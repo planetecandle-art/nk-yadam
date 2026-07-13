@@ -2306,7 +2306,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제+★r7.9:야담성별잠금(제목우선)+신분어인접강제+뒤집기차단] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2323,7 +2323,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r7.8';
+      var _VER = 'v21.0 r7.9';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -10513,6 +10513,8 @@ ${inputScript.slice(0, 12000)}
             //       "여종과 혼인 고집한 도련님"   → 끝=도련님(남) → 주인공 남
             //   관계동사 없는 제목(사온/판/맡긴)도 이 규칙으로 정확히 잡힘.
             try {
+              // [r7.9-1b] 잠금 플래그는 편마다 초기화 (이전 편 값이 남지 않도록)
+              try { if (typeof window !== 'undefined') window.__YA_GENDER_LOCK__ = null; } catch(_e){}
               // [핵심부 추출] 쉼표/줄표 앞부분이 제목의 핵심 (뒤는 부연설명)
               //   "시어머니가 고른 수상한 머슴, 집안의 숨겨진 원수였다" → 핵심="시어머니가 고른 수상한 머슴"
               var _core = _titleForGender.split(/[,\u2014\u2013|]/)[0].trim();
@@ -10530,10 +10532,14 @@ ${inputScript.slice(0, 12000)}
               if (_lastF >= 0 || _lastM >= 0) {
                 if (_lastF > _lastM) {
                   mainGender = 'female';
-                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastFkw + '" → 주인공 여성 (최종확정)');
+                  // [r7.9-1] "최종확정"이라 로그만 찍고 실제 잠금이 없어서 뒤 단계(시놉성별검증)가 덮어씀
+                  //   실전 사고: 제목 "…아내곁엔 옛 정혼자"(여 확정) → 시놉검증이 남으로 뒤집음
+                  try { if (typeof window !== 'undefined') window.__YA_GENDER_LOCK__ = '여'; } catch(_e){}
+                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastFkw + '" → 주인공 여성 (최종확정·잠금)');
                 } else if (_lastM > _lastF) {
                   mainGender = 'male';
-                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastMkw + '" → 주인공 남성 (최종확정)');
+                  try { if (typeof window !== 'undefined') window.__YA_GENDER_LOCK__ = '남'; } catch(_e){}
+                  console.log('[r7.5 Y-1 끝신분어] 핵심부 마지막 신분어 "' + _lastMkw + '" → 주인공 남성 (최종확정·잠금)');
                 }
               }
             } catch(_y1e){ console.warn('[r7.5 Y-1 끝신분어] 오류:', _y1e.message); }
@@ -12658,23 +12664,69 @@ ${isYadam ?
                     _g2++;
                   }
                   // ② 이름 + 직접 신분어 결합 ("며느리 진이", "진이라는 며느리")
-                  var _femDirect = new RegExp('(며느리|아내|부인|여인|과부|딸|소녀|처녀|규수|낭자|아씨|마님|새댁|어머니|어미)\\s*' + _nm + '|' + _nm + '(이|가|은|는)?\\s*(라는|이라는)?\\s*(며느리|아내|부인|여인|과부|딸|소녀|처녀|규수|낭자|아씨|마님|새댁|어머니|어미)');
-                  var _malDirect = new RegExp('(도련님|사내|남자|남편|아들|총각|선비|영감|대감|머슴|나무꾼|농부|아버지|아비)\\s*' + _nm + '|' + _nm + '(이|가|은|는)?\\s*(라는|이라는)?\\s*(도련님|사내|남자|남편|아들|총각|선비|영감|대감|머슴|나무꾼|농부|아버지|아비)');
+                  //   [r7.9-2] 기존 정규식이 \s*(공백 0개 이상)라 거리 제한이 사실상 없었음
+                  //     실전 사고: "귀순은 남편의 죽음 직후 시어머니에게 쫓겨나"
+                  //       → "귀순은 + 남편"이 매칭되어 여주인공이 '남'으로 뒤집힘
+                  //     수정: "이름 + 은/는 + 신분어" 패턴은 원천 제거
+                  //       (한국어에서 "귀순은 남편의 죽음"은 '귀순=남편'이 아니라 '귀순의 남편'을 뜻함)
+                  //     남은 패턴은 두 개뿐 — 둘 다 동격(同格)일 때만 성립:
+                  //       A) "며느리 귀순"      (신분어 + 공백 + 이름)
+                  //       B) "귀순이라는 며느리" (이름 + 라는 + 신분어)
+                  var _fKw = '며느리|아내|부인|여인|과부|딸|소녀|처녀|규수|낭자|아씨|마님|새댁|어머니|어미|신부|색시';
+                  var _mKwS = '도련님|사내|남자|남편|아들|총각|선비|영감|대감|머슴|나무꾼|농부|아버지|아비|신랑|서방';
+                  var _femDirect = new RegExp(
+                    '(?:' + _fKw + ')\\s' + _nm
+                    + '|' + _nm + '(?:이|가)?\\s*(?:라는|이라는)\\s*(?:' + _fKw + ')'
+                  );
+                  var _malDirect = new RegExp(
+                    '(?:' + _mKwS + ')\\s' + _nm
+                    + '|' + _nm + '(?:이|가)?\\s*(?:라는|이라는)\\s*(?:' + _mKwS + ')'
+                  );
                   var _dirF = _femDirect.test(_r75_syn);
                   var _dirM = _malDirect.test(_r75_syn);
+
+                  // [r7.9-2] 시놉 전체의 여성/남성 지시어 빈도 (보조 근거)
+                  //   야담 여주 서사엔 '그녀/시어머니/신부/며느리'가 반복 등장함
+                  var _femHint = (_r75_syn.match(/그녀|시어머니|시아버지|신부|며느리|아내|부인|낭자|아씨|새댁/g) || []).length;
+                  var _malHint = (_r75_syn.match(/사내|도령|도련님|선비|머슴|총각|장인|장모/g) || []).length;
 
                   // 판정: 대명사 + 직접신분어 종합. 한쪽이 명확히 우세할 때만 보정.
                   var _synIsF = (_sheCnt >= 2 && _heCnt === 0) || (_dirF && !_dirM);
                   var _synIsM = (_heCnt >= 2 && _sheCnt === 0) || (_dirM && !_dirF);
 
-                  if (_synIsF && !_synIsM && _r75_main.gender !== '여') {
+                  // [r7.9-2] Y-1(제목 끝 신분어)이 확정한 성별은 시놉검증이 뒤집지 못함
+                  //   제목은 사용자가 정한 것이고 썸네일·대본이 모두 여기 맞춰짐
+                  var _gLock = null;
+                  try { _gLock = (typeof window !== 'undefined') ? window.__YA_GENDER_LOCK__ : null; } catch(_e){}
+                  if (_gLock && _r75_main.gender !== _gLock) {
+                    console.log('[r7.9-2 성별잠금] Y-1 확정(' + _gLock + ') ≠ 캐스트(' + _r75_main.gender + ') → 잠금값으로 교정');
+                    _r75_main.gender = _gLock;
+                  } else if (_gLock) {
+                    // 잠금과 일치 → 시놉검증 스킵 (뒤집기 금지)
+                    if ((_synIsF && _gLock === '남') || (_synIsM && _gLock === '여')) {
+                      console.log('[r7.9-2 성별잠금] 시놉검증이 ' + _gLock + '→반대로 뒤집으려 함 → 차단 (제목 우선)');
+                    }
+                  } else if (_synIsF && !_synIsM && _r75_main.gender !== '여') {
                     console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' → 여 (시놉 근거: 그녀' + _sheCnt + '회/신분어' + (_dirF?'O':'X') + ')');
                     _r75_main.gender = '여';
                   } else if (_synIsM && !_synIsF && _r75_main.gender !== '남') {
-                    console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' → 남 (시놉 근거: 그' + _heCnt + '회/신분어' + (_dirM?'O':'X') + ')');
-                    _r75_main.gender = '남';
+                    // [r7.9-2] 대명사 근거가 0회인데 신분어만으로 뒤집는 것을 금지
+                    //   + 여성 지시어가 더 많으면 뒤집지 않음 (야담 여주 서사 보호)
+                    if (_heCnt === 0 && _femHint >= _malHint) {
+                      console.log('[r7.9-2 시놉성별검증] ' + _nm + ' 남으로 뒤집기 차단 (대명사 근거 0회 / 여성지시어 ' + _femHint + ' ≥ 남성 ' + _malHint + ') → ' + _r75_main.gender + ' 유지');
+                    } else {
+                      console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' → 남 (시놉 근거: 그' + _heCnt + '회/신분어' + (_dirM?'O':'X') + ')');
+                      _r75_main.gender = '남';
+                    }
                   } else if (_r75_main.gender) {
-                    console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' 유지 (시놉 근거 불충분 → 직업/제목 판단 존중)');
+                    // [r7.9-2c] 근거 불충분 시에도, 여성 지시어가 압도적인데 캐스트가 '남'이면 교정
+                    //   (야담 여주 서사: 시어머니/신부/며느리 등이 반복 등장하는데 캐스트만 남인 경우)
+                    if (_r75_main.gender === '남' && _femHint >= 3 && _femHint > _malHint * 2 && _heCnt === 0) {
+                      console.log('[r7.9-2c 시놉성별검증] ' + _nm + ': 남 → 여 (여성지시어 ' + _femHint + '회 압도 / 남성 ' + _malHint + '회 / 그0회)');
+                      _r75_main.gender = '여';
+                    } else {
+                      console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' 유지 (시놉 근거 불충분 → 직업/제목 판단 존중)');
+                    }
                   }
                   // [r7.7-2b] 확정된 주인공 성별을 전역 노출 → cleanText 배우자 호칭 교정이 사용
                   try {
@@ -25382,7 +25434,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r7.5 (2026-07-02 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r7.9 (2026-07-13 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
