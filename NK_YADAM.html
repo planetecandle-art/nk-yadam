@@ -988,7 +988,8 @@ window.buildDynamicMidjourneyContext = function buildDynamicMidjourneyContext(ca
     '베트남': 'Vietnam jungle border path',
     '인천': 'Incheon airport modern terminal',
     '국경': 'tense border crossing area, barbed wire',
-    '강': 'Yalu or Tumen river crossing point',
+    // [r7.7-6] 'Yalu or Tumen' → AI가 매번 다른 강을 뽑음 (시놉=압록강인데 썸네일=Tumen)
+    '강': 'Yalu river crossing point',
     '터널': 'dark tunnel with concrete walls',
     '산': 'rugged Korean mountain border area',
     '집': 'modest North Korean apartment interior'
@@ -2305,7 +2306,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2322,7 +2323,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r7.5';
+      var _VER = 'v21.0 r7.8';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -5510,6 +5511,38 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             }
           }
         } catch(_r76dup){ /* 무시 */ }
+        // [r7.7-2] 배우자 호칭 성별 강제 (대본 후처리)
+        //   기존 fix12(3584)는 '캐스트 생성' 시점만 보정 → AI가 대본에 "제 남편"이라 써도 못 막음
+        //   실전 사고: 남주(오광일) 5막 "아내" ↔ 9막 "제 남편이 있었다면" 동시 등장
+        //   NK 1인칭에서만 적용 (야담은 3인칭 → 화자≠주인공이므로 건드리지 않음)
+        try {
+          var _r77_g = (typeof window !== 'undefined' && window.__NK_MAIN_GENDER__) || null;
+          var _r77_isNK = (typeof window !== 'undefined') ? (window.__IS_YADAM__ !== true) : false;
+          if (_r77_isNK && _r77_g) {
+            var _r77_b4 = result;
+            // 받침 유무가 바뀌므로 조사도 함께 교정 (남편=받침O / 아내=받침X)
+            var _r77_toWife = { '이':'가', '은':'는', '을':'를', '과':'와' };
+            var _r77_toHusb = { '가':'이', '는':'은', '를':'을', '와':'과' };
+            if (_r77_g === '남') {
+              result = result.replace(/(제|내|나의)\s*(남편|서방님|신랑)([가-힣])?/g, function(m, p, sp, nx){
+                var j = _r77_toWife[nx];
+                return p + ' 아내' + (j !== undefined ? j : (nx || ''));
+              });
+              result = result.replace(/(?:^|(?<=[\s.,!?"']))(남편|서방님|신랑)([이은을과])(?=\s*(?:있었|없었|살아|죽|떠나|남았|기다))/g, function(m, sp, j){
+                return '아내' + (_r77_toWife[j] || j);
+              });
+            } else if (_r77_g === '여') {
+              result = result.replace(/(제|내|나의)\s*(아내|안사람|집사람)([가-힣])?/g, function(m, p, sp, nx){
+                var j = _r77_toHusb[nx];
+                return p + ' 남편' + (j !== undefined ? j : (nx || ''));
+              });
+              result = result.replace(/(?:^|(?<=[\s.,!?"']))(아내|안사람|집사람)([가는를와])(?=\s*(?:있었|없었|살아|죽|떠나|남았|기다))/g, function(m, sp, j){
+                return '남편' + (_r77_toHusb[j] || j);
+              });
+            }
+            if (_r77_b4 !== result) console.log('[r7.7-2] 배우자 호칭 성별 교정 (주인공: ' + _r77_g + ')');
+          }
+        } catch(_r77sp){ /* 무시 */ }
         return result;
       };
       // ========== v21.0 r3.4 정화 시스템 끝 ==========
@@ -5874,6 +5907,35 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
               }
               // r3.5: 숫자나 특수문자 포함 시 제외
               if (/[0-9\s]/.test(n)) return false;
+              // [r7.7-1] 사물/장소/개념 명사 블랙리스트 — "신분증→오광일(9회)" 같은 치명적 오치환 차단
+              var _r77_blockWords = [
+                '신분증','저체온증','건너편','추격대','뒷모습','사람들','비행기','보위부','안전부',
+                '수술실','진료실','병실','회복실','당직실','탈의실','수용소','은신처','검문소','초소',
+                '증명서','진단서','경위서','서류철','기록지','처방전','통행증','여행증','공민증',
+                '무전기','손전등','청진기','혈압계','주사기','밧줄','담요','외투','점퍼','군화',
+                '고시원','하나원','공항','기차역','정거장','정류장','골목길','강기슭','강둑','제방',
+                '반대편','맞은편','저편','이편','한복판','한가운데','바깥쪽','안쪽','위쪽','아래쪽',
+                '경비대','순찰대','수색대','기동대','특무대','정찰대','헌병대','호위대',
+                '노동당','인민군','보안원','보위원','지도원','선전대','청년동맹','여성동맹'
+              ];
+              if (_r77_blockWords.indexOf(n) >= 0) {
+                console.log('[r7.7-1 A-17] 사물명사 "' + n + '" → 이름 치환 차단');
+                return false;
+              }
+              // [r7.7-1] 접미 패턴 차단 — 목록에 없어도 잡음
+              //   ⚠️ 야담 회귀 주의: '최판서/이참판' 같은 관직명이 이름으로 쓰임
+              //     → 접미 필터는 NK에서만 적용, 야담은 블랙리스트만 사용
+              //   ⚠️ NK 오차단 주의: '김정서' 같은 실제 3자 이름이 접미('서')에 걸림
+              //     → 한국 성씨로 시작하는 3자 이름은 접미 필터를 면제
+              var _r77_yadamMode = false;
+              try { _r77_yadamMode = (typeof window !== 'undefined' && window.__IS_YADAM__ === true); } catch(_e){}
+              var _r77_surname = /^(김|이|박|최|정|강|조|윤|장|임|한|오|서|신|권|황|안|송|류|전|홍|고|문|양|손|배|백|허|유|남|심|노|하|곽|성|차|주|우|구|민|나|지|엄|채|원|천|방|공|현|함|변|염|여|추|도|소|석|선|설|마|길|연|위|표|명|기|반|왕|모|육|진|어|은|편|용)[가-힣]{2}$/;
+              if (!_r77_yadamMode
+                  && !_r77_surname.test(n)
+                  && /(증|서|실|소|대|원|기|장|편|쪽|길|둑|당|군|맹|물|품|국|부|청|처|반|조|판|권|표|모습|사람)$/.test(n)) {
+                console.log('[r7.7-1 A-17] 사물접미 "' + n + '" → 이름 치환 차단 (NK)');
+                return false;
+              }
               return true;
             });
             
@@ -12547,6 +12609,27 @@ ${isYadam ?
                   }
                   return c;
                 });
+                // [r7.7-7] 격한 탈출 루트일 때 조력자 나이 캡
+                //   실전 사고: '강 도강' 루트인데 조력자가 60대 중반 → 저체온증/야간도주 리얼리티 붕괴
+                //   + 이미지 프롬프트에도 'elderly'로 나가 썸네일이 어색해짐
+                try {
+                  var _r77_hard = false;
+                  if (typeof escapeConfig !== 'undefined' && escapeConfig && escapeConfig.route) {
+                    var _r77_rk = ((escapeConfig.route.key||'') + ' ' + (escapeConfig.route.type||'') + ' ' + (escapeConfig.route.name||'')).toLowerCase();
+                    _r77_hard = /river|도강|압록|두만|국경|dmz|철책|산악|야간|헤엄|수영|해상|어선/.test(_r77_rk);
+                  }
+                  if (_r77_hard) {
+                    newCast = newCast.map(function(c){
+                      if (c.isMain || c.starRole === '주인공') return c;   // 주인공은 유지
+                      var _a = String(c.age || '');
+                      if (/6\s*0대|7\s*0대|8\s*0대|노인|고령|elderly/i.test(_a)) {
+                        console.log('[r7.7-7] 격한 루트 → 조력자 ' + c.name + ' 나이 캡: ' + _a + ' → 50대 초반');
+                        return Object.assign({}, c, { age: '50대 초반' });
+                      }
+                      return c;
+                    });
+                  }
+                } catch(_r77ac){ /* 무시 */ }
               }
             } catch(_r75age){ console.warn('[r7.5 시놉나이보정] 오류:', _r75age.message); }
             
@@ -12593,6 +12676,14 @@ ${isYadam ?
                   } else if (_r75_main.gender) {
                     console.log('[r7.5 시놉성별검증] 주인공 ' + _nm + ': ' + _r75_main.gender + ' 유지 (시놉 근거 불충분 → 직업/제목 판단 존중)');
                   }
+                  // [r7.7-2b] 확정된 주인공 성별을 전역 노출 → cleanText 배우자 호칭 교정이 사용
+                  try {
+                    if (typeof window !== 'undefined' && _r75_main.gender) {
+                      window.__NK_MAIN_GENDER__ = _r75_main.gender;
+                      window.__IS_YADAM__ = (typeof isYadam !== 'undefined') ? !!isYadam : false;
+                      console.log('[r7.7-2b] 주인공 성별 전역 등록: ' + _r75_main.gender + ' (야담=' + window.__IS_YADAM__ + ')');
+                    }
+                  } catch(_r77gx){}
                 }
               }
             } catch(_r75gv){ console.warn('[r7.5 시놉성별검증] 오류:', _r75gv.message); }
@@ -12755,13 +12846,29 @@ ${isYadam ?
                       const _isModern = _modernKeywords.some(kw => (c.clothing || '').toLowerCase().includes(kw));
                       if (_isModern || (c.clothing && c.clothing.length > 60)) {
                         const role = (c.role || '').toLowerCase();
+                        // [r7.7-5] role(="핵심조력자")만 보면 직업이 무시됨
+                        //   실전 사고: 평양의과대학병원 '동료 의사' 한영순 → worn civilian work clothes
+                        const _r77_ctx = (
+                          (c.role||'') + ' ' + (c.job||'') + ' ' + (c.occupation||'') + ' ' +
+                          (c.desc||'') + ' ' + (c.description||'') + ' ' + (c.appearance||'') + ' ' + (c.profile||'')
+                        ).toLowerCase();
+                        const _r77_has = (kw) => _r77_ctx.includes(kw);
                         let _nkCloth = 'worn civilian work clothes';
-                        if (role.includes('기술') || role.includes('전파') || role.includes('정비')) _nkCloth = 'oil-stained work clothes with tool belt';
-                        else if (role.includes('군') || role.includes('보위')) _nkCloth = 'dark military uniform';
-                        else if (role.includes('브로커') || role.includes('밀수')) _nkCloth = 'dark nondescript civilian jacket';
-                        else if (role.includes('목사') || role.includes('선교')) _nkCloth = 'modest dark clothing';
+                        // ① 직업 우선 — 조력자가 전문직이면 직업복
+                        if (_r77_has('의사') || _r77_has('의료') || _r77_has('외과') || _r77_has('내과') || _r77_has('보건'))
+                          _nkCloth = 'white medical coat with stethoscope';
+                        else if (_r77_has('간호')) _nkCloth = 'white nurse uniform with cap';
+                        else if (_r77_has('교사') || _r77_has('교원') || _r77_has('선생님'))
+                          _nkCloth = 'plain dark teacher jacket, modest collared shirt';
+                        else if (_r77_has('과학') || _r77_has('연구') || _r77_has('기사'))
+                          _nkCloth = 'grey lab coat over plain shirt';
+                        // ② 기존 role 분기 유지
+                        else if (role.includes('기술') || role.includes('전파') || role.includes('정비')) _nkCloth = 'oil-stained work clothes with tool belt';
+                        else if (role.includes('군') || role.includes('보위') || _r77_has('보위부') || _r77_has('군관')) _nkCloth = 'dark military uniform';
+                        else if (role.includes('브로커') || role.includes('밀수') || _r77_has('브로커')) _nkCloth = 'dark nondescript civilian jacket';
+                        else if (role.includes('목사') || role.includes('선교') || _r77_has('목사')) _nkCloth = 'modest dark clothing';
                         c = { ...c, clothing: _nkCloth };
-                        console.log('fix7: 조력자 NK 복장 → ' + c.name + ': ' + _nkCloth);
+                        console.log('[r7.7-5] 조력자 NK 복장 → ' + c.name + ': ' + _nkCloth);
                       }
                     }
                     return c;
@@ -12948,6 +13055,9 @@ ${isYadam ?
                 // 시놉 전체 텍스트 합치기 (각 막 summary)
                 const _synAll = (Array.isArray(scenes) ? scenes : []).map(s => (s && s.summary) ? s.summary : '').join(' ');
                 const _usedN = new Set(newCast.map(c => c.name));
+                // [r7.6 이름버그] 조사/불용어 블랙리스트 — 자녀·배우자 이름 추출에 공통 적용
+                //   시놉에 "아내에게 말했습니다"처럼 이름 없이 조사만 붙으면 "에게"가 이름으로 잡히던 버그 방지
+                var _josaBlacklist = ['에게','에서','으로','에는','과는','와는','이는','가는','한테','부터','까지','보다','처럼','만큼','에게는','에서는','이라고','라고','이라는','라는','이며','으며','에게서','한테서','에게도','한테도','까지도','부터는'];
 
                 // ---------- (B) 자녀 처리 ----------
                 const _hasChild = newCast.some(c => /자녀|아들|딸|아이|자식/.test(c.role || '') || /자녀|아들|딸|아이/.test(c.name || ''));
@@ -12959,9 +13069,27 @@ ${isYadam ?
                   // [에게버그수정] '아들에게/딸에게' 같은 조사 직결은 이름 아님 (공백 필수 \s+)
                   if (_sonM && _sonM[1]) { _childName = _sonM[1]; _childGender = '남'; }
                   else if (_dauM && _dauM[1]) { _childName = _dauM[1]; _childGender = '여'; }
-                  // [에게버그 안전망] 조사/불용어가 이름으로 추출되면 무효화
-                  var _josaBlacklist = ['에게','에서','으로','에는','과는','와는','이는','가는','한테','부터','까지','보다','처럼','만큼','에게는','에서는','이라고','라고','이라는','라는','이며','으며','에게서','한테서'];
+                  // [에게버그 안전망] 조사/불용어가 이름으로 추출되면 무효화 (블랙리스트는 상단에서 공용 선언)
                   if (_childName && _josaBlacklist.indexOf(_childName) >= 0) { _childName = ''; }
+                  // [r7.6 이름버그2] 시놉이 딸에게 남자 이름(예: "승일")을 붙이는 경우가 있음
+                  //   → 추출한 이름이 '반대 성별 이름풀'에 들어있으면 거부하고 이름풀에서 재배정
+                  if (_childName && _childGender) {
+                    try {
+                      var _oppPool = (_childGender === '여') ? (_namePool.male || []) : (_namePool.female || []);
+                      var _samePool = (_childGender === '여') ? (_namePool.female || []) : (_namePool.male || []);
+                      // 풀네임(김승일) 또는 이름 부분(승일)이 반대 성별 풀에 있으면 성별 불일치
+                      var _inOpp = _oppPool.some(function(n){
+                        return n === _childName || (n.length >= 3 && n.slice(1) === _childName);
+                      });
+                      var _inSame = _samePool.some(function(n){
+                        return n === _childName || (n.length >= 3 && n.slice(1) === _childName);
+                      });
+                      if (_inOpp && !_inSame) {
+                        console.log('[r7.6 이름버그2] 자녀 이름 "' + _childName + '"이(가) ' + _childGender + '자녀와 성별 불일치 → 이름풀에서 재배정');
+                        _childName = '';
+                      }
+                    } catch(_g2){ /* 무시 */ }
+                  }
                   // 1글자거나 받침조사 패턴이면 무효화
                   if (_childName && _childName.length < 2) { _childName = ''; }
                   // 추출 이름이 기존 캐스트와 겹치면 무효화(다른 인물 보호)
@@ -12997,8 +13125,34 @@ ${isYadam ?
                   const _spouseGender = (_main && (_main.gender === '여' || _main.gender === 'female')) ? '남' : '여';
                   // 시놉의 "아내 OO" 이름이 조력자와 겹치면 무시하고 이름풀에서 새로 부여(분리 보장)
                   let _spouseName = '';
-                  const _wifeM = _synAll.match(/아내\s*([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에|로|만|\s|,|\.|$)/);
+                  // [r7.6 이름버그] 기존 정규식이 \s*(공백 0개 허용)라서 "아내에게"의 "에게"가 이름으로 캡처됨
+                  //   → \s+(공백 필수)로 변경. 자녀 추출(위 _sonM/_dauM)은 이미 \s+라서 멀쩡했음
+                  //   → 성별에 맞는 배우자 단어(_spouseWord)를 사용해 남편/아내 모두 지원
+                  const _wifeM = _synAll.match(new RegExp(_spouseWord + '\\s+([가-힣]{2,3}?)(?:을|를|은|는|이|가|와|과|의|도|에게|에|로|만|\\s|,|\\.|$)'));
                   if (_wifeM && _wifeM[1] && !_usedN.has(_wifeM[1])) { _spouseName = _wifeM[1]; }
+                  // [r7.6 이름버그] 조사/불용어가 이름으로 잡히면 무효화 (자녀와 동일한 안전망 적용)
+                  if (_spouseName && (typeof _josaBlacklist !== 'undefined') && _josaBlacklist.indexOf(_spouseName) >= 0) {
+                    console.log('[r7.6 이름버그] 배우자 이름이 조사("' + _spouseName + '")로 추출됨 → 무효화 후 이름풀 사용');
+                    _spouseName = '';
+                  }
+                  if (_spouseName && _spouseName.length < 2) { _spouseName = ''; }
+                  // [r7.6 이름버그2] 배우자 이름도 성별과 맞는지 검증 (자녀와 동일 로직)
+                  if (_spouseName) {
+                    try {
+                      var _oppPoolS = (_spouseGender === '여') ? (_namePool.male || []) : (_namePool.female || []);
+                      var _samePoolS = (_spouseGender === '여') ? (_namePool.female || []) : (_namePool.male || []);
+                      var _inOppS = _oppPoolS.some(function(n){
+                        return n === _spouseName || (n.length >= 3 && n.slice(1) === _spouseName);
+                      });
+                      var _inSameS = _samePoolS.some(function(n){
+                        return n === _spouseName || (n.length >= 3 && n.slice(1) === _spouseName);
+                      });
+                      if (_inOppS && !_inSameS) {
+                        console.log('[r7.6 이름버그2] 배우자 이름 "' + _spouseName + '"이(가) ' + _spouseGender + '배우자와 성별 불일치 → 이름풀에서 재배정');
+                        _spouseName = '';
+                      }
+                    } catch(_g3){ /* 무시 */ }
+                  }
                   if (!_spouseName) {
                     const _sPool = (_spouseGender === '여') ? _shufF : _shufM;
                     for (const pn of _sPool) { if (!_usedN.has(pn)) { _spouseName = pn; break; } }
@@ -13791,7 +13945,16 @@ const _NK_EXTRA=['가족이별','자수/투항','은신/잠복','신분위장'];
                   if (window._usedSceneTypes.includes('소품전달경고') && /건전지.*건네|건전지.*쥐여|건전지.*전달/.test(s)) return '소품전달경고';
                   if (window._usedSceneTypes.includes('탈출실패') && /탈출.*실패|발각.*탈출|잡혔.*탈/.test(s)) return '탈출실패';
                   // r9-25: 강도하/구출씬 중복 감지 추가
-                  if (window._usedSceneTypes.includes('강도하') && /(?:두만강|압록강|강).{0,40}(?:건너|도강|건넜|도하|얼음.*위)/.test(s)) return '강도하';
+                  // [r7.7-3] 강도하 오탐 수정
+                  //   기존: "압록강을 건너는 방법"(2막 메모 언급)까지 '강도하'로 소진 등록
+                  //     → 6~9막의 실제 도강이 전부 '중복'으로 판정 → 재생성 → 오히려 중복 문단 생산
+                  //   수정: ① 물에 들어간 신체 묘사가 있어야 도강으로 인정 (단순 언급 제외)
+                  //         ② 탈출 구간(6막 이후)은 도강이 정상이므로 중복 판정 제외
+                  if (window._usedSceneTypes.includes('강도하')
+                      && (typeof actIdx === 'undefined' || actIdx < 6)
+                      && /(?:두만강|압록강|강물|강)/.test(s)
+                      && /(?:물이?\s*(?:발목|무릎|허리|가슴|목)|강물에\s*(?:뛰|들어|잠기)|얼음\s*위를\s*(?:걷|기)|헤엄|물살에\s*(?:밀려|휩쓸))/.test(s)
+                      && !/(?:방법|경로|루트|계획|얘기|말했|적혀|메모|알아보|생각)/.test(s)) return '강도하';
                   if (window._usedSceneTypes.includes('구출씬') && (/딸.*구해|아이.*구하/.test(s) || /(?:물.*빠진|물에 빠진).{0,30}(?:구해|구출|잡아)/.test(s))) return '구출씬';
                 }
                 return null;
@@ -14581,6 +14744,39 @@ ${yadamJobText}
                 + `[좋은 예 — 이렇게 써라]\n`
                 + `"복도에서 제 이름을 부르는 소리가 들렸습니다. 화장실 창틀에 한쪽 발을 올린 채였습니다. 십 초. 그게 제게 남은 전부였습니다."\n`
                 + `→ 위기 한복판, 감각, 시한, 궁금증이 모두 있다.\n`
+                + `\n`
+                + `\n`
+                + `★★★[r7.7 훅 최대강화 — 아래 규격을 반드시 지켜라]★★★\n`
+                + `\n`
+                + `[첫 문장 규격 — 위반 시 실패]\n`
+                + `① 첫 문장은 25자 이내. 주어를 빼도 좋다. 짧을수록 강하다.\n`
+                + `② 첫 문장에 "이미 벌어지고 있는 행동"이 있어야 한다.\n`
+                + `   (강물이 목까지 찼다 / 총구가 겨눠졌다 / 문고리가 돌아갔다 / 발밑 얼음이 갈라졌다)\n`
+                + `③ 첫 3문장 안에 신체 반응을 하나 넣어라. (숨이 멎었다 / 손끝이 저렸다 / 다리가 풀렸다)\n`
+                + `④ 첫 5문장 안에 "돌이킬 수 없는 사실"을 하나 던져라.\n`
+                + `   (그 사람은 이미 죽어 있었다 / 제 이름이 명단에 있었다 / 잡으면 둘 다 죽는다)\n`
+                + `⑤ 첫 5문장 안에 주인공의 직업과 지금 행동이 "모순"됨을 드러내라.\n`
+                + `   (예: 저는 외과의사였습니다. 지금은 동료를 놓아야 합니다.)\n`
+                + `\n`
+                + `[훅 강도 등급 — 반드시 A급으로 써라]\n`
+                + `· C급(실패): "그날 밤 보위부원이 찾아왔습니다." → 위험하지만 아직 아무 일도 안 일어남\n`
+                + `· B급(보통): "군화 소리가 문 앞에서 멈췄습니다." → 임박했지만 정적임\n`
+                + `· A급(합격): 행동 + 감각 + 신체반응 + 돌이킬 수 없는 사실 + 직업 모순. 5개가 다 있어야 A급.\n`
+                + `\n`
+                + `[좋은 예 2 — 물속 위기형(A급)]\n`
+                + `"강물이 목까지 찼습니다. 뒤에서 손전등 세 개가 붙었습니다. 제 흰 가운이 물을 먹고 저를 끌어내리고 있었습니다. 저는 외과의사였습니다. 사흘 전까지 사람을 살렸습니다. 지금은 옆에서 동료가 경련을 일으키고 있었습니다. 잡으면 둘 다 죽습니다."\n`
+                + `\n`
+                + `[좋은 예 3 — 발각 직전형(A급)]\n`
+                + `"명단에 제 이름이 있었습니다. 열두 명. 그중 아홉은 이미 사라진 사람들이었습니다. 복도에서 발소리가 났습니다. 서류를 덮을 시간은 없었습니다. 손이 떨려서 종이가 소리를 냈습니다."\n`
+                + `\n`
+                + `[self-check — 출력 전 스스로 검사하라]\n`
+                + `□ 첫 문장이 25자 이내인가?\n`
+                + `□ 첫 문장에 "이미 벌어진 행동"이 있는가? (없으면 다시 써라)\n`
+                + `□ 첫 3문장에 신체 반응이 있는가?\n`
+                + `□ 첫 5문장에 돌이킬 수 없는 사실이 있는가?\n`
+                + `□ 첫 5문장에 직업과 행동의 모순이 드러나는가?\n`
+                + `□ 인물 소개·직업 설명·날짜·장소 설명이 첫 5문장에 없는가? (있으면 다 지워라)\n`
+                + `위 6개 중 하나라도 X면 인트로를 폐기하고 처음부터 다시 써라.\n`
                 + `\n`
                 + `훅이 끝난 뒤에야 채널 멘트와 회상 선언을 붙여라.`;
             }
@@ -18078,7 +18274,20 @@ JSON 형식:
                 // 우선순위: dmz > overseas > river > sea > air (구체적인 것 먼저)
                 if (/dmz|gp|jsa|군사분계|휴전선|철책/.test(_b3Route)) _b3Env = 'Include barbed wire fence or military watchtower in at least one scene. Do NOT include ocean, sea, river crossing, or fishing boat.';
                 else if (/overseas|defect|diplomat|망명|해외|대회|출장|외교|대사관/.test(_b3Route)) _b3Env = 'Include foreign city or embassy in at least one scene. Do NOT include ocean, river crossing, or DMZ.';
-                else if (/river|압록강|두만강|도강|국경/.test(_b3Route)) _b3Env = 'Include dark river crossing or border river (Yalu/Tumen) in at least one scene. Do NOT include ocean, fishing boat, or DMZ.';
+                else if (/river|압록강|두만강|도강|국경/.test(_b3Route)) {
+                  // [r7.7-6b] 시놉/대본에서 실제로 쓰인 강 이름 하나로 확정 (병기 금지)
+                  var _r77_rs = ((typeof synopsisText === 'string' ? synopsisText : '') + ' ' +
+                                 (typeof fullScript === 'string' ? fullScript : '') + ' ' + _b3Route);
+                  var _r77_y = (_r77_rs.match(/압록강/g) || []).length;
+                  var _r77_t = (_r77_rs.match(/두만강/g) || []).length;
+                  var _r77_river = (_r77_t > _r77_y) ? 'Tumen River' : 'Yalu River';
+                  var _r77_riverKo = (_r77_t > _r77_y) ? '두만강' : '압록강';
+                  _b3Env = 'Include dark river crossing at the ' + _r77_river + ' in at least one scene. '
+                         + 'The river MUST be the ' + _r77_river + ' — do NOT mention or depict any other river. '
+                         + 'Do NOT include ocean, fishing boat, or DMZ.';
+                  console.log('[r7.7-6b] 강 이름 확정 → ' + _r77_riverKo + ' (압록강' + _r77_y + '회 vs 두만강' + _r77_t + '회)');
+                  try { if (typeof window !== 'undefined') window.__NK_RIVER__ = _r77_riverKo; } catch(_e){}
+                }
                 else if (/sea|boat|해상|어선|바다/.test(_b3Route)) _b3Env = 'Include ocean waves or fishing boat in at least one scene. Do NOT include river crossing or DMZ.';
                 else if (/air|항공|비행/.test(_b3Route)) _b3Env = 'Include aircraft cockpit or runway in at least one scene.';
                 if (_b3Env) {
@@ -18174,7 +18383,29 @@ JSON 형식:
                   rightSide = rightSide.replace('portrait with', 'with family members (2-4 people), group portrait with');
                   console.log('L패치(ES6): NK 썸네일 일가족 반영');
                 } else if (etype === 'group') {
-                  const groupSize = escapeConfig.escapeType.size || 5;
+                  // [r7.7-4] 인원수 하드코딩(5) 제거
+                  //   진짜 원인: getEscapeConfig()가 반환하는 키는 'count'인데 여기선 'size'를 읽음
+                  //     → 항상 undefined → fallback 5 → "leading a group of 5 people" 고정
+                  //   실전 사고: 4명 탈출인데 프롬프트엔 5명
+                  let groupSize = (escapeConfig.escapeType && (escapeConfig.escapeType.count || escapeConfig.escapeType.size)) || 0;
+                  try {
+                    // ① 대본/시놉에 "N명" 표현이 있으면 그게 가장 정확
+                    const _r77_src = (typeof fullScript === 'string' && fullScript) ? fullScript
+                                   : (typeof synopsisText === 'string' ? synopsisText : '');
+                    const _r77_m = _r77_src.match(/([2-9]|10)\s*명(?:이|은|의|과|,|\s)?\s*(?:함께|같이|탈출|도망|건너|넘|모여|출발|모두)/);
+                    if (_r77_m) {
+                      const _n = parseInt(_r77_m[1], 10);
+                      if (_n >= 2 && _n <= 10) groupSize = _n;
+                    }
+                    // ② 그래도 없으면 캐스트 수
+                    if (!groupSize && typeof cast !== 'undefined' && Array.isArray(cast) && cast.length > 0) {
+                      groupSize = Math.max(2, Math.min(6, cast.length));
+                    }
+                    if (!groupSize) groupSize = 4;
+                    // 썸네일에 20명은 그릴 수 없으므로 상한
+                    if (groupSize > 6) groupSize = 6;
+                  } catch(_r77gs){ groupSize = 4; }
+                  console.log('[r7.7-4] 썸네일 인원수 산출 → ' + groupSize + '명 (기존: size 미존재로 항상 5)');
                   rightSide = rightSide.replace('portrait with', `leading a group of ${groupSize} people, group portrait with`);
                   console.log('L패치(ES6): NK 썸네일 단체(' + groupSize + '명) 반영');
                 }
