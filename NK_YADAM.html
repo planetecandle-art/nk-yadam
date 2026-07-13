@@ -2306,7 +2306,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제+★r7.9:야담성별잠금(제목우선)+신분어인접강제+뒤집기차단] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제+★r7.9:야담성별잠금(제목우선)+신분어인접강제+뒤집기차단+★r8.0:F-1시놉주입버그수정(무효였음)+제목검증+대본제목강제+누락요소회수+야담시간일관성] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2323,7 +2323,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r7.9';
+      var _VER = 'v21.0 r8.0';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -10868,27 +10868,11 @@ ${assignedNames.map(n => '- ' + n.role + ': ' + n.name + ' (' + n.gender + ', ' 
           const generateTitle = (job, benchTitle, gender, thumbType, routeType) => {
             // Fix-L r9-13: 3단계 조건 분기 명확히 분리 (충돌 완전 해결)
             // 케이스1: 야담 + B방식 + selectedTitle 있음 → B방식 제목 그대로 반환
-            // [r7.5 F-1] 목표 제목이 입력되면 시놉을 그 제목대로 강제 (야담/NK 공통)
-            //   비어 있으면 아무 것도 하지 않음 → 기존 자동 생성 흐름 그대로 유지
-            try {
-              if (typeof targetTitle === 'string' && targetTitle.trim()) {
-                var _f1_t = targetTitle.trim();
-                synopsisPrompt += '\n\n★★★[r7.5 F-1 목표 제목 절대 강제 — 최우선]★★★\n'
-                  + '이 대본의 확정 제목은 다음과 같다:\n'
-                  + '「' + _f1_t + '」\n'
-                  + '\n'
-                  + '[반드시 지킬 것]\n'
-                  + '1. 제목에 나온 인물·소재·행동·장소가 시놉에 실제 사건으로 전부 등장해야 한다.\n'
-                  + '2. 제목이 암시하는 "핵심 행동"을 주인공이 능동적으로 수행하는 장면이 반드시 있어야 한다.\n'
-                  + '   (명사만 등장시키고 행동을 다른 것으로 바꾸면 실패)\n'
-                  + '3. 제목에 따옴표 대사가 있으면, 그 대사가 대본 안에서 실제로 발화되어야 한다.\n'
-                  + '   특히 1막(인트로)의 첫 장면에 그 대사/장면을 배치하면 가장 좋다.\n'
-                  + '4. 제목이 "~한 이유"로 끝나면, 그 이유가 이야기 전체를 관통하는 핵심 동기여야 하고\n'
-                  + '   마지막 막에서 명확히 밝혀져야 한다.\n'
-                  + '5. 시놉의 내용이 제목과 어긋나면 안 된다. 제목이 곧 이 이야기의 뼈대다.\n';
-                console.log('[r7.5 F-1] 목표 제목 시놉 주입 → ' + _f1_t.slice(0, 40) + (_f1_t.length > 40 ? '...' : ''));
-              }
-            } catch(_f1e) { console.warn('[r7.5 F-1] 목표 제목 주입 오류:', _f1e.message); }
+            // [r8.0-0] ⚠️ 여기 있던 F-1 시놉 주입은 무효였음 — 제거함
+            //   generateTitle()은 12375줄에서 호출되는데, 시놉 API 호출은 11584줄에서 이미 끝남.
+            //   즉 synopsisPrompt에 아무리 덧붙여도 시놉 생성에는 전혀 쓰이지 않았다.
+            //   (콘솔의 "목표 제목 시놉 주입" 로그만 찍히고 실제 반영은 0)
+            //   → 실제 주입은 11330 근처(시놉 API 호출 전)로 이동. [r8.0-1] 참조
             if (isYadam && useBMode && selectedTitle) {
               console.log('Fix-L: B방식 selectedTitle 고정 →', selectedTitle);
               return { title: selectedTitle, tags: YADAM_TAGS.join(' '), sub: '' };
@@ -11579,6 +11563,67 @@ ${synopsisPrompt}
 </output_schema>`;
           }
           
+          // [r8.0-1] ★F-1 목표 제목 시놉 주입 — 반드시 API 호출 '직전'이어야 효력이 있다★
+          //   기존 버그: generateTitle()(12375) 안에서 주입했는데, 시놉 API는 이미 여기서 끝남
+          //             → synopsisPrompt에 붙여도 전혀 반영 안 됨 (로그만 찍힘)
+          //   실전 사고: 제목 "약이 없어 손을 놓았습니다" → 대본에 약 부족 0회
+          //             제목 "조강지처 버렸더니 아내곁엔 옛 정혼자" → 정혼자도 버린 남편도 없음
+          try {
+            if (typeof targetTitle === 'string' && targetTitle.trim()) {
+              var _f1t = targetTitle.trim();
+              // 제목에서 핵심 요소 추출 (따옴표 대사 / 신분어 / 행동어 / 소재)
+              var _f1quote = (_f1t.match(/["'“”'']([^"'“”'']{4,40})["'“”'']/) || [])[1] || '';
+              var _f1core = [];
+              if (_f1quote) _f1core.push('대사 "' + _f1quote + '" 가 실제로 발화되어야 함');
+              // 핵심 명사 후보 — 조사·어미를 떼어 어간만 남김
+              //   "약이"→"약", "의사가"→"의사", "군관이"→"군관", "놓았습니다"→(동사, 제외)
+              var _f1strip = function(w){
+                w = w.replace(/(이|가|은|는|을|를|와|과|의|에|에서|에게|엔|께|도|만|까지|부터|으로|로|라도|곁엔|곁에)$/, '');
+                return w;
+              };
+              var _f1bad = /^(진짜|이유|정말|그리고|하지만|그러나|모든|무엇|어떻게|때문|자신|사람|하나|여기|거기|이것|그것|없어|있어|하는|되는|같은|많은)$/;
+              var _f1verb = /(습니다|했다|한다|されました|더니|으로|하고|버리고|넘은|넘어|버린|되어|주는|주고)$/;
+              var _f1nouns = (_f1t.replace(/["'“”'']/g, ' ')
+                .match(/[가-힣]{2,7}/g) || [])
+                .map(_f1strip)
+                .filter(function(w){ return w.length >= 2 && !_f1bad.test(w) && !_f1verb.test(w); });
+              // 중복 제거 + 상위 5개
+              var _f1seen = {};
+              _f1nouns = _f1nouns.filter(function(w){ if(_f1seen[w]) return false; _f1seen[w]=1; return true; }).slice(0, 5);
+              _f1nouns.forEach(function(w){ _f1core.push('"' + w + '" 가 실제 사건/인물로 등장해야 함'); });
+              try { if (typeof window !== 'undefined') window.__F1_CORE__ = _f1core; } catch(_e){}
+
+              var _f1block = '\n\n★★★[r8.0 F-1 목표 제목 절대 강제 — 최우선]★★★\n'
+                + '이 이야기의 확정 제목은 다음과 같다:\n'
+                + '「' + _f1t + '」\n'
+                + '\n'
+                + '[반드시 지킬 것]\n'
+                + '1. 제목에 나온 인물·소재·행동·장소가 시놉에 실제 사건으로 전부 등장해야 한다.\n'
+                + '   명사만 슬쩍 언급하고 실제 사건은 다른 것으로 바꾸면 실패다.\n'
+                + '2. 제목이 암시하는 "핵심 행동"을 인물이 능동적으로 수행하는 장면이 반드시 있어야 한다.\n'
+                + '3. 제목에 따옴표 대사가 있으면, 그 대사가 대본 안에서 실제로 발화되어야 한다.\n'
+                + '   1막(인트로)의 첫 장면에 그 대사/장면을 배치하는 것이 가장 좋다.\n'
+                + '4. 제목이 "~한 이유"로 끝나면, 그 이유가 이야기 전체를 관통하는 핵심 동기여야 하고\n'
+                + '   마지막 막에서 명확히 밝혀져야 한다.\n'
+                + '5. 시놉의 내용이 제목과 어긋나면 안 된다. 제목이 곧 이 이야기의 뼈대다.\n';
+              if (_f1core.length) {
+                _f1block += '\n[제목의 핵심 요소 — 시놉에 전부 들어가야 함]\n';
+                _f1core.forEach(function(k){ _f1block += '  · ' + k + '\n'; });
+              }
+              _f1block += '\n[self-check — 시놉을 출력하기 전에 스스로 검사하라]\n'
+                + '□ 위 핵심 요소가 시놉 안에 "사건"으로 들어가 있는가? (단어만 있으면 실패)\n'
+                + '□ 제목만 읽은 시청자가 기대할 이야기와, 내가 쓴 시놉이 같은 이야기인가?\n'
+                + '□ 하나라도 X면 시놉을 폐기하고 제목에 맞춰 처음부터 다시 써라.\n';
+
+              synopsisPrompt += _f1block;
+              if (typeof _synPromptFinal === 'string') _synPromptFinal += _f1block;
+              console.log('[r8.0-1 F-1] ✅ 목표 제목 시놉 주입 (API 호출 직전) → "' + _f1t.slice(0, 30) + '..."');
+              console.log('[r8.0-1 F-1] 핵심 요소 ' + _f1core.length + '개:', _f1core.map(function(c){return c.slice(0,20);}).join(' / '));
+            } else {
+              try { if (typeof window !== 'undefined') window.__F1_CORE__ = null; } catch(_e){}
+            }
+          } catch(_f1inj) { console.warn('[r8.0-1 F-1] 주입 오류:', _f1inj.message); }
+
           let synopsisRaw = _synClaudeMode
             ? await callClaude(_synSysFinal, _synPromptFinal, 4096, 'haiku')
             : await callGemini(synopsisSystem, synopsisPrompt, true);
@@ -12118,6 +12163,53 @@ JSON: {"scenes":[{"act":1,"title":"막제목","summary":"200자","emotion":"감�
           
           setSynopsisText(synFixed);
           window._lastSynFixed = synFixed;
+
+          // [r8.0-3] ★F-1 시놉 검증 — 제목의 핵심 요소가 실제로 들어갔는지 확인★
+          //   주입만으로는 부족. AI가 제목을 무시해도 그대로 통과하던 것을 막는다.
+          //   실전 사고: 제목 "약이 없어 손을 놓았습니다" → 시놉에 약 부족 0회 → 대본도 0회
+          try {
+            var _f1chk = (typeof targetTitle === 'string') ? targetTitle.trim() : '';
+            if (_f1chk && synFixed && synFixed.length > 100) {
+              // 제목에서 검사할 핵심 명사 추출 (조사·불용어 제거)
+              //   [r8.0-3] 조사를 떼고 어간으로 검사 — "의사가"가 아니라 "의사"로 찾아야 시놉에서 매칭됨
+              var _f1strip2 = function(w){
+                return w.replace(/(이|가|은|는|을|를|와|과|의|에|에서|에게|엔|께|도|만|까지|부터|으로|로|라도|곁엔|곁에)$/, '');
+              };
+              var _f1stop = /^(진짜|이유|정말|그리고|하지만|그러나|모든|무엇|어떻게|때문|자신|사람|하나|여기|거기|이것|그것|없어|있어|하는|되는|같은|많은)$/;
+              var _f1verb2 = /(습니다|했다|한다|더니|하고|버리고|넘은|넘어|버린|되어|주는|주고)$/;
+              var _f1keys = (_f1chk.replace(/["'“”'']/g, ' ')
+                .match(/[가-힣]{2,7}/g) || [])
+                .map(_f1strip2)
+                .filter(function(w){ return w.length >= 2 && !_f1stop.test(w) && !_f1verb2.test(w); });
+              var _f1uniq = {}, _f1list = [];
+              _f1keys.forEach(function(w){ if(!_f1uniq[w]){ _f1uniq[w]=1; _f1list.push(w); } });
+              // 상위 6개만 검사 (제목이 길어도 핵심만)
+              _f1list = _f1list.slice(0, 6);
+
+              var _f1hit = 0, _f1miss = [];
+              _f1list.forEach(function(w){
+                if (synFixed.indexOf(w) >= 0) _f1hit++;
+                else _f1miss.push(w);
+              });
+              var _f1rate = _f1list.length ? (_f1hit / _f1list.length) : 1;
+              console.log('[r8.0-3 F-1검증] 제목 핵심어 ' + _f1hit + '/' + _f1list.length
+                + ' 반영 (' + Math.round(_f1rate*100) + '%)'
+                + (_f1miss.length ? ' — 누락: ' + _f1miss.join(', ') : ' — 전부 반영 ✅'));
+
+              // 60% 미만이면 시놉이 제목을 흘린 것
+              //   ※ 시놉 재파싱은 하위 파이프라인(캐스트/떡밥/이미지)을 전부 다시 태워야 해서 위험.
+              //     대신 ① 사용자에게 경고 ② 대본 프롬프트에 '누락 요소 강제 회수' 지시를 심는다.
+              //     대본은 시놉을 참고하되 프롬프트 지시가 더 강하므로 여기서 복구 가능.
+              if (_f1rate < 0.6 && _f1miss.length) {
+                console.warn('[r8.0-3 F-1검증] ⚠️ 시놉이 제목을 흘렸다 (반영률 '
+                  + Math.round(_f1rate*100) + '% < 60%) — 누락: ' + _f1miss.join(', '));
+                console.warn('[r8.0-3 F-1검증] → 대본 단계에서 강제 회수 지시를 주입한다');
+                try { if (typeof window !== 'undefined') window.__F1_MISSING__ = _f1miss; } catch(_e){}
+              } else {
+                try { if (typeof window !== 'undefined') window.__F1_MISSING__ = null; } catch(_e){}
+              }
+            }
+          } catch(_f1v){ console.warn('[r8.0-3 F-1검증] 오류:', _f1v.message); }
           
           // v20.54 M-4: 시놉시스 마지막 막 키워드 추출 (대본 검증용)
           (function() {
@@ -14855,15 +14947,59 @@ ${yadamJobText}
             // [r7.6 H] 시간·설정 일관성 — 막별 독립 생성이라 다른 막의 시점을 몰라 충돌 발생
             //   실제 사례: 1막 "2025년 8월" ↔ 탈출 막 "3월의 베를린" (같은 사건인데 계절이 다름)
             //             조력자가 3막 "대사관 동료" ↔ 7막 "재독 교포" (같은 인물인데 신분이 다름)
-            if (!isYadam && actNum >= 2) {
+            //   [r8.0-2] 야담에도 적용 — 야담 실전 사고: 4막 봄비 → 5막 "쫓겨난 지 사흘째" 겨울바람
+            //            + 조력자가 2막 '떠돌이' → 7막 '관아 곡간지기'로 신분 붕괴
+            if (actNum >= 2) {
               writePrompt += `\n\n⚠️ [r7.6 H 시간·설정 일관성 절대 규칙]\n`
                 + `- 시놉시스에 적힌 연도·월·계절을 그대로 따르라. 임의로 바꾸지 마라.\n`
                 + `  (예: 시놉이 "2025년 8월"이면 그 사건은 여름이다. "3월의 찬 공기" 같은 서술 금지)\n`
                 + `- 인물의 신분·소속·관계를 시놉시스에 적힌 대로 유지하라.\n`
                 + `  (예: 시놉이 "현지 교포"라면 그 인물을 "대사관 동료"로 바꾸지 마라)\n`
+                + `  ★조력자의 직업·신분은 시놉에 적힌 것이 전부다. 새 직함(관아 곡간지기, 전직 관리 등)을 지어내지 마라.\n`
                 + `- 계절 묘사(날씨·옷차림·풍경)는 시놉의 시점과 반드시 일치시켜라.\n`
+                + `  ★며칠 사이에 계절이 바뀌지 않는다. "봄비 내리는 날 쫓겨나" → 사흘 뒤는 여전히 봄이다.\n`
+                + `- 아이의 나이는 시간 흐름과 맞아야 한다. 젖먹이는 말을 못 하고, 10년 뒤에 열 살이면 지금은 갓난아기다.\n`
                 + `- 이전 막에서 이미 정해진 사실(장소·인물·시간)과 모순되는 서술을 만들지 마라.`;
             }
+            // [r8.0-1] 목표 제목을 대본 프롬프트에도 주입 (기존엔 시놉에만 주입 → 대본이 제목을 흘림)
+            //   실전 사고: 제목 "약이 없어 손을 놓았습니다"인데 대본에 약 부족이 한 번도 안 나옴
+            //             제목 "조강지처 버렸더니 아내곁엔 옛 정혼자"인데 정혼자도 버린 남편도 없음
+            try {
+              if (typeof targetTitle === 'string' && targetTitle.trim()) {
+                var _f1w = targetTitle.trim();
+                var _f1core = window.__F1_CORE__ || null;   // 시놉 검증 때 뽑아둔 핵심 요소
+                writePrompt += `\n\n★★★[r8.0 F-1 목표 제목 — 대본 강제]★★★\n`
+                  + `이 영상의 확정 제목: 「${_f1w}」\n`
+                  + `시청자는 이 제목을 보고 클릭한다. 대본이 제목과 다르면 시청자는 속았다고 느낀다.\n`;
+                if (_f1core && _f1core.length) {
+                  writePrompt += `\n[제목의 핵심 요소 — 대본 전체에서 반드시 다뤄야 함]\n`;
+                  _f1core.forEach(function(k){ writePrompt += `  · ${k}\n`; });
+                }
+                // [r8.0-4] 시놉이 제목을 흘렸다면 대본에서 강제 회수
+                var _f1missing = null;
+                try { _f1missing = (typeof window !== 'undefined') ? window.__F1_MISSING__ : null; } catch(_e){}
+                if (_f1missing && _f1missing.length) {
+                  writePrompt += `\n★★[r8.0 누락 요소 강제 회수 — 시놉이 이것을 빠뜨렸다]★★\n`
+                    + `시놉시스에는 없지만, 제목이 약속했으므로 대본에는 반드시 있어야 하는 것:\n`;
+                  _f1missing.forEach(function(w){ writePrompt += `  ★ "${w}"\n`; });
+                  writePrompt += `- 위 요소를 이 이야기에 자연스럽게 녹여 넣어라. 시놉의 흐름은 유지하되, 빠진 것을 채워라.\n`
+                    + `- 억지로 단어만 끼워 넣지 말고, 실제 사건·인물·대사로 만들어라.\n`
+                    + `- 시놉과 충돌하면 제목을 우선하라. 제목이 이 영상의 약속이다.\n`;
+                }
+                if (actNum === 1) {
+                  writePrompt += `\n[1막 특별 지시]\n`
+                    + `- 제목에 따옴표 대사가 있으면, 그 대사를 1막 안에서 실제로 발화하게 하라.\n`
+                    + `- 제목이 약속한 상황(위기·사건)을 1막에서 곧바로 보여줘라. 미루지 마라.\n`;
+                }
+                var _lastAct = (typeof seniorConfig !== 'undefined' && seniorConfig && seniorConfig.totalChapters) ? seniorConfig.totalChapters : (isYadam ? 8 : 9);
+                if (actNum === _lastAct) {
+                  writePrompt += `\n[마지막 막 특별 지시]\n`
+                    + `- 제목이 "~한 이유"로 끝나면, 그 이유를 이 막에서 명확히 말로 밝혀라.\n`
+                    + `- 제목이 약속한 것 중 아직 안 나온 게 있으면 여기서 반드시 회수하라.\n`;
+                }
+                writePrompt += `\n제목에 없는 이야기로 새지 마라. 제목이 이 대본의 뼈대다.`;
+              }
+            } catch(_f1we){ /* 무시 */ }
             if (actNum === 9 && window._coreBait && window._coreBait.prop) {
               writePrompt += `\n⚠️ [소품 회수 필수] 1막에서 등장한 핵심 소품 "${window._coreBait.prop}"을(를) 9막에서 반드시 다시 언급하거나 의미를 부여하세요!`;
             }
@@ -25434,7 +25570,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r7.9 (2026-07-13 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r8.0 (2026-07-13 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
