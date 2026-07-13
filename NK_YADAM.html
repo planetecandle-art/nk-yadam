@@ -2306,7 +2306,7 @@ window.fixDeficiencies = function fixDeficiencies(script, channelKey, isYadamMod
 
 /* ===== 복구 함수 끝 ===== */
 
-console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제+★r7.9:야담성별잠금(제목우선)+신분어인접강제+뒤집기차단+★r8.0:F-1시놉주입버그수정(무효였음)+제목검증+대본제목강제+누락요소회수+야담시간일관성] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
+console.log("%c★ NK/YADAM v21.0 r7.5 로드완료 (2026-07-02 빌드) — [r7.5 야담 최종: 탈락+썸네일다인구도+인트로호칭+★성별3단계방어(주체판단/시놉동기화/시놉검증)+미성년자회피+되물림재정화+조연나이고정+시놉나이보정+나이마스터통합(직업신분관계아이)+나이대로그리기+시간선일관성+썸네일관계행동+벤치폴백+어휘강제치환+탈락복원+이미지이름+고른관계+absurd제거+썸네일신분명시+문장끊김복원+이름정리+초반디테일+구조추출8192+을명사보호+★r7.6:탈락2차+성별일관성+끝신분어+시간선역산+인트로컷3소품+NK복장/루트/대명사/배우자+제목행동강제+썸네일소재+목표제목입력+★r7.6b:제목/태그탭연동+썸네일문구연동+배우자포함+막별분량+인트로훅강화+중복제거+시간일관성+이름조사버그+자녀성별이름+★r7.8:사물명사이름치환차단+배우자성별교정+강도하중복해소+인원수실측(size→count)+강이름확정+조력자직업복장+조력자나이캡+인트로훅A급강제+★r7.9:야담성별잠금(제목우선)+신분어인접강제+뒤집기차단+★r8.0:F-1시놉주입버그수정(무효였음)+제목검증+대본제목강제+누락요소회수+야담시간일관성+★r8.1:야담훅/악역을제목에서결정(랜덤제거)+인물관계강제(동일인물/생존/부부)+전으로깨짐교정] 되물림→대물림(하드코딩교정)·NK썸네일색 시안→노랑#FFEB3B·NK인트로 이름+궁금증블록(1인칭 내이름은OOO)·야담 이름반복완화(호칭섞기)·글자탈락교정 / 이전 r6.9 기능 전부 유지","color:#fff;background:#16a34a;font-size:16px;padding:4px 12px;border-radius:4px;");
 console.log("[r5.1.6] Phase1 적용: 인트로/본문 미드저니 글씨차단 (썸네일만 글씨 허용)");
 console.log("[r5.1.6 D-1] 이름꼬임 수정: r5.1.5 강제동기화 비활성화 (I+J v2 검증 보존)");
 console.log("[r5.1.6 E-1] 썸네일 글자공식: 두줄 88%같은너비+1.15배+세로38%+따옴표제거 (NK5+야담1)");
@@ -2323,7 +2323,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r8.0';
+      var _VER = 'v21.0 r8.1';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -5143,6 +5143,19 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           [/천천히 다가 보/g, '천천히 다가가 보', '탈락'],
           
           // ===== r3.4 신규 글자탈락 패턴 =====
+          // [r8.1-4] "~전으로" 깨짐 — AI가 조사 '으로' 앞에 '전'을 끼워 넣는 사고
+          //   실전 사고: "죽을죄인전으로 낙인찍혀" / "굶주림전으로 쓰러진다"
+          //   시간 표현("10년 전으로", "이전으로", "예전으로")은 건드리지 않도록 명사를 명시 열거
+          [/죽을죄인전으로/g, '죽을죄인으로', '탈락'],
+          [/죄인전으로/g, '죄인으로', '탈락'],
+          [/굶주림전으로/g, '굶주림으로', '탈락'],
+          [/지옥전으로/g, '지옥으로', '탈락'],
+          [/노비전으로/g, '노비로', '탈락'],
+          [/거지전으로/g, '거지로', '탈락'],
+          [/역적전으로/g, '역적으로', '탈락'],
+          [/미치광이전으로/g, '미치광이로', '탈락'],
+          [/도둑전으로/g, '도둑으로', '탈락'],
+          [/폐인전으로/g, '폐인으로', '탈락'],
           [/따스하깊게/g, '따스하고 깊게', '탈락'],
           [/따스하맑게/g, '따스하고 맑게', '탈락'],
           [/나뭇을 모아/g, '나뭇잎을 모아', '탈락'],
@@ -11043,22 +11056,80 @@ ${escapeConfig.escapeType.type === 'group' ? '단체 탈북: 동료 역할/관�
           let actPatternsText = '';
           let selectedYadamIntroHook = null; // v20.52d L패치: 야담 인트로 훅 선택값 (외부 스코프)
           if (isYadam) {
-            // v20.35 Phase5 AJ: 랜덤 위기 훅 선택
-            const hookIdx = Math.floor(Math.random() * YADAM_HOOK_POOL.length);
-            const selectedYadamHook = YADAM_HOOK_POOL[hookIdx];
-            console.log(`AJ: 야담 훅 선택 → ${selectedYadamHook.name} (${selectedYadamHook.type})`);
-            
+            // [r8.1-1] ★F-1 우선 — 목표 제목이 있으면 훅/악역을 랜덤이 아니라 '제목'에서 뽑는다★
+            //   기존 버그: Math.random()이 훅·악역을 먼저 확정 → F-1 주입이 뒤에 붙어도 구조를 못 이김
+            //     실전 사고: 제목 "…매질하던 시어머니"인데 AN이 '배다른 형제'를 랜덤 선택
+            //               → 시놉의 진짜 악역이 '시어머니의 이복형 영감'이라는 엉뚱한 인물이 됨
+            //     실전 사고2: 제목 "…옛 정인"인데 AJ가 '임종 고백'을 골라 출생의 비밀 이야기가 됨
+            var _r81_title = (typeof targetTitle === 'string' && targetTitle.trim()) ? targetTitle.trim() : '';
+
+            // ── 악역: 제목에 등장하는 관계어로 매칭 ──
+            var _r81_villainMap = [
+              { kw: /시어머니|시모|시엄마/,            type: 'stepmother' },   // 풀에 시어머니 전용이 없어 계모 슬롯 사용 → 아래에서 이름 덮어씀
+              { kw: /계모|의붓어[머미]/,               type: 'stepmother' },
+              { kw: /숙부|삼촌|작은아버지/,            type: 'uncle' },
+              { kw: /수령|사또|관리|아전|현감|군수/,   type: 'corrupt_official' },
+              { kw: /장인|처가/,                       type: 'father_in_law' },
+              { kw: /부호|지주|양반집|토호/,           type: 'rich_neighbor' },
+              { kw: /이복|서자|적서|배다른|형제|형수|동서/, type: 'sibling' },
+              { kw: /사촌/,                            type: 'cousin' },
+              { kw: /거상|상인|장사꾼/,                type: 'merchant' }
+            ];
+            var _r81_hookMap = [
+              { kw: /매질|때리|맞고|폭행|학대|회초리|몽둥이/, type: 'overheard_plot' },  // 학대 현장 목격 계열
+              { kw: /처형|참수|목을 베|사형/,          type: 'execution' },
+              { kw: /불|화재|불길|화염/,               type: 'fire_trapped' },
+              { kw: /관 속|매장|생매장|묻[혀히]/,      type: 'buried_alive' },
+              { kw: /암행어사|마패|거지/,              type: 'beggar_reveal' },
+              { kw: /혼례|첫날밤|신부|족두리/,         type: 'bride_secret' },
+              { kw: /죽었던|살아 ?돌아|관 뚜껑|장례/,  type: 'corpse_alive' },
+              { kw: /음모|밀담|엿들|엿봤/,             type: 'overheard_plot' }
+            ];
+
+            var selectedYadamHook = null, selectedVillain = null;
+            var _r81_hookSrc = 'random', _r81_vilSrc = 'random';
+
+            if (_r81_title) {
+              // 훅 매칭
+              for (var _hi = 0; _hi < _r81_hookMap.length; _hi++) {
+                if (_r81_hookMap[_hi].kw.test(_r81_title)) {
+                  var _hf = YADAM_HOOK_POOL.find(function(h){ return h.type === _r81_hookMap[_hi].type; });
+                  if (_hf) { selectedYadamHook = _hf; _r81_hookSrc = '제목'; break; }
+                }
+              }
+              // 악역 매칭
+              for (var _vi = 0; _vi < _r81_villainMap.length; _vi++) {
+                if (_r81_villainMap[_vi].kw.test(_r81_title)) {
+                  var _vf = YADAM_VILLAIN_POOL.find(function(v){ return v.type === _r81_villainMap[_vi].type; });
+                  if (_vf) {
+                    selectedVillain = Object.assign({}, _vf);
+                    // 제목이 '시어머니'라 명시했으면 악역 이름·관계를 그대로 시어머니로 덮어쓴다
+                    if (/시어머니|시모|시엄마/.test(_r81_title)) {
+                      selectedVillain.name = '악독한 시어머니';
+                      selectedVillain.relation = '시어머니';
+                      selectedVillain.desc = '며느리를 종처럼 부리고 학대하는 시어머니';
+                    }
+                    _r81_vilSrc = '제목'; break;
+                  }
+                }
+              }
+            }
+            // 매칭 실패 시에만 기존 랜덤 유지
+            if (!selectedYadamHook) selectedYadamHook = YADAM_HOOK_POOL[Math.floor(Math.random() * YADAM_HOOK_POOL.length)];
+            if (!selectedVillain)  selectedVillain  = YADAM_VILLAIN_POOL[Math.floor(Math.random() * YADAM_VILLAIN_POOL.length)];
+
+            console.log('AJ: 야담 훅 선택 → ' + selectedYadamHook.name + ' (' + selectedYadamHook.type + ') [' + _r81_hookSrc + ']');
+            console.log('AN: 야담 악역 선택 → ' + selectedVillain.name + ' (' + selectedVillain.type + ') [' + _r81_vilSrc + ']');
+            if (_r81_title && (_r81_hookSrc === '제목' || _r81_vilSrc === '제목')) {
+              console.log('[r8.1-1] ✅ F-1 우선: 목표 제목에서 훅/악역 결정 (랜덤 미사용)');
+            }
+
             // v20.52d L패치: 야담 인트로 훅 UI 선택값 반영 (기존: 랜덤만 사용 → 수정: UI 선택 우선)
             selectedYadamIntroHook = INTRO_HOOK_YADAM.find(h => h.value === introHookType);
             const yadamHookDesc = selectedYadamIntroHook 
               ? `${selectedYadamIntroHook.label} - ${selectedYadamIntroHook.pattern} (예: "${selectedYadamIntroHook.example}") + ${selectedYadamHook.name}`
               : `${selectedYadamHook.name} - ${selectedYadamHook.desc}`;
             if (selectedYadamIntroHook) console.log(`L패치: 야담 인트로 훅 UI선택 반영 → ${selectedYadamIntroHook.label}`);
-            
-            // v20.35 AN: 랜덤 악역 유형 선택
-            const villainIdx = Math.floor(Math.random() * YADAM_VILLAIN_POOL.length);
-            const selectedVillain = YADAM_VILLAIN_POOL[villainIdx];
-            console.log(`AN: 야담 악역 선택 → ${selectedVillain.name} (${selectedVillain.type})`);
             
             actPatternsText = `1막: ${yadamHookDesc}
 2막: CTA + 발단 - 구독유도 후 비참한 신분과 은혜 만남
@@ -11614,6 +11685,55 @@ ${synopsisPrompt}
                 + '□ 위 핵심 요소가 시놉 안에 "사건"으로 들어가 있는가? (단어만 있으면 실패)\n'
                 + '□ 제목만 읽은 시청자가 기대할 이야기와, 내가 쓴 시놉이 같은 이야기인가?\n'
                 + '□ 하나라도 X면 시놉을 폐기하고 제목에 맞춰 처음부터 다시 써라.\n';
+
+              // [r8.1-2] ★인물 관계 강제 — 단어만 넣고 관계를 바꿔버리는 사고를 막는다★
+              //   실전 사고: 제목 "암행어사 되어 돌아온 남편"인데
+              //             시놉에선 남편이 죽고, 암행어사는 남남이고, 아내는 머슴과 재혼함
+              //             → 단어(암행어사/남편/아내)는 다 있는데 '관계'가 완전히 다름
+              var _rel = [];
+              // ① "A 되어 돌아온 B" → A와 B는 동일인물
+              var _mSame = _f1t.match(/([가-힣]{2,6})\s*(?:되어|이 되어|가 되어)\s*돌아온\s*([가-힣]{2,5})/);
+              if (_mSame) _rel.push('★"' + _mSame[1] + '"와 "' + _mSame[2] + '"는 같은 사람이다. 서로 다른 두 인물로 나누지 마라.');
+              // ② 돌아온 사람은 살아 있다 (죽이지 마라)
+              if (/돌아[온왔]|귀환|복귀|살아 ?돌아/.test(_f1t)) {
+                // [r8.1-2 fix] "돌아왔더니"의 '더니'를 인물로 오인하던 버그
+                //   → 어미·조사는 제외하고, 실제 신분어만 인물로 인정
+                var _persona = /(남편|아내|아들|딸|아버지|어머니|형|누이|동생|주인|나으리|서방|낭군|며느리|사위|손자|손녀)/;
+                var _mBack = _f1t.match(/돌아[온왔][^,.]{0,10}?(남편|아내|아들|딸|아버지|어머니|형님|누이|동생|서방|낭군|나으리)/);
+                var _who = _mBack ? _mBack[1] : '';
+                if (!_who) {
+                  // "A 되어 돌아온 B"에서 B를 이미 잡았으면 그것 사용
+                  if (_mSame && _persona.test(_mSame[2])) _who = _mSame[2];
+                }
+                if (_who) {
+                  _rel.push('★"' + _who + '"은(는) 살아서 돌아온다. 시놉에서 죽이지 마라. 이야기 끝까지 살아 있어야 한다.');
+                  _rel.push('★"' + _who + '"이 돌아오는 장면이 1막에 반드시 있어야 한다.');
+                } else {
+                  _rel.push('★제목의 "돌아온" 인물은 살아 있다. 죽이지 말고, 1막에 돌아오는 장면을 넣어라.');
+                }
+              }
+              // ③ 남편/아내가 제목에 함께 있으면 부부 관계 유지
+              if (/남편/.test(_f1t) && /아내|처|부인/.test(_f1t)) {
+                _rel.push('★"남편"과 "아내"는 부부다. 이 부부 관계가 이야기의 축이다.');
+                _rel.push('★아내를 다른 남자(머슴·조력자 등)와 재혼시키지 마라. 남편이 살아 있다.');
+              }
+              // ④ 시어머니가 있으면 며느리와의 갈등이 중심
+              if (/시어머니|시모/.test(_f1t)) {
+                _rel.push('★악역은 "시어머니" 본인이다. 시어머니의 친척(이복형·숙부 등)에게 악역을 떠넘기지 마라.');
+              }
+              // ⑤ 계모가 있으면 계모가 악역
+              if (/계모/.test(_f1t)) {
+                _rel.push('★악역은 "계모" 본인이다. 다른 인물에게 악행을 떠넘기지 마라.');
+              }
+              if (_rel.length) {
+                _f1block += '\n★★★[r8.1 인물 관계 절대 강제 — 단어만 넣고 관계를 바꾸면 실패다]★★★\n';
+                _rel.forEach(function(r){ _f1block += r + '\n'; });
+                _f1block += '위 관계를 어기면 제목과 다른 이야기가 된다. 시청자는 속았다고 느낀다.\n';
+                try { if (typeof window !== 'undefined') window.__F1_REL__ = _rel; } catch(_e){}
+                console.log('[r8.1-2] 인물 관계 강제 ' + _rel.length + '건 주입');
+              } else {
+                try { if (typeof window !== 'undefined') window.__F1_REL__ = null; } catch(_e){}
+              }
 
               synopsisPrompt += _f1block;
               if (typeof _synPromptFinal === 'string') _synPromptFinal += _f1block;
@@ -14974,6 +15094,14 @@ ${yadamJobText}
                 if (_f1core && _f1core.length) {
                   writePrompt += `\n[제목의 핵심 요소 — 대본 전체에서 반드시 다뤄야 함]\n`;
                   _f1core.forEach(function(k){ writePrompt += `  · ${k}\n`; });
+                }
+                // [r8.1-3] 인물 관계 강제 (시놉과 동일 규칙을 대본에도)
+                var _f1rel = null;
+                try { _f1rel = (typeof window !== 'undefined') ? window.__F1_REL__ : null; } catch(_e){}
+                if (_f1rel && _f1rel.length) {
+                  writePrompt += `\n★★[r8.1 인물 관계 절대 강제]★★\n`;
+                  _f1rel.forEach(function(r){ writePrompt += `${r}\n`; });
+                  writePrompt += `- 시놉이 이 관계를 어겼더라도, 대본에서는 제목의 관계를 따르라.\n`;
                 }
                 // [r8.0-4] 시놉이 제목을 흘렸다면 대본에서 강제 회수
                 var _f1missing = null;
@@ -25570,7 +25698,7 @@ ${reviewed.slice(-3000)}
           )}
 
           <footer className={`footer ${isYadam ? 'footer-yadam' : 'footer-nk'}`}>
-            <span>NK/YADAM v21.0 r8.0 (2026-07-13 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
+            <span>NK/YADAM v21.0 r8.1 (2026-07-13 빌드) | {geminiModel} | {config.channelName} | 만자 {seniorConfig.totalChapters}막 {apiKey2 && apiKey2.startsWith('sk-ant-') ? '| 💳 Claude' : ''}</span>
             <span>{msg}</span>
           </footer>
         </div>
