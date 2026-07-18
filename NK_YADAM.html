@@ -2353,7 +2353,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r8.6';
+      var _VER = 'v21.0 r8.8';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -4619,13 +4619,15 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             "5. 절정·갈등 장면은 INTENSE한 표정(충격/분노/슬픔/결의). 차분·미소 금지. 마지막 막만 평온/따뜻함 허용.\n" +
             "6. 시놉에 실제 나오는 사건·인물만. 지어내지 마라.\n" +
             "7. [나이 일치 — 필수] 각 인물의 나이는 아래 [등장인물 나이표]를 그대로 따른다. 표에 없는 인물만 장면 맥락에 맞게 추정한다. 주인공·조력자의 나이를 임의로 바꾸지 마라.\n" +
-            "8. [첫 장면 — 필수] scenes의 맨 첫 번째(act 1의 첫 컷)는 반드시 '본문이 시작되는 도입 장면'이어야 한다. 대본 본문 첫 문장이 묘사하는 배경/상황(예: 가뭄 든 논밭, 장터, 눈 내린 마을 등)을 그 장면의 배경으로 그려라. 이야기가 실제로 시작되는 그 장소를 첫 컷에 담아라.\n\n" +
+            "8. [첫 장면 — 필수] scenes의 맨 첫 번째(act 1의 첫 컷)는 반드시 '본문이 시작되는 도입 장면'이어야 한다. 대본 본문 첫 문장이 묘사하는 배경/상황(예: 가뭄 든 논밭, 장터, 눈 내린 마을 등)을 그 장면의 배경으로 그려라. 이야기가 실제로 시작되는 그 장소를 첫 컷에 담아라.\n" +
+            "9. [소재 정확 번역 — 필수] 대본에 나오는 사물/생물/재료를 영어로 옮길 때 절대 다른 것으로 바꾸지 마라. 특히: 굼벵이=white beetle larvae/grubs (silkworm 절대 금지, 누에 아님), 소똥=ox dung/manure, 누에=silkworm, 지렁이=earthworm, 옹기/독=earthenware jar, 장독=fermentation jar, 약초=medicinal herbs. 확신이 없으면 대본의 그 단어를 그대로 음차(로마자)라도 병기하라. 헷갈리는 벌레·재료를 임의로 흔한 다른 것으로 바꾸지 마라.\n\n" +
             "[good_example] (나이는 인물표 기준으로 채울 것)\n" +
             "A Korean woman in her late 20s wearing dark hanbok, unfolding an old letter with trembling hands, shocked sorrowful face, dim inner room with candlelight\n" +
             "[bad_example]\n" +
             "woman, letter, room (← 단어 나열 금지)\n\n" +
             "[출력 형식] JSON만. 마크다운/설명 금지:\n" +
-            '{"scenes":[{"act":1,"desc":"영어 장면묘사"},{"act":1,"desc":"..."},{"act":2,"desc":"..."}]}\n' +
+            '{"story_tone":"witty|tragic|neutral","scenes":[{"act":1,"desc":"영어 장면묘사"},{"act":1,"desc":"..."},{"act":2,"desc":"..."}]}\n' +
+            "story_tone: 이야기 전체 정서를 판정하라. witty=천한 것으로 성공하는 통쾌한 지혜담·반전 성공담(주인공이 끝내 당당히 이김), tragic=억울한 죽음·복수·한(恨)이 중심인 비극, neutral=그 중간. 제목과 시놉을 보고 판정.\n" +
             "scenes는 막당 2개씩 순서대로. 막 번호(act)를 정확히 표기.";
           const _ageToEn = function(a){
             var s = String(a||'').trim();
@@ -4683,8 +4685,15 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           try { _sceneJson = JSON.parse((_sceneRaw||"").replace(/```json|```/g, '').trim()); } catch(_e) { _sceneJson = null; }
           if (!(_sceneJson && Array.isArray(_sceneJson.scenes) && _sceneJson.scenes.length > 0)) return null;
           const _BASE = "2D anime illustration, Korean webtoon manhwa drawing, hand-drawn cartoon art, thick clean black outlines, flat cel-shading, bright saturated vivid colors, drawn not photographed, East Asian Korean ethnicity ONLY, Joseon dynasty late period, traditional Korean hanbok ONLY";
-          const _NEGi = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no calm --no serene --no smiling --no english text --no korean text --no text";
-          const _NEGw = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no english text --no korean text --no text";
+          // [r8.8 오역차단] 목표제목/시놉에 헷갈리기 쉬운 소재가 있으면 네거티브 자동 추가
+          var _mistransNeg = '';
+          try {
+            var _msSrc = String((typeof targetTitle === 'string' ? targetTitle : '') + ' ' + (sceneSrc||'') + ' ' + (bodyTextArg||'')).slice(0, 3000);
+            if (/굼벵이/.test(_msSrc)) _mistransNeg += ' --no silkworm --no bee --no caterpillar';
+            if (/지렁이/.test(_msSrc)) _mistransNeg += ' --no snake';
+          } catch(_mn){ _mistransNeg = ''; }
+          const _NEGi = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no calm --no serene --no smiling --no english text --no korean text --no text" + _mistransNeg;
+          const _NEGw = "--ar 16:9 --stylize 250 --no photo --no photorealistic --no realistic --no 3d render --no dslr --no real person --no western faces --no modern clothes --no english text --no korean text --no text" + _mistransNeg;
           const _maxAct = _sceneJson.scenes.reduce(function(m,s){ return Math.max(m, s.act||1); }, 1);
 
           // [r8.5 첫컷 배경정합] 본문 첫 문장(들)의 장소/상황을 첫 이미지 배경으로 강제
@@ -4707,7 +4716,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
                                     .filter(function(x){return x.length>4;});
             var _fChunk = _fSents.slice(0, 3).join(' ');
             // 첫 장면 장소 추출 (koToEnSceneFirst와 동일한 장소 사전)
-            var _LOC = {'가뭄':'drought-stricken cracked dry farmland','논':'rice paddy field','밭':'crop field','들':'open field','장터':'busy Joseon marketplace','장날':'busy market day','시장':'busy marketplace','관아':'government office courtyard','동헌':'official hall','옥':'dark prison cell','감옥':'dark prison cell','광':'dark storage shed','마당':'inner courtyard of hanok','우물':'village well','주막':'roadside tavern','사랑방':'study room with candle','부엌':'traditional kitchen','대문':'gate of hanok','산':'mountain path','숲':'deep forest','강':'riverside','거간':'cattle market with a broker','초가':'thatched cottage','기와집':'tiled-roof house','벌통':'wooden beehives in an orchard','과수원':'orchard','뽕밭':'mulberry field','누에':'silkworm farm room','약초':'herb garden'};
+            var _LOC = {'가뭄':'drought-stricken cracked dry farmland','논':'rice paddy field','밭':'crop field','들':'open field','장터':'busy Joseon marketplace','장날':'busy market day','시장':'busy marketplace','관아':'government office courtyard','동헌':'official hall','옥':'dark prison cell','감옥':'dark prison cell','광':'dark storage shed','마당':'inner courtyard of hanok','우물':'village well','주막':'roadside tavern','사랑방':'study room with candle','부엌':'traditional kitchen','대문':'gate of hanok','산':'mountain path','숲':'deep forest','강':'riverside','거간':'cattle market with a broker','초가':'thatched cottage','기와집':'tiled-roof house','벌통':'wooden beehives in an orchard','과수원':'orchard','뽕밭':'mulberry field','누에':'silkworm farm room','약초':'herb garden','굼벵이':'clay jars filled with beetle larvae in a dim storehouse','재':'grey ash heaps in a farmyard'};
             var _locEn = '';
             for (var _lk in _LOC) { if (_fChunk.indexOf(_lk) >= 0) { _locEn = _LOC[_lk]; break; } }
             // koToEn으로 첫 장면 요소도 뽑아 보강 (인물/사물/감정)
@@ -4737,36 +4746,48 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           const _introScene = (_sceneJson.scenes.find(function(s){return (s.act||1)===1;}) || _sceneJson.scenes[0]);
           const _introDesc = (_introScene && _introScene.desc) ? _introScene.desc : "dramatic Joseon-era opening scene, main character in hanbok, intense moment";
 
-          // [r8.5 인트로 톤 자동판별] 소재/제목에 따라 인트로 감정 톤 결정
-          //   비극/억울 계열 → INTENSE 비장 / 통쾌·지혜·반전 계열 → 당당·위트
+          // [r8.8 인트로 톤 — AI 판정 우선] 본문이미지 AI가 판정한 story_tone을 우선 사용.
+          //   AI가 판정 못했을 때만 키워드 폴백 (소재 사전 의존 제거).
           var _toneSrc = '';
           try { _toneSrc = String((typeof targetTitle === 'string' ? targetTitle : '') + ' ' + (sceneSrc||'')).slice(0, 800); } catch(_ts){ _toneSrc = String(sceneSrc||'').slice(0,800); }
-          // 통쾌/지혜/기지 신호 (며느리 지혜담, 반전 성공담 등)
-          var _wittyKw = /지혜|슬기|꾀|기지|재치|영리|당돌|백 수레|소똥|거름|뒤집|반전|보란 듯|콧대|망신|톡톡히|혼쭐|한 방|약 올|어사출두|참교육/;
-          // 비극/억울/한 신호
-          var _tragicKw = /죽음|죽은|살해|자결|목매|피눈물|원한|복수|누명|억울|비극|한many|처형|사약|귀신|원귀|버림받|배신당|굶주|매질/;
-          var _isWitty = _wittyKw.test(_toneSrc);
-          var _isTragic = _tragicKw.test(_toneSrc);
-          // 톤 결정: 통쾌 신호가 있고 비극 신호가 약하면 witty
-          var _introTone = (_isWitty && !_isTragic) ? 'witty' : (_isTragic ? 'tragic' : 'neutral');
+          var _introTone = 'neutral';
+          var _aiTone = (_sceneJson && typeof _sceneJson.story_tone === 'string') ? _sceneJson.story_tone.trim().toLowerCase() : '';
+          if (_aiTone === 'witty' || _aiTone === 'tragic' || _aiTone === 'neutral') {
+            _introTone = _aiTone;
+            console.log('[r8.8 톤] AI 판정 사용:', _introTone);
+          } else {
+            // 폴백: 키워드 방식 (AI가 story_tone 안 줬을 때만)
+            var _wittyKw = /지혜|슬기|꾀|기지|재치|영리|당돌|백 수레|백 항아리|뒤집|반전|보란 듯|콧대|망신|톡톡히|혼쭐|한 방|약 올|어사출두|참교육|부자가|대박|되갚|성공/;
+            var _tragicKw = /죽음|죽은|살해|자결|목매|피눈물|원한|복수|누명|억울|비극|처형|사약|귀신|원귀|버림받|배신당|굶주|매질/;
+            var _isWitty = _wittyKw.test(_toneSrc);
+            var _isTragic = _tragicKw.test(_toneSrc);
+            _introTone = (_isWitty && !_isTragic) ? 'witty' : (_isTragic ? 'tragic' : 'neutral');
+            console.log('[r8.8 톤] 키워드 폴백:', _introTone);
+          }
 
           // 톤별 인트로 감정 문구
           var _toneDesc = {
             witty: {
               cut1: 'confident lively atmosphere, the clever twist of the story visible, bright natural daylight, intriguing and amusing mood',
+              cutStand: 'the protagonist standing firm and composed with quiet dignity, feet planted, chin level, calm and unshaken even amid the surrounding commotion, self-assured body language, NOT cowering NOT crying',
               cut2: 'bright clever eyes with a faint knowing smirk, one eyebrow slightly raised as if holding a secret, calm self-assured confident expression, warm cheerful lighting, NOT crying NOT despair NOT grief',
+              cutSide: 'onlookers or a rival reacting with shock, gossip and pointing fingers, mouths agape, while the protagonist stays calm in the middle, contrast between the crowd and the composed hero',
               cut3neg: 'curious playful mysterious mood',
               neg: '--no crying --no despair --no grief --no fear'
             },
             tragic: {
               cut1: 'INTENSE dramatic atmosphere with heavy tension, sorrowful oppressive mood, dramatic moody lighting with strong shadows',
+              cutStand: 'the protagonist standing alone enduring the moment, trembling but not breaking, fists clenched, tragic dignity, heavy sorrowful air',
               cut2: 'INTENSE expression eyes burning with suppressed grief or anger, lips pressed firm, dramatic lighting',
+              cutSide: 'antagonist or crowd looming with cruelty or scorn, the protagonist small and isolated, oppressive tragic contrast',
               cut3neg: 'ominous foreboding mood',
               neg: ''
             },
             neutral: {
               cut1: 'dramatic engaging atmosphere, tension and intrigue, cinematic lighting',
+              cutStand: 'the protagonist standing with determined resolve, composed posture, facing the moment head-on',
               cut2: 'expressive determined face showing the emotion of the moment, cinematic lighting',
+              cutSide: 'surrounding characters reacting to the situation, dynamic tension around the protagonist',
               cut3neg: 'intriguing mysterious mood',
               neg: ''
             }
@@ -4811,11 +4832,12 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           var _c4_cut3 = _c4_propEn
             ? ("Insert shot: EXTREME close-up of " + _c4_propEn + ", lying still, dramatic side light with soft shadows, dust motes in the air, slow zoom-in toward it, " + _toneDesc.cut3neg + ", NO people, NO faces, NO hands in frame, object only")
             : ("Insert shot: EXTREME close-up of the single most important object in the opening scene, dramatic side light, slow zoom-in, " + _toneDesc.cut3neg + ", NO people, NO faces, object only");
-          let _introOut = "\n═══════════════════════════════\n🎬 인트로 영상 프롬프트 (1핵심장면 → 3컷, 톤:" + _introTone + ")\n═══════════════════════════════\n\n";
+          let _introOut = "\n═══════════════════════════════\n🎬 인트로 영상 프롬프트 (핵심장면 → 4컷, 톤:" + _introTone + ")\n═══════════════════════════════\n\n";
           const _introCuts = [
-            ["컷1 — 전체샷 (상황 제시)", "Wide establishing shot, " + _introDesc + ", slow Ken Burns zoom-in, mouths stay closed no talking no lip movement, " + _toneDesc.cut1],
-            ["컷2 — 클로즈업 (주인공 표정)", "EXTREME emotional close-up, main character face filling 55% of frame, " + _toneDesc.cut2 + ", " + _introDesc + ", slow push-in, mouth stays closed no talking"],
-            ["컷3 — 핵심 오브젝트 인서트 (반전 떡밥)", _c4_cut3]
+            ["컷1 — 충격의 오프닝 (전체샷)", "Wide establishing shot, " + _introDesc + ", slow Ken Burns zoom-in, mouths stay closed no talking no lip movement, " + _toneDesc.cut1],
+            ["컷2 — 주인공 당당함 (미디엄샷)", "Medium shot of the main character, " + _toneDesc.cutStand + ", " + _introDesc + ", slow push-in, mouths stay closed no talking"],
+            ["컷3 — 주인공 눈빛 클로즈업 (훅)", "EXTREME emotional close-up, main character face filling 55% of frame, " + _toneDesc.cut2 + ", slow push-in, mouth stays closed no talking"],
+            ["컷4 — 조연/주변 반응 (긴장 증폭)", "Reaction shot, " + _toneDesc.cutSide + ", " + _introDesc + ", slow pan, mouths stay closed no lip movement"]
           ];
           var _introNegFinal = _NEGi + (_toneDesc.neg ? (' ' + _toneDesc.neg) : '');
           _introCuts.forEach(function(c){
@@ -18531,31 +18553,39 @@ ${chunkScript}`;
             
             // v20.35 Phase2: AI 썸네일 치환 (스타일 유지 + 핵심 시각요소 변환)
             // v20.35 Phase4: AI에 char 태그 직접 전달 → 악역 태그 남용 방지
+            // [r8.8 AI판정] 목표제목 우선: 벤치=스타일/구도느낌만, 인물·인원·배경·행동은 목표제목에서
             let aiSubstitutionSuccess = false;
             try {
               setMsg("2/3 벤치마킹 썸네일 → AI 장면 치환 중...");
-              const thumbTransformSystem = `You are a Midjourney prompt transformer. Keep the EXACT same art style, composition, atmosphere, and technical parameters. Only change the content elements (characters, creatures, situations) to create a NEW but similar scene.`;
-              const thumbTransformPrompt = `[Original Midjourney Prompt]
+              var _r88_title = (typeof targetTitle === 'string' && targetTitle.trim()) ? targetTitle.trim() : '';
+              const thumbTransformSystem = `You are a Midjourney thumbnail prompt transformer for Korean historical (Joseon) YouTube stories. The benchmark prompt provides ONLY the art STYLE, color palette, text placement, and general COMPOSITION FEEL. You must rebuild the actual PEOPLE, their COUNT, their ACTIONS, and (conditionally) the BACKGROUND from the TARGET TITLE, not from the benchmark. Return JSON only.`;
+              const thumbTransformPrompt = `[Benchmark Midjourney Prompt — USE ONLY for art style, colors, text layout, composition feel]
 ${convertedThumb}
 
-[Story Context - 새 대본의 핵심 장면]
+${_r88_title ? `[TARGET TITLE — the NEW thumbnail must depict THIS. People, their number, roles, actions, and subject matter come from HERE]
+"${_r88_title}"` : `[No target title — use the story context below]`}
+
+[Story Context — supporting detail]
 ${scenes.slice(0, 3).map(s => s.summary).join(' ')}
 
-[Character Tags - 반드시 아래 태그를 그대로 사용]
+[Character Tags — use these EXACT tags for the named cast]
 - PROTAGONIST (주인공): ${char1Tag}
-${char2Tag ? `- COMPANION (조연/동행자): ${char2Tag}` : '- No companion character'}
+${char2Tag ? `- COMPANION (조연): ${char2Tag}` : '- (no named companion)'}
 
-[Instructions]
-1. Analyze the visual elements: characters, their roles, actions, settings, props
-2. Replace PROTAGONIST/HERO character description with exactly: ${char1Tag}
-${char2Tag ? `3. Replace COMPANION/ALLY character with exactly: ${char2Tag}` : '3. No companion character - remove secondary character if present'}
-4. VILLAIN/ANTAGONIST characters: Do NOT replace with character tags! Keep as descriptive text (e.g., "sinister nobleman in dark robes", "corrupt official with cruel expression")
-5. Keep EXACTLY: art style keywords, atmosphere, lighting, --ar, --v, --stylize, --no, all technical params
-6. Keep the same dramatic tension and emotional tone
-7. The transformed scene MUST reflect the new story, not the original
+[RULES — follow strictly]
+1. PEOPLE COUNT: Decide how many people appear based on the TARGET TITLE, not the benchmark. If the title implies 2 people (e.g. 며느리 and 시어머니), show exactly 2 — even if the benchmark shows 3. If 1, show 1.
+2. WHO THEY ARE: Identify each person from the TARGET TITLE. Roles like 며느리(daughter-in-law), 시어머니(mother-in-law), 시아버지(father-in-law), 남편(husband), 아내(wife) MUST match the title's gender and relationship. 시어머니=elderly woman. 시아버지=elderly man. 며느리=young woman. Do NOT keep the benchmark's genders if they conflict with the title.
+3. NAMED CAST: If the protagonist/companion tags above fit a person in the title, use the exact tag. For relationship-only figures with no name (e.g. 시어머니), describe them plainly (e.g. "a stern elderly mother-in-law in dark hanbok") — do NOT force a character tag on them.
+4. ACTION: The action/emotion comes from the TARGET TITLE's situation.
+5. BACKGROUND (conditional):
+   - If the TARGET TITLE names a concrete subject/object/material (e.g. 굼벵이, 소똥, 누에, 도자기), set the background to that. Translate it CORRECTLY: 굼벵이 = white beetle larvae/grubs (NOT silkworm, NOT bee). 소똥 = ox dung/manure. 누에 = silkworm. 지렁이 = earthworm.
+   - If the TARGET TITLE names NO concrete subject, KEEP the benchmark's background.
+6. KEEP EXACTLY from benchmark: art style keywords, color palette, lighting mood, text overlay layout (the two-line Korean caption block at the bottom), --ar, --stylize, --no params.
+7. Add negative tags to prevent mistranslation when relevant: for 굼벵이 add "--no silkworm --no bee --no caterpillar".
+8. Korean ethnicity, Joseon hanbok only. No modern clothes.
 
 Return JSON only:
-{"transformed_prompt": "full transformed Midjourney prompt", "scene_kr": "한국어 200자 장면 설명 (대본 1-2막 삽입용)"}`;
+{"transformed_prompt": "full transformed Midjourney prompt", "people_count": number, "scene_kr": "한국어 200자 장면 설명"}`;
               
               const thumbTransformRaw = (apiKey2 && apiKey2.startsWith('sk-ant-'))
                 ? await callClaude(thumbTransformSystem, thumbTransformPrompt, 4096, 'haiku')
@@ -18564,7 +18594,7 @@ Return JSON only:
               
               if (thumbTransformResult?.transformed_prompt) {
                 convertedThumb = thumbTransformResult.transformed_prompt;
-                console.log("✅ 썸네일 AI 치환 성공:", convertedThumb.substring(0, 100));
+                console.log("✅ 썸네일 AI 치환 성공 (r8.8 목표제목우선, 인원:" + (thumbTransformResult.people_count||'?') + "):", convertedThumb.substring(0, 100));
                 aiSubstitutionSuccess = true;
                 // 변환된 장면을 대본에도 반영
                 if (thumbTransformResult.scene_kr) {
@@ -18750,34 +18780,35 @@ Return JSON only:
 
             // v20.63 YD-1: 야담 배경 키워드 씬 묘사 일치 강제
             if (isYadam) {
-              // [r8.5 A방식 배경버그] 목표제목이 있으면 벤치이미지 배경소재를 목표제목 소재로 교체
-              //   — 벌통편 벤치로 소똥편 만들 때 배경에 벌통 잔재 남는 문제 해결
-              //   — 벤치에서 구도/스타일만 쓰고, 배경 소재는 목표 제목에서
+              // [r8.8 배경 보조청소] 1번(AI 치환)이 배경을 목표제목대로 바꾸는 게 주력.
+              //   여기는 AI가 놓쳤을 수 있는 '벤치 소재 잔재(벌통 등)'만 청소하는 안전장치.
+              //   목표제목에 소재가 있고, 그 소재가 벌통류가 아닌데도 벌통 단어가 남아있으면 제거.
               try {
                 if (typeof targetTitle === 'string' && targetTitle.trim()) {
-                  // 목표 제목에서 핵심 소재/배경 추출
-                  var _tMat = { '소똥':'piles of ox-dung manure and rice paddies','거름':'compost heaps and farm field','벌통':'wooden beehives in an orchard','꿀':'wooden beehives in an orchard','누에':'silkworm racks in a mulberry farm','뽕':'mulberry field','지렁이':'herb garden with tilled soil','약초':'herb garden','산삼':'deep forest mountain','물고기':'riverside fishing spot','생선':'busy fish market','소금':'salt flats by the sea','도자기':'pottery kiln workshop','옹기':'pottery workshop','베':'weaving loom room','비단':'silk weaving workshop','장':'rows of soy sauce jars (jangdok)','된장':'rows of fermentation jars','떡':'rice cake shop','쌀':'rice paddy field','벼':'golden rice paddy field' };
+                  var _tMat = { '소똥':'ox-dung manure and rice paddies','거름':'compost heaps and farm field','굼벵이':'clay jars filled with white beetle larvae (grubs, not silkworms)','상한 생선':'baskets of salted fish and fermentation jars','소뿔':'piles of ox horns in a craft workshop','벌통':'wooden beehives in an orchard','꿀':'wooden beehives in an orchard','누에':'silkworm racks in a mulberry farm','뽕':'mulberry field','지렁이':'herb garden with tilled soil','약초':'herb garden','산삼':'deep forest mountain','물고기':'riverside fishing spot','생선':'busy fish market','소금':'salt flats by the sea','도자기':'pottery kiln workshop','옹기':'pottery workshop','재':'piles of grey ash in a farmyard','베':'weaving loom room','비단':'silk weaving workshop','장':'rows of soy sauce jars (jangdok)','된장':'rows of fermentation jars','떡':'rice cake shop','쌀':'rice paddy field','벼':'golden rice paddy field' };
                   var _tKey = Object.keys(_tMat).find(function(k){ return targetTitle.indexOf(k) >= 0; });
                   if (_tKey) {
                     var _newBg = _tMat[_tKey];
-                    // 벤치 배경 흔적 제거 후 목표 배경 주입 (기존 배경 묘사문 교체)
-                    // "set in ..." 또는 배경 관련 구절을 목표 배경으로
-                    if (/set in [^,\-]+/i.test(convertedThumb)) {
-                      convertedThumb = convertedThumb.replace(/set in [^,\-]+(?=[,\-]|--|$)/i, 'set in a Joseon farmyard with ' + _newBg);
-                    } else {
-                      convertedThumb = convertedThumb.replace(/(--ar|$)/i, ', traditional Joseon setting with ' + _newBg + ' in the background $1');
-                    }
-                    // 벤치의 대표 배경 명사(벌통/과수원 등)가 목표와 다르면 제거
-                    var _wrongBgKw = ['beehive','beehives','honeycomb','swarm of bees','orchard','apiary','bee'];
-                    if (_tKey !== '벌통' && _tKey !== '꿀') {
-                      _wrongBgKw.forEach(function(w){
+                    var _isBeeSubject = (_tKey === '벌통' || _tKey === '꿀');
+                    // 벌통류가 아닌데 AI 결과에 벌통 잔재가 남아있으면 → 목표 배경으로 청소
+                    var _beeLeft = /\b(beehive|beehives|honeycomb|apiary|swarm of bees|orchard)\b/i.test(convertedThumb);
+                    if (!_isBeeSubject && _beeLeft) {
+                      ['beehive','beehives','honeycomb','swarm of bees','apiary','orchard'].forEach(function(w){
                         convertedThumb = convertedThumb.replace(new RegExp('\\b'+w+'s?\\b','gi'), '');
                       });
+                      // 목표 배경이 명시 안 됐으면 한 번 주입
+                      if (convertedThumb.toLowerCase().indexOf(_newBg.split(' ')[0].toLowerCase()) < 0) {
+                        convertedThumb = convertedThumb.replace(/(--ar|$)/i, ', Joseon farmyard with ' + _newBg + ' $1');
+                      }
+                      console.log('[r8.8 배경청소] 벌통 잔재 제거 + 목표소재("'+_tKey+'") 보강');
                     }
-                    console.log('[r8.5 A방식배경] 목표제목 소재("'+_tKey+'")로 썸네일 배경 교체 → '+_newBg);
+                    // 굼벵이 오역차단 네거티브 보강
+                    if (_tKey === '굼벵이' && !/--no silkworm/i.test(convertedThumb)) {
+                      convertedThumb = convertedThumb.replace(/(--ar|$)/i, ' --no silkworm --no bee --no caterpillar $1');
+                    }
                   }
                 }
-              } catch(_abg){ console.warn('[r8.5 A방식배경] 교체 오류:', _abg); }
+              } catch(_abg){ console.warn('[r8.8 배경청소] 오류:', _abg); }
 
               // 씬 묘사 배경과 --set 키워드 충돌 감지 및 교정
               const _bgConflicts = [
