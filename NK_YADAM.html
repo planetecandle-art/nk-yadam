@@ -2353,7 +2353,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r8.8';
+      var _VER = 'v21.0 r8.9';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -3778,14 +3778,19 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         return [L1, L2];
       }, []);
 
-      // 목표 제목이 바뀌면 썸네일 2줄 자동 채움 (사용자가 직접 수정 가능)
+      // 목표 제목 또는 B방식 선택제목이 바뀌면 썸네일 2줄 자동 채움 (사용자가 직접 수정 가능)
+      // [r8.9] targetTitle(직접입력) 우선 → 없으면 selectedTitle(B방식). 
+      //   제목이 있을 때만 갱신 (사용자가 직접 입력한 썸네일 텍스트는 덮어쓰지 않음)
       React.useEffect(() => {
-        if (targetTitle && targetTitle.trim()) {
-          var two = splitTitleToTwoLines(targetTitle);
+        var _srcTitle = '';
+        if (targetTitle && targetTitle.trim()) _srcTitle = targetTitle.trim();
+        else if (selectedTitle && selectedTitle.trim()) _srcTitle = selectedTitle.trim();
+        if (_srcTitle) {
+          var two = splitTitleToTwoLines(_srcTitle);
           setThumbLine1(two[0]);
           setThumbLine2(two[1]);
         }
-      }, [targetTitle, splitTitleToTwoLines]);
+      }, [targetTitle, selectedTitle, splitTitleToTwoLines]);
       const [titleLoading, setTitleLoading] = useState(false);
       const [msg, setMsg] = useState("준비 완료. API Key를 입력하고 대본을 생성하세요.");
       const [progress, setProgress] = useState(0);
@@ -4688,7 +4693,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           // [r8.8 오역차단] 목표제목/시놉에 헷갈리기 쉬운 소재가 있으면 네거티브 자동 추가
           var _mistransNeg = '';
           try {
-            var _msSrc = String((typeof targetTitle === 'string' ? targetTitle : '') + ' ' + (sceneSrc||'') + ' ' + (bodyTextArg||'')).slice(0, 3000);
+            var _msSrc = String((typeof targetTitle === 'string' ? targetTitle : '') + ' ' + (typeof selectedTitle === 'string' ? selectedTitle : '') + ' ' + (sceneSrc||'') + ' ' + (bodyTextArg||'')).slice(0, 3000);
             if (/굼벵이/.test(_msSrc)) _mistransNeg += ' --no silkworm --no bee --no caterpillar';
             if (/지렁이/.test(_msSrc)) _mistransNeg += ' --no snake';
           } catch(_mn){ _mistransNeg = ''; }
@@ -18557,7 +18562,12 @@ ${chunkScript}`;
             let aiSubstitutionSuccess = false;
             try {
               setMsg("2/3 벤치마킹 썸네일 → AI 장면 치환 중...");
-              var _r88_title = (typeof targetTitle === 'string' && targetTitle.trim()) ? targetTitle.trim() : '';
+              // [r8.8 목표제목] targetTitle(직접입력) 우선, 없으면 B방식 selectedTitle 사용
+              var _r88_title = '';
+              try {
+                if (typeof targetTitle === 'string' && targetTitle.trim()) _r88_title = targetTitle.trim();
+                else if (typeof selectedTitle === 'string' && selectedTitle.trim()) _r88_title = selectedTitle.trim();
+              } catch(_rt){ _r88_title = ''; }
               const thumbTransformSystem = `You are a Midjourney thumbnail prompt transformer for Korean historical (Joseon) YouTube stories. The benchmark prompt provides ONLY the art STYLE, color palette, text placement, and general COMPOSITION FEEL. You must rebuild the actual PEOPLE, their COUNT, their ACTIONS, and (conditionally) the BACKGROUND from the TARGET TITLE, not from the benchmark. Return JSON only.`;
               const thumbTransformPrompt = `[Benchmark Midjourney Prompt — USE ONLY for art style, colors, text layout, composition feel]
 ${convertedThumb}
@@ -18784,9 +18794,12 @@ Return JSON only:
               //   여기는 AI가 놓쳤을 수 있는 '벤치 소재 잔재(벌통 등)'만 청소하는 안전장치.
               //   목표제목에 소재가 있고, 그 소재가 벌통류가 아닌데도 벌통 단어가 남아있으면 제거.
               try {
-                if (typeof targetTitle === 'string' && targetTitle.trim()) {
+                var _bgTitle = '';
+                if (typeof targetTitle === 'string' && targetTitle.trim()) _bgTitle = targetTitle.trim();
+                else if (typeof selectedTitle === 'string' && selectedTitle.trim()) _bgTitle = selectedTitle.trim();
+                if (_bgTitle) {
                   var _tMat = { '소똥':'ox-dung manure and rice paddies','거름':'compost heaps and farm field','굼벵이':'clay jars filled with white beetle larvae (grubs, not silkworms)','상한 생선':'baskets of salted fish and fermentation jars','소뿔':'piles of ox horns in a craft workshop','벌통':'wooden beehives in an orchard','꿀':'wooden beehives in an orchard','누에':'silkworm racks in a mulberry farm','뽕':'mulberry field','지렁이':'herb garden with tilled soil','약초':'herb garden','산삼':'deep forest mountain','물고기':'riverside fishing spot','생선':'busy fish market','소금':'salt flats by the sea','도자기':'pottery kiln workshop','옹기':'pottery workshop','재':'piles of grey ash in a farmyard','베':'weaving loom room','비단':'silk weaving workshop','장':'rows of soy sauce jars (jangdok)','된장':'rows of fermentation jars','떡':'rice cake shop','쌀':'rice paddy field','벼':'golden rice paddy field' };
-                  var _tKey = Object.keys(_tMat).find(function(k){ return targetTitle.indexOf(k) >= 0; });
+                  var _tKey = Object.keys(_tMat).find(function(k){ return _bgTitle.indexOf(k) >= 0; });
                   if (_tKey) {
                     var _newBg = _tMat[_tKey];
                     var _isBeeSubject = (_tKey === '벌통' || _tKey === '꿀');
@@ -19189,14 +19202,16 @@ JSON 형식:
                   // 인물모드: 문구맞춤 배경 + 중앙 인물 검은실루엣(얼굴X) + 북한국기
                   promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. A large vivid North Korean flag (red blue white stripes with bright red star) fills the right side and upper part of the background, with ${leftScene} blended into the lower-left area, smoke and dramatic glow. The main subject ${_realPersonFace} is positioned toward the right of center. On the left side, over the scene and far away from the flag, a thin hollow circle with bright red stroke highlights a point, clearly visible. An empty space at the upper area is left for a caption.`;
                 } else {
-                  // 직업모드: 좌 직업장면 + 중 익명실루엣 + 우 주인공얼굴 + 국기
+                  // 직업모드: 좌 직업/탈출장면 + 우 주인공얼굴 + 국기 (실존인물 없으면 실루엣 없이 인물로 채움)
+                  // [r8.9] 벤치마킹 스타일: 가운데 익명 검은 실루엣 제거 → 인물로 꽉 채운 실사 썸네일
+                  //   (실존정치인은 _realPersonFace 분기(위 if)에서만 실루엣 처리. 가상 주인공만이면 그림자 없음)
                   // [r7.6 E] 일가족 탈북이면 배우자(char3)까지 포함 → 가족 전원이 프롬프트에 등장
                   const leftSideDesc = char3Tag
                     ? `${char1Tag}, ${char2Tag} and ${char3Tag} ${leftScene}`
                     : (char2Tag
                         ? `${char1Tag} and ${char2Tag} ${leftScene}`
                         : `${char1Tag} ${leftScene}`);
-                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast. On the left third of the frame: ${leftSideDesc}, brightly lit and in sharp focus, North Korean atmosphere. In the middle stands a large dark black silhouette of an anonymous figure, chest-up, completely solid pure black, absolutely no face and no features whatsoever, a flat black shape with a thin orange rim light. A vivid North Korean flag (red blue white stripes, bright red star) is visible in the upper-right background. On the right third is the main subject: ${rightSide}. On the left side over the scene, far from the flag, a thin hollow circle with bright red stroke highlights a point clearly. An empty space at the upper area is left for a caption.`;
+                  promptBase = `Dramatic photojournalism YouTube thumbnail, 16:9, vivid saturated colors like a viral news thumbnail, bright and high contrast, cinematic realism. LEFT HALF of the frame: ${leftSideDesc}, brightly lit and in sharp focus, tense urgent North Korean atmosphere, real people filling the space. A vivid North Korean flag (red blue white stripes, bright red star) is visible in the upper-middle background against a dark dramatic sky. RIGHT HALF as the MAIN focus: ${rightSide}. NO black silhouette, NO shadow figure, NO anonymous dark shape anywhere — fill the entire frame with real detailed people. On the left side over the scene, a thin hollow circle with bright red stroke highlights a key point clearly. An empty space at the upper area is left for a caption.`;
                 }
                 // [N-신규] 제목 글씨 2줄 분할 (야담처럼 TEXT OVERLAY)
                 let _nkL1 = '', _nkL2 = '';
