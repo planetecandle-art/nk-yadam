@@ -13745,7 +13745,7 @@ ${isYadam ?
                 const _usedN = new Set(newCast.map(c => c.name));
                 // [r7.6 이름버그] 조사/불용어 블랙리스트 — 자녀·배우자 이름 추출에 공통 적용
                 //   시놉에 "아내에게 말했습니다"처럼 이름 없이 조사만 붙으면 "에게"가 이름으로 잡히던 버그 방지
-                var _josaBlacklist = ['에게','에서','으로','에는','과는','와는','이는','가는','한테','부터','까지','보다','처럼','만큼','에게는','에서는','이라고','라고','이라는','라는','이며','으며','에게서','한테서','에게도','한테도','까지도','부터는'];
+                var _josaBlacklist = ['에게','에서','으로','에는','과는','와는','이는','가는','한테','부터','까지','보다','처럼','만큼','에게는','에서는','이라고','라고','이라는','라는','이며','으며','에게서','한테서','에게도','한테도','까지도','부터는','몰래','함께','혼자','같이','먼저','다시','이미','아직','계속','조용히','가만히','슬며시','결국','마침내','서로','당장','겨우','간신히','오직'];
 
                 // ---------- (B) 자녀 처리 ----------
                 const _hasChild = newCast.some(c => /자녀|아들|딸|아이|자식/.test(c.role || '') || /자녀|아들|딸|아이/.test(c.name || ''));
@@ -13759,6 +13759,20 @@ ${isYadam ?
                   else if (_dauM && _dauM[1]) { _childName = _dauM[1]; _childGender = '여'; }
                   // [에게버그 안전망] 조사/불용어가 이름으로 추출되면 무효화 (블랙리스트는 상단에서 공용 선언)
                   if (_childName && _josaBlacklist.indexOf(_childName) >= 0) { _childName = ''; }
+                  // [r8.10 NK-이름] 근본방어: 추출된 자녀 이름이 실제 인명풀에 존재하는 진짜 이름일 때만 채택.
+                  //   "아들 몰래" 같은 부사 오추출을 인명풀 대조로 차단.
+                  if (_childName) {
+                    try {
+                      var _allNamesC = [].concat(_namePool.male || [], _namePool.female || [], _namePool.childMale || [], _namePool.childFemale || []);
+                      var _isRealNameC = _allNamesC.some(function(n){
+                        return n === _childName || (n.length >= 3 && n.slice(1) === _childName) || (n.length >= 2 && n.slice(1) === _childName);
+                      });
+                      if (!_isRealNameC) {
+                        console.log('[r8.10 NK-이름] 자녀 추출 이름 "' + _childName + '"이(가) 인명풀에 없음(부사/오추출 의심) → 이름풀에서 재배정');
+                        _childName = '';
+                      }
+                    } catch(_gRNC){ /* 무시 */ }
+                  }
                   // [r7.6 이름버그2] 시놉이 딸에게 남자 이름(예: "승일")을 붙이는 경우가 있음
                   //   → 추출한 이름이 '반대 성별 이름풀'에 들어있으면 거부하고 이름풀에서 재배정
                   if (_childName && _childGender) {
@@ -13832,6 +13846,21 @@ ${isYadam ?
                     _spouseName = '';
                   }
                   if (_spouseName && _spouseName.length < 2) { _spouseName = ''; }
+                  // [r8.10 NK-이름] 근본방어: 추출된 배우자 이름이 실제 인명풀(_namePool)에 존재하는
+                  //   진짜 한국 이름일 때만 채택. "몰래/함께" 같은 부사가 블랙리스트를 빠져나가도
+                  //   인명풀에 없으면 무효화 → 이름풀에서 새로 부여. (성씨 제외 이름 2글자도 인정)
+                  if (_spouseName) {
+                    try {
+                      var _allNames = [].concat(_namePool.male || [], _namePool.female || []);
+                      var _isRealName = _allNames.some(function(n){
+                        return n === _spouseName || (n.length >= 3 && n.slice(1) === _spouseName) || (n.length >= 2 && n.slice(1) === _spouseName);
+                      });
+                      if (!_isRealName) {
+                        console.log('[r8.10 NK-이름] 배우자 추출 이름 "' + _spouseName + '"이(가) 인명풀에 없음(부사/오추출 의심) → 이름풀에서 재배정');
+                        _spouseName = '';
+                      }
+                    } catch(_gRN){ /* 무시 */ }
+                  }
                   // [r7.6 이름버그2] 배우자 이름도 성별과 맞는지 검증 (자녀와 동일 로직)
                   if (_spouseName) {
                     try {
