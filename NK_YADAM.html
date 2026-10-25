@@ -2353,7 +2353,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
 
     // [v21.0 버전배지] 페이지 로드 시 화면 우상단+콘솔에 현재 버전 표시 (최신 파일 즉시 확인용)
     (function(){
-      var _VER = 'v21.0 r9.0 수면동화';
+      var _VER = 'v21.0 r9.2 수면동화';
       console.log('%c★ '+_VER+' 로드완료 ★', 'background:#2563eb;color:#fff;font-size:15px;padding:6px 10px;border-radius:4px;');
       function _showBadge(){
         if(document.getElementById('_verBadge'))return;
@@ -2711,7 +2711,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         narrator: '솔이',
         greet: '여러분, 안녕하세요. 잠 오는 옛이야기 들려드리는 솔이예요.',
         invite: '여러분은 오늘 어디에서 이 이야기를 듣고 계신가요? 댓글로 살짝 남겨 주시면, 솔이가 하나하나 반갑게 읽을게요.',
-        settle: '자, 이제 이불을 목까지 끌어올리고, 편안하게 누워 보세요. 들숨에 하나, 날숨에 둘.',
+        settle: '', // [r9.1] SIRI 요청: 이불·들숨날숨 문장 제외
         close: '편안한 밤 보내세요. 좋은 꿈 꾸시길 바라요. 솔이였습니다.',
         tone: '여성 이야기꾼 솔이의 다정하고 나긋한 말투. 서술 어미는 "~습니다"를 기본으로 "~어요/~았어요/~였어요"와 "~지요"를 고르게 섞을 것'
       },
@@ -2759,10 +2759,44 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         if (i + 1 < segs.length && /[.!?…][ \t]+$/.test(segs[i])) segs[i] = segs[i].replace(/[ \t]+$/, '\n');
       }
       return segs.join('')
+        // [r9.2] 대사 뒤에 서술이 붙으면 줄을 나눔 ("가자!" 돌쇠가 외쳤습니다. → 두 줄). "…" 하고/라고 등은 유지
+        .replace(/("[^"\n]*[.!?…]")[ \t]+(?!(하고|하며|하니|하자|하는|하면서|하던|라고|라며|라는|이라고|소리|며|고)[\s,.])/g, '$1\n')
         .replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n')
         .replace(/\n{3,}/g, '\n\n').trim();
     };
-    try { window._sleepTools = { fix: _sleepFixEndings, lines: _sleepLines, narrators: SLEEP_NARRATORS }; } catch (e) {}
+    // [r9.2] 자동 교정 — 문맥과 상관없이 늘 틀린 것만 (조사·현대어·숨쉬기 문장)
+    const _SLEEP_FIX = [
+      [/무언가을/g, '무언가를'], [/누군가을/g, '누군가를'], [/뭔가을/g, '뭔가를'], [/어딘가을/g, '어딘가를'], [/언젠가을/g, '언젠가를'],
+      [/걸음마을/g, '걸음마를'], [/창고을/g, '창고를'], [/무릎릎/g, '무릎'], [/깊깊/g, '깊'],
+      [/(^|[\s,])(마을|고을) (떠나|떠났|떠날|돌아다니|돌아다녔)/gm, '$1$2을 $3'],
+      [/엄마/g, '어머니'], [/아빠/g, '아버지'], [/(2층|이층)/g, '위층'], [/침대/g, '이부자리'], [/페이지/g, '종이'],
+      [/정육점/g, '푸줏간'], [/감사패/g, '공덕 문서'], [/도시락/g, '찬합']
+    ];
+    const _sleepAutoFix = (txt) => {
+      if (!txt) return txt;
+      var s2 = String(txt);
+      _SLEEP_FIX.forEach(function(r){ s2 = s2.replace(r[0], r[1]); });
+      // 들숨·날숨·숨쉬기·숫자 세기 문장은 줄째 삭제
+      s2 = s2.split('\n').filter(function(l){ return !/들숨|날숨|들이마시|내쉬|숨을\s*(천천히\s*)?들이|하나,\s*둘,\s*셋/.test(l); }).join('\n');
+      return s2.replace(/\n{3,}/g, '\n\n');
+    };
+    // [r9.2] 경고 리포트 — 문맥을 봐야 하는 것은 고치지 않고 줄 번호로 알려줌
+    const _SLEEP_WARN = [
+      ['욕설', /새끼|과부 년|계집년|그년|저년|빌어먹|염병/],
+      ['죽음', /죽었|죽은|죽음|숨을 거두|세상을 떠|먼 길을 떠|눈을 감았습니다|시체|무덤|상여|장례/],
+      ['공포', /귀신|혼령|저주|악몽|원혼/],
+      ['아동위험', /(아이|아기|아들|딸)[^.\n]{0,15}(물에 빠|다치|버리|잃어버)/],
+      ['폭력', /피가|피를|피투성이|매질|칼부림|때렸|뺨을/],
+      ['시대착오', /십자|천 원|노크|빨래방|관계자|자료실|빨대|병원|학교/]
+    ];
+    const _sleepWarn = (txt) => {
+      var out = [];
+      String(txt || '').split('\n').forEach(function(l, i){
+        _SLEEP_WARN.forEach(function(w){ if (w[1].test(l)) out.push({ cat: w[0], line: i + 1, text: l.trim().slice(0, 60) }); });
+      });
+      return out;
+    };
+    try { window._sleepTools = { fix: _sleepFixEndings, lines: _sleepLines, autofix: _sleepAutoFix, warn: _sleepWarn, narrators: SLEEP_NARRATORS }; } catch (e) {}
 
     // v20.35 Phase5: NK 인트로 훅 문장 풀 (벤치마킹 스타일 - 아이러니/담담)
     const NK_HOOK_PHRASES = [
@@ -3807,6 +3841,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
       // [r8.24] 2차 품질 검수 배치
       const [batchReviewId, setBatchReviewId] = useState(function(){ try { var r = JSON.parse(localStorage.getItem('nk_batch_review') || 'null'); return r ? r.id : ''; } catch(e) { return ''; } });
       const [batchReviewResults, setBatchReviewResults] = useState(null);
+      const [batchWarns, setBatchWarns] = useState({}); // [r9.2] 편별 경고 리포트
       const [batchImages, setBatchImages] = useState({});
 
       // [r8.15 Batch] 편별 썸네일 프롬프트 + 메타데이터 생성 (시놉·캐스트 재사용, 즉시)
@@ -3814,6 +3849,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         const s = batchSyns[i];
         if (!s || s.error) return;
         if (!apiKey2 || !apiKey2.startsWith('sk-ant-')) return alert('Claude API 키(sk-ant-)가 필요합니다.');
+        if (isYadam && SLEEP_MODE) { return handleBatchImages(i); } // [r9.2] 수면동화: 썸네일은 이미지 패키지에 함께
         setBatchBusy(true); setBatchMsg('🖼️ 썸네일 프롬프트 생성 중... (' + s.title + ')');
         try {
           const castLine = (s.cast || []).map(function(c){ return '- ' + c.name + ': ' + c.role + ' (' + c.gender + ', ' + c.age + ')'; }).join('\n');
@@ -3911,7 +3947,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         } catch (e) {}
         return SLEEP_NARRATORS[yadamChannel] ? yadamChannel : 'manim';
       };
-      const _sleepIntroLine = (n) => n.greet + ' ' + n.invite + ' ' + n.settle;
+      const _sleepIntroLine = (n) => [n.greet, n.invite, n.settle].filter(Boolean).join(' ');
       const _sleepScriptSys = (ck) => {
         var n = SLEEP_NARRATORS[ck] || SLEEP_NARRATORS.manim;
         return '당신은 조선시대 야담을 잠자리 옛이야기(수면동화)로 들려주는 전문 작가입니다. 아래 규칙으로 완결된 대본 전체를 한 번에 씁니다.\n'
@@ -3927,8 +3963,12 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           + '- 본문에 [1막] 같은 막 태그·구조 용어 절대 금지 (자연스러운 문단 전환만)\n'
           + '- 등장인물 명단에 없는 새 인물·이름 추가 금지, 춘향/홍길동 등 유명 캐릭터명 금지\n'
           + '- 조선시대 고증: 미검증 사실은 "~라고 전해집니다" 어미, 실존 역사인물 주인공 금지, 현대 물건/표현 금지\n'
-          + '- 마지막: 시간경과("그로부터 십 년이 흘렀습니다") → 따뜻한 여운 장면(자녀·후손에게 마음이 이어지는 모습) → "옛 어른들은 ~ 하셨습니다" 같은 짧은 교훈 → 듣는 분께 건네는 질문 1~2문장(예: "여러분에게도 ~ 있으셨나요?") → 숨을 고르게 하는 이완 2~3문장(눈을 감고, 숨을 천천히) → 마지막 인사 "' + n.close + '" → 끝\n'
+          + '- 마지막: 시간경과("그로부터 십 년이 흘렀습니다") → 따뜻한 여운 장면(자녀·후손에게 마음이 이어지는 모습) → "옛 어른들은 ~ 하셨습니다" 같은 짧은 교훈 → 듣는 분께 건네는 질문 1~2문장(예: "여러분에게도 ~ 있으셨나요?") → "이제 천천히 눈을 감아 보세요." 한 줄과 잔잔한 장면 묘사 1~2문장 → 마지막 인사 "' + n.close + '" → 끝\n'
           + '- 구독·좋아요·알림 같은 구독 유도 멘트와 채널명은 쓰지 말 것\n'
+          + '- ★들숨·날숨·"숨을 들이마시고 내쉬어 보세요"·숫자 세기(하나, 둘, 셋) 같은 호흡 안내 문장은 대본 어디에도 쓰지 말 것\n'
+          + '- ★인물의 대사는 대사만 한 줄로 쓰고, 누가 어떻게 말했는지는 다음 줄에 따로 쓸 것\n'
+          + '- ★욕설·비속어(새끼, 년 등) 금지. 현대 단어(2층, 침대, 페이지, 노크, 엄마·아빠, 원 단위 돈, 병원, 학교 등) 금지 — 조선 말로(위채, 이부자리, 종이, 문을 두드리다, 어머니·아버지, 냥·푼, 약방, 서당)\n'
+          + '- ★귀신·혼령·저주 같은 공포 소재와 임종·장례 장면 금지. 회상 속 이별도 "먼 길을 떠났다" 정도로 한 번만\n'
           + '- 메타 주석·AI 자기언급·영어 절대 금지. 빈 따옴표 "" 금지';
       };
       const _sleepReviewSys = (ck) => {
@@ -3938,12 +3978,13 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
           + '1. ★인트로 재작성(후킹 유지): 첫 문단을 가장 충격적인 장면이나 실제 인물의 대사로 시작. 짧은 단문을 연달아 써서 긴박한 리듬을 만들고, 궁금증 세 개를 연달아 던진 뒤 인사말(7번 원문 그대로) → "이야기는 ~년 전으로 거슬러 올라갑니다"로 전환\n'
           + '2. ★따옴표는 인물이 실제로 말한 대사에만. 서술 문장을 따옴표로 감싸지 말 것. 느낌표와 직접 대사는 살릴 것\n'
           + '3. ★문체: ' + n.tone + '. "~답니다 / ~더랍니다 / ~랍니다"는 0회 — 초안에 있으면 전부 "~습니다 / ~어요 / ~지요"로 고칠 것. 어색한 번역투·현대어투 문장은 자연스러운 옛이야기 말투로\n'
-          + '4. ★분량: 최종 16,000자 이상. 초안이 짧으면 장면 묘사·대사·인물 심리를 덧붙여 채울 것(내용을 새로 지어내지 말고 기존 장면을 깊게)\n'
+          + '4. ★고칠 것만 고칠 것: 새 장면·새 사건·새 결말을 지어내지 말 것. 특히 인물의 죽음·임종·장례 장면을 새로 넣는 것 절대 금지. 분량을 늘리려고 같은 말을 반복하지 말 것(초안 분량 유지로 충분)\n'
           + '5. ★수면동화 안전: 죽음·폭력·피·고문, 아이가 다치거나 위험한 장면이 있으면 줄거리는 유지하되 잔잔한 표현으로 순화(예: 매질 → 호된 꾸중, 죽음 → 먼 길을 떠났다는 소식). 악인은 뉘우치거나 떠나는 정도로\n'
           + '6. 줄거리·등장인물·이름·사건 순서는 절대 바꾸지 말 것\n'
           + '7. 인사말 원문 유지: 도입 "' + _sleepIntroLine(n) + '" / 마지막 "' + n.close + '". 구독·좋아요 멘트와 채널명은 넣지 말 것\n'
           + '8. 본문 서술 문장에는 물음표 금지(인트로 훅·마지막 질문·인물 대사 안은 허용)\n'
-          + '9. 마크다운(#, ---, **) 금지. 막 번호 표기 금지. 본문만 출력\n';
+          + '9. 마크다운(#, ---, **) 금지. 막 번호 표기 금지. 본문만 출력\n'
+          + '10. 들숨·날숨·숨쉬기·숫자 세기 문장은 모두 삭제. 대사는 대사만 한 줄, 서술은 다음 줄. 욕설 삭제. 현대 단어(2층·침대·페이지·노크·엄마·아빠·원·병원 등)는 조선 말로. 귀신·혼령 같은 공포 표현은 "이상한 소문" 정도로 순화\n';
       };
 
       const _batchPurify = (script, castArr) => {
@@ -4049,8 +4090,9 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
               var _ts = Math.max(0, t.length - 500);
               var _tail = t.slice(_ts).replace(/(편안한 밤 보내세요[.!]?|좋은 꿈 꾸시길 바라요[.!]?|좋은 꿈 꾸세요[.!]?|(솔이|전기수)였습니다[.!]?)\s*/g, '');
               t = (t.slice(0, _ts) + _tail).replace(/\s+$/, '') + '\n\n' + _sn.close;
-              // ⑥ 한 문장 = 한 줄
+              // ⑥ 한 문장 = 한 줄 + [r9.2] 자동교정(조사·현대어·숨쉬기 문장 삭제)
               t = _sleepLines(t);
+              t = _sleepAutoFix(t);
               console.log('[r9.0 수면동화] ' + _sn.narrator + ' 오프닝/엔딩 · 답니다 ' + _dBefore + '→' + (t.match(/답니다/g) || []).length + '회');
             } catch (eS) { console.warn('[r9.0 수면동화] 정리 오류:', eS.message); }
           }
@@ -4132,6 +4174,21 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
         // 최종본 > 1차본 > 시놉 순으로 소스 선택
         var src = (batchReviewResults && batchReviewResults[cid]) || (batchResultsState && batchResultsState[cid]) || sinfo.synopsis;
         var srcLabel = (batchReviewResults && batchReviewResults[cid]) ? '최종본' : ((batchResultsState && batchResultsState[cid]) ? '1차본' : '시놉');
+        // [r9.2] 수면동화: 대본 기준 '지금 방식' 패키지 (썸네일 3 + 인트로 + 본편 10 + 인물 고정값)
+        if (isYadam && SLEEP_MODE) {
+          if (srcLabel === '시놉') return alert('먼저 대본을 받아 주세요. (이미지는 실제 대본 기준으로 만들어요)');
+          setBatchBusy(true); setBatchMsg('🎬 수면동화 이미지 패키지 생성 중... (' + sinfo.title + ' · ' + srcLabel + ' 기준)');
+          try {
+            const pk = await _sleepImagePack(src, sinfo.title, _sleepCh());
+            if (pk) {
+              setBatchImages(function(prev){ var n = Object.assign({}, prev); n[i] = pk; return n; });
+              var thumbOnly = pk.split('▣ 인트로 이미지')[0];
+              setBatchThumbs(function(prev){ var n = Object.assign({}, prev); n[i] = thumbOnly; return n; });
+              setBatchMsg('🎬 이미지 패키지 완료: ' + sinfo.title + ' — [💾 이미지] / [💾 썸네일]로 받으세요.');
+            } else setBatchMsg('이미지 패키지 생성 실패 — 다시 시도해주세요.');
+          } finally { setBatchBusy(false); }
+          return;
+        }
         setBatchBusy(true); setBatchMsg('🎬 이미지 프롬프트 생성 중... (' + sinfo.title + ' · ' + srcLabel + ' 기반)');
         try {
           const castLine = (sinfo.cast || []).map(function(c){ return '- ' + c.name + ': ' + c.role + ' (' + c.gender + ', ' + c.age + ')'; }).join('\n');
@@ -4162,7 +4219,9 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
             setBatchMsg('① 시놉 생성 중... ' + (i+1) + '/' + titles.length);
             // system을 100자 미만으로 유지 → callClaude의 대본용 규칙 주입 회피 (JSON 순수 출력)
             const _sys = '반드시 JSON만 출력하는 ' + (isYadam ? '조선 야담' : '탈북 실화') + ' 구조 설계자.';
-            const _p = '제목: "' + titles[i] + '"\n\n이 제목으로 ' + (isYadam ? '조선시대 야담 8막' : '북한 탈북 실화풍 9막') + ' 시놉시스와 등장인물을 설계하세요.\n\n[출력 - 아래 JSON 형식만! 다른 텍스트 금지]\n{"synopsis":"[1막: 소제목] 내용...\\n[2막: 소제목] 내용...(모든 막)","cast":[{"name":"이름","role":"주인공","gender":"남 또는 여","age":"30대"},{"name":"이름","role":"핵심조력자","gender":"남 또는 여","age":"40대"}]}\n\n[규칙]\n- 캐스트는 주인공+핵심조력자+필요시 악역, 총 2~4명\n- 제목이 말하는 인물의 성별·나이·직업을 정확히 반영 (예: "주모"=여성, "열살배기 아들"=남아)\n- ' + (isYadam ? '이름은 조선식(분이/돌쇠/막동/옥분 등), 춘향/홍길동 등 유명 캐릭터명 금지. 마지막 막은 시간경과+자녀 대물림 에필로그.' + (SLEEP_MODE ? '\n- 수면동화용: 죽음·살해·자결·피·폭행·고문 전개 금지, 아이가 다치거나 위험에 처하는 전개 금지. 갈등은 오해·시기·구박·속임수 정도로, 결말은 따뜻한 반전과 화해(악인은 잘못이 드러나 뉘우치거나 떠나는 정도)' : '') : '이름은 북한식. 마지막 막은 한국 정착 현재시점+미완결 여운.') + '\n- 각 막 내용은 2~3문장으로 구체적으로 (반드시 JSON을 끝까지 닫을 것)';
+            const _p = '제목: "' + titles[i] + '"\n\n이 제목으로 ' + (isYadam ? '조선시대 야담 8막' : '북한 탈북 실화풍 9막') + ' 시놉시스와 등장인물을 설계하세요.\n\n[출력 - 아래 JSON 형식만! 다른 텍스트 금지]\n{"synopsis":"[1막: 소제목] 내용...\\n[2막: 소제목] 내용...(모든 막)","cast":[{"name":"이름","role":"주인공","gender":"남 또는 여","age":"30대"},{"name":"이름","role":"핵심조력자","gender":"남 또는 여","age":"40대"}]}\n\n[규칙]\n- 캐스트는 주인공+핵심조력자+필요시 악역, 총 2~4명\n- 제목이 말하는 인물의 성별·나이·직업을 정확히 반영 (예: "주모"=여성, "열살배기 아들"=남아)\n- ' + (isYadam ? '이름은 조선식(분이/돌쇠/막동/옥분 등), 춘향/홍길동 등 유명 캐릭터명 금지. 마지막 막은 시간경과+자녀 대물림 에필로그.' + (SLEEP_MODE ? '\n- 수면동화용: 죽음·살해·자결·피·폭행·고문 전개 금지, 아이가 다치거나 위험에 처하는 전개 금지. 귀신·혼령 같은 공포 소재 금지. 갈등은 오해·시기·구박·속임수 정도로, 결말은 따뜻한 반전과 화해(악인은 잘못이 드러나 뉘우치거나 떠나는 정도)'
+              + '\n- 이름은 조선식으로 다양하게: 양반·관리는 성+이름자(예: 정헌, 수겸, 윤서), 여인은 이름이나 택호(예: 서월, 안동댁), 평민·아이는 만복·삼봉·곱단이·언년이처럼. 돌쇠·갑돌·복돌·봉달이·분이·쇠봉 같은 흔한 이름 금지'
+              + (acc.length ? '\n- 다른 편에서 이미 쓴 이름이라 금지: ' + acc.map(function(a){ return (a.cast || []).map(function(c){ return c.name; }).join(','); }).join(',') : '') : '') : '이름은 북한식. 마지막 막은 한국 정착 현재시점+미완결 여운.') + '\n- 각 막 내용은 2~3문장으로 구체적으로 (반드시 JSON을 끝까지 닫을 것)';
             // [r8.20] 관대한 JSON 파서: 여는 중괄호 누락 / 뒤 잘림 / 잡텍스트 혼입까지 복구
             var _tryParse = function(t) {
               var r = String(t || '').replace(/```json|```/g, '').trim();
@@ -4278,6 +4337,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
                 rp[k] = r[k] ? _batchPurify(r[k], cst) : r[k];
               });
               setBatchResultsState(rp);
+              try { if (isYadam && SLEEP_MODE) { var _w1 = {}; Object.keys(rp).forEach(function(k){ if (rp[k]) _w1[k] = _sleepWarn(rp[k]); }); setBatchWarns(_w1); } } catch (eW) {}
               setBatchMsg('🎉 결과 도착: ' + Object.keys(rp).length + '편 (기존 정화 파이프라인 적용 완료). 아래에서 다운로드하세요.');
             } else {
               setBatchMsg('결과 가져오기 실패 — 잠시 후 [상태 확인]을 다시 눌러주세요.');
@@ -4353,6 +4413,7 @@ console.log("[r5.1.6 북-신6/북-신5] NK 인트로 우측인물 차분(calm di
                 rp2[k] = r[k] ? _batchPurify(r[k], cst) : r[k];
               });
               setBatchReviewResults(rp2);
+              try { if (isYadam && SLEEP_MODE) { var _w2 = {}; Object.keys(rp2).forEach(function(k){ if (rp2[k]) _w2[k] = _sleepWarn(rp2[k]); }); setBatchWarns(_w2); } } catch (eW) {}
               setBatchMsg('🎉 검수 완료: ' + Object.keys(rp2).length + '편 (정화 파이프라인 적용). [📤 메인에 불러오기] → [🎯 프롬프트] 순서로 진행하세요.');
             } else setBatchMsg('결과 없음 — 잠시 후 다시');
           } else {
@@ -8619,6 +8680,8 @@ JSON: {"introScripts":{"A":"","B":"","C":"","D":"","E":""},"introVideoPrompts":[
       };
 
       const forceEnding = (txt, mainCharName, isYadamMode) => {
+        // [r9.2] 수면동화: 옛 구연체 에필로그(허허·권선징악·벌)를 끝에 덧붙이지 않음 (엔딩 인사 뒤에 붙는 문제)
+        if (isYadamMode && SLEEP_MODE) return txt;
         if (isYadamMode) {
           return txt + `\n\n그로부터 5년 후, ${mainCharName || '그'}는 마을에서 가장 존경받는 사람이 되었답니다. 악행을 일삼던 자들은 모두 벌을 받았고, 선한 이들은 복을 받았답니다. 허허, 권선징악이란 바로 이런 것이었답니다.`;
         } else {
@@ -25916,6 +25979,105 @@ ${reviewed.slice(-3000)}
       };
 
       // ========== 이미지 프롬프트 재생성 ==========
+
+      // ========== [r9.2] 수면동화 이미지 패키지 — '지금 방식' (수채 웹툰 16:9 · 인물 고정 · 나레이션+프롬프트 한 줄) ==========
+      const _SLP_LP = 'Soft warm watercolor Korean webtoon illustration, horizontal 16:9, warm brown and amber tones, Joseon dynasty, painterly manhwa style, gentle storybook mood, no text.';
+      const _SLP_TP = 'Soft warm watercolor Korean webtoon illustration, horizontal 16:9, warm brown and amber tones, Joseon dynasty, painterly manhwa style, clear bright colors, expressive faces.';
+      const _sleepImagePack = async (scriptText, title, chKey) => {
+        try {
+          var ck = SLEEP_NARRATORS[chKey] ? chKey : 'manim';
+          var rate = ck === 'chungam' ? 270 : 254;
+          var slogan = ck === 'chungam' ? '틀어놓으면 잠이 옵니다' : '틀어놓고 주무세요';
+          var lines = String(scriptText || '').split('\n').map(function(l){ return l.trim(); });
+          var nonblank = lines.filter(Boolean);
+          var introEnd = -1;
+          for (var i = 0; i < Math.min(nonblank.length, 40); i++) { if (/거슬러 올라/.test(nonblank[i])) { introEnd = i; break; } }
+          if (introEnd < 0) introEnd = Math.min(13, nonblank.length - 1);
+          var introLines = nonblank.slice(0, introEnd + 1);
+          var bodyLines = nonblank.slice(introEnd + 1);
+          var sys = '반드시 JSON만 출력하는 조선 수면동화 삽화 콘티 작가.';
+          var prm = '제목: "' + (title || '') + '"\n\n[인트로 문장 목록 — 문장마다 그림 1장]\n'
+            + introLines.map(function(l, k){ return (k + 1) + '. ' + l; }).join('\n')
+            + '\n\n[본편 대본]\n' + bodyLines.join('\n').slice(0, 30000)
+            + '\n\n위 대본으로 영상용 이미지 프롬프트를 만드세요. 출력은 아래 JSON 하나만.\n'
+            + '{"characters":[{"code":"C1","name":"한국어 이름","desc":"English fixed look: Korean, gender, age, face, hair, clothes (hanbok details), 25-40 words"}],'
+            + '"intro":["인트로 1번 문장 그림 (English)", "... 인트로 문장 수와 정확히 같은 개수"],'
+            + '"body":[{"line":"본편 대본에 있는 문장을 글자 그대로 복사","prompt":"English"} ... 정확히 10개],'
+            + '"band":"썸네일 상단 띠 한국어 10~16자 (결말 숨긴 후킹)","hook2":"썸네일 2줄 한국어 14~20자 (궁금증)","hook2_hl":"hook2 안에서 노랑으로 강조할 2~6자",'
+            + '"thumbA":"English: 이야기 속 인물이 눈 감고 편안히 잠든 모습 + 이야기 소품, 인물 오른쪽 크게",'
+            + '"thumbB":"English: 결말 직전의 핵심 갈등·반전 장면, 인물 2명 대비, 오른쪽 크게",'
+            + '"thumbC":"English: 주인공 얼굴 크게 + 궁금증을 주는 표정·소품"}\n\n'
+            + '[규칙]\n'
+            + '- 인물은 characters에 한 번 정의하고, 프롬프트 안에서는 {C1}, {C2}처럼 코드로만 부를 것. 한 프롬프트에 같은 코드는 한 번만.\n'
+            + '- 나이가 크게 바뀌는 인물(아이→어른, 젊은→노년)은 코드를 따로 만들 것.\n'
+            + '- 프롬프트는 영어 한 문장, 25~45단어. 그 문장 내용 그대로의 장면(인물·행동·표정·장소·빛). 스타일 문구는 쓰지 말 것(자동으로 붙음).\n'
+            + '- body 10장은 본편 처음부터 끝까지 고르게, 이야기 순서대로. line은 대본 문장을 한 글자도 바꾸지 말고 그대로.\n'
+            + '- 인사·댓글 유도 문장은 인물 없이 밤 풍경·따뜻한 방 그림으로.\n'
+            + '- 피, 무기, 시체, 무덤, 귀신, 다치는 장면, 물에 빠지는 장면 금지. 조선시대 복장·소품만(현대 물건 금지).';
+          var raw = await callClaude(sys, prm, 16000, 'sonnet');
+          var j = null;
+          try {
+            var r = String(raw || '').replace(/```json|```/g, '').trim();
+            var a0 = r.indexOf('{'), a1 = r.lastIndexOf('}');
+            j = JSON.parse(r.slice(a0, a1 + 1));
+          } catch (eP) { console.warn('[r9.2 이미지] JSON 파싱 실패', eP.message); return null; }
+          var chars = Array.isArray(j.characters) ? j.characters : [];
+          var cmap = {};
+          chars.forEach(function(c){ if (c && c.code) cmap[c.code] = String(c.desc || '').replace(/\.$/, ''); });
+          var BAD = /\b(blood\w*|gore|corpse|dead body|coffin|grave\w*|ghost\w*|skull\w*|knife|knives|sword\w*|weapon\w*|wound\w*|drown\w*)\b/gi;
+          var fill = function(t){
+            var seen = {};
+            var out = String(t || '').replace(/\{(C\d+)\}/g, function(m0, code){
+              if (!cmap[code]) return 'a person';
+              if (seen[code]) return 'the same person';
+              seen[code] = 1; return cmap[code];
+            });
+            return out.replace(BAD, '').replace(/\s{2,}/g, ' ').trim();
+          };
+          var full = String(scriptText || '');
+          var pure = function(x){ return String(x).replace(/\s/g, '').length; };
+          var mmss = function(sec){ sec = Math.round(sec); var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s3 = sec % 60;
+            return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(s3).padStart(2, '0'); };
+          var totalSec = pure(full) / rate * 60;
+          // 본편 10장: 문장 위치 찾기(정확 → 부분 → 균등 폴백)
+          var body = (Array.isArray(j.body) ? j.body : []).slice(0, 10);
+          var lastIdx = full.indexOf(introLines[introLines.length - 1] || '') + 1;
+          var placed = body.map(function(b, k){
+            var ln = String(b.line || '').trim();
+            var idx = ln ? full.indexOf(ln, lastIdx) : -1;
+            if (idx < 0 && ln.length > 8) idx = full.indexOf(ln.slice(0, 12), lastIdx);
+            if (idx < 0) { var bl = bodyLines[Math.floor(bodyLines.length * k / 10)] || ''; ln = bl; idx = full.indexOf(bl, lastIdx); }
+            if (idx >= 0) lastIdx = idx + 1;
+            var ls = full.lastIndexOf('\n', idx) + 1, le = full.indexOf('\n', idx);
+            var lineTxt = idx >= 0 ? full.slice(ls, le < 0 ? undefined : le).trim() : ln;
+            return { sec: idx >= 0 ? pure(full.slice(0, idx)) / rate * 60 : 0, line: lineTxt, prompt: fill(b.prompt) };
+          });
+          var bar = '════════════════════════════════════════';
+          var o = [];
+          var band = String(j.band || '').trim(), hook2 = String(j.hook2 || '').trim(), hl = String(j.hook2_hl || '').trim();
+          var ov = ' Left side kept darker and simple for large text. Overlay Korean text, HUGE bold brush lettering with thick black outline: top banner small "' + band + 'ㅣ야담ㅣ민담", big line 1 white "' + slogan + '", big line 2 blue with "' + hl + '" in bright yellow "' + hook2 + '". Text on the left, faces large and clear.';
+          o.push(bar, '▣ 썸네일 2~4 · 롱폼 3종 (가로 16:9)', bar,
+            '캔바 문구 → 상단 띠: ' + band + 'ㅣ야담ㅣ민담 / 1줄(흰색): ' + slogan + ' / 2줄(파랑, 노랑 강조): ' + hook2 + '  ← 노랑: ' + hl, '',
+            '[썸네일 2 · A 자는 인물]', _SLP_TP + ' ' + fill(j.thumbA) + ov, '',
+            '[썸네일 3 · B 장면 연출 ★추천]', _SLP_TP + ' ' + fill(j.thumbB) + ov, '',
+            '[썸네일 4 · C 강조 자막]', _SLP_TP + ' ' + fill(j.thumbC) + ov, '');
+          var intro = Array.isArray(j.intro) ? j.intro : [];
+          o.push(bar, '▣ 인트로 이미지 프롬프트 (문장마다 1장 · ' + introLines.length + '장 · 가로 16:9)', bar, '');
+          introLines.forEach(function(l, k){
+            o.push('인트로' + (k + 1) + ' — 나레이션: ' + l, _SLP_LP + ' ' + fill(intro[k] || 'A quiet Joseon village at night with warm lamplight in paper windows, peaceful.'), '');
+          });
+          o.push(bar, '▣ 본편 이미지 프롬프트 (10장 · 가로 16:9 · 이야기 순서)', '   장마다 그 장면이 시작되는 문장과 구간 시간(대본 글자 수 기준 예상치)', bar, '');
+          placed.forEach(function(b, k){
+            var nxt = k + 1 < placed.length ? placed[k + 1].sec : totalSec;
+            o.push((k + 1) + '장 — 나레이션: ' + b.line + '   (구간 ' + mmss(b.sec) + ' ~ ' + mmss(nxt) + ')', _SLP_LP + ' ' + b.prompt, '');
+          });
+          o.push(bar, '▣ 인물 묘사 고정값 (다른 그림 만들 때 그대로 복사)', bar);
+          chars.forEach(function(c){ o.push((c.name || c.code) + ': ' + (cmap[c.code] || '')); });
+          console.log('[r9.2 이미지] 썸네일 3 · 인트로 ' + introLines.length + ' · 본편 ' + placed.length + ' · 인물 ' + chars.length);
+          return o.join('\n');
+        } catch (e) { console.warn('[r9.2 이미지] 오류:', e.message); return null; }
+      };
+
       const handleRegeneratePrompts = async () => {
         if (!bodyText || bodyText.length < 500) return alert("대본이 없습니다.");
         // r9-24: Gemini 또는 Claude 키 둘 중 하나만 있어도 OK
@@ -25997,6 +26159,29 @@ ${reviewed.slice(-3000)}
             .replace(/\b(woman|girl|lady|wife|mother|daughter)\s+in\s+his\b/gi, function(m0, w){ return w + ' in her'; })
             .replace(/\b(man|boy|husband|father|son)\s+in\s+her\b/gi, function(m0, w){ return w + ' in his'; })
             .replace(/(NO|no) traditional hanbok[^,\n]*/g, '$1 western blazer');
+          // [r9.2] 수면동화: 썸네일 1 = 기존 앵글1 버전A(그대로) / 썸네일 2~4 = 롱폼 3종 / 인트로 문장마다 / 본편 10장 / 인물 고정값 / 기존 프로필
+          if (isYadam && SLEEP_MODE) {
+            var _a1 = '';
+            try {
+              var _t = String(thumbnailPromptsOnly || '');
+              var _i1 = _t.indexOf('[앵글 1');
+              var _iA = _i1 >= 0 ? _t.indexOf('버전 A', _i1) : -1;
+              if (_iA >= 0) {
+                var _ls = _t.lastIndexOf('\n', _iA) + 1;
+                var _end = _t.indexOf('\n\n', _iA);
+                _a1 = _t.slice(_i1, _i1 + _t.slice(_i1).indexOf('\n') + 1) + _t.slice(_ls, _end < 0 ? undefined : _end);
+              }
+            } catch (eA1) {}
+            setMsg('수면동화 이미지 프롬프트 생성 중... (롱폼 썸네일 3 · 인트로 문장마다 · 본편 10장)');
+            const _pk = await _sleepImagePack(bodyText, selectedTitle || targetTitle || '', yadamChannel);
+            var _bar = '════════════════════════════════════════';
+            var _out = _bar + '\n▣ 썸네일 1 · 기존 생성기 (앵글 1 핵심 장면 · 버전 A)\n' + _bar + '\n' + (_a1 || '(앵글 1 생성 실패 — 다시 눌러 주세요)') + '\n\n'
+              + (_pk || '(롱폼 썸네일·인트로·본편 생성 실패 — 다시 눌러 주세요)') + '\n\n' + profilePromptsOnly;
+            setImagePrompts(_out);
+            setMsg(_pk ? '✅ 썸네일 4종 + 인트로 + 본편 10장 완료' : '일부 생성 실패 — 한 번 더 눌러 주세요.');
+            setProgress(100); setResultTab('prompts');
+            return;
+          }
           setImagePrompts(allPrompts);
 
           // ===== r6.9 본문 AI 장면 생성 (야담 전용) — 시놉 8막 → 16장면 =====
@@ -26839,6 +27024,12 @@ ${reviewed.slice(-3000)}
                             {s.error
                               ? <span style={{color: '#ff7b7b'}}>— {s.error}</span>
                               : <span>— 캐스트: {(s.cast || []).map(c => c.name + '(' + c.gender + ')').join(', ')}</span>}
+                            {isYadam && SLEEP_MODE && batchWarns['ep-' + (i + 1)] && (
+                              batchWarns['ep-' + (i + 1)].length
+                                ? <button onClick={() => alert('⚠️ 확인 필요 ' + batchWarns['ep-' + (i + 1)].length + '곳 (줄 번호는 받은 대본 기준)\n\n' + batchWarns['ep-' + (i + 1)].map(w => '[' + w.cat + '] ' + w.line + '줄: ' + w.text).join('\n'))}
+                                    className="btn" style={{marginLeft: '4px', fontSize: '10px', padding: '1px 6px', background: '#b45309', color: '#fff'}}>⚠️ 확인 {batchWarns['ep-' + (i + 1)].length}곳</button>
+                                : <span style={{marginLeft: '4px', color: '#4ade80'}}>✅ 경고 0</span>
+                            )}
 
                             {!s.error && (
                               <button onClick={() => handleBatchLoadToMain(i)} disabled={batchBusy}
